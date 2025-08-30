@@ -1,0 +1,84 @@
+<?php
+
+namespace App\Models;
+
+use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+
+class Invoice extends Model
+{
+    protected $fillable = [
+        'user_id',
+        'order_id',
+        'invoice_number',
+        'amount',
+        'status',
+        'due_date',
+        'paid_at',
+        'payment_method',
+        'notes',
+    ];
+
+    protected function casts(): array
+    {
+        return [
+            'amount' => 'decimal:2',
+            'due_date' => 'date',
+            'paid_at' => 'datetime',
+        ];
+    }
+
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    public function order(): BelongsTo
+    {
+        return $this->belongsTo(Order::class);
+    }
+
+    public function scopePaid($query)
+    {
+        return $query->where('status', 'paid');
+    }
+
+    public function scopeUnpaid($query)
+    {
+        return $query->whereIn('status', ['sent', 'overdue']);
+    }
+
+    public function scopeOverdue($query)
+    {
+        return $query->where('status', 'overdue')
+            ->orWhere(function ($q) {
+                $q->where('due_date', '<', Carbon::now())
+                    ->where('status', 'sent');
+            });
+    }
+
+    public function scopeByUser($query, int $userId)
+    {
+        return $query->where('user_id', $userId);
+    }
+
+    public function isPaid(): bool
+    {
+        return $this->status === 'paid' && $this->paid_at !== null;
+    }
+
+    public function isOverdue(): bool
+    {
+        return $this->due_date->isPast() && ! $this->isPaid();
+    }
+
+    public function markAsPaid(?string $paymentMethod = null): void
+    {
+        $this->update([
+            'status' => 'paid',
+            'paid_at' => Carbon::now(),
+            'payment_method' => $paymentMethod,
+        ]);
+    }
+}
