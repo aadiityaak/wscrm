@@ -9,7 +9,8 @@
       "Bash(npm install)",
       "Bash(composer run:*)",
       "Bash(php artisan migrate:*)",
-      "Bash(php artisan:*)"
+      "Bash(php artisan:*)",
+      "Bash(git commit:*)"
     ],
     "deny": [],
     "ask": []
