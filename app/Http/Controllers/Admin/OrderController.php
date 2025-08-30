@@ -13,11 +13,22 @@ class OrderController extends Controller
     public function index(): Response
     {
         $orders = Order::with(['customer', 'orderItems'])
+            ->when(request('search'), function ($query, $search) {
+                $query->whereHas('customer', function ($q) use ($search) {
+                    $q->where('name', 'like', "%{$search}%")
+                      ->orWhere('email', 'like', "%{$search}%");
+                })->orWhere('id', 'like', "%{$search}%");
+            })
+            ->when(request('status'), function ($query, $status) {
+                $query->where('status', $status);
+            })
             ->orderBy('created_at', 'desc')
-            ->paginate(20);
+            ->paginate(20)
+            ->withQueryString();
 
         return Inertia::render('Admin/Orders/Index', [
             'orders' => $orders,
+            'filters' => request()->only(['search', 'status']),
         ]);
     }
 

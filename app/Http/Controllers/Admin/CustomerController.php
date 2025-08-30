@@ -14,11 +14,20 @@ class CustomerController extends Controller
     {
         $customers = Customer::with(['orders', 'services'])
             ->withCount(['orders', 'services'])
+            ->when(request('search'), function ($query, $search) {
+                $query->where('name', 'like', "%{$search}%")
+                      ->orWhere('email', 'like', "%{$search}%");
+            })
+            ->when(request('status'), function ($query, $status) {
+                $query->where('status', $status);
+            })
             ->orderBy('created_at', 'desc')
-            ->paginate(20);
+            ->paginate(20)
+            ->withQueryString();
 
         return Inertia::render('Admin/Customers/Index', [
             'customers' => $customers,
+            'filters' => request()->only(['search', 'status']),
         ]);
     }
 
