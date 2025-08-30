@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class Invoice extends Model
 {
     protected $fillable = [
-        'user_id',
+        'customer_id',
         'order_id',
         'invoice_number',
         'amount',
@@ -29,9 +29,9 @@ class Invoice extends Model
         ];
     }
 
-    public function user(): BelongsTo
+    public function customer(): BelongsTo
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(Customer::class);
     }
 
     public function order(): BelongsTo
@@ -58,9 +58,9 @@ class Invoice extends Model
             });
     }
 
-    public function scopeByUser($query, int $userId)
+    public function scopeByCustomer($query, int $customerId)
     {
-        return $query->where('user_id', $userId);
+        return $query->where('customer_id', $customerId);
     }
 
     public function isPaid(): bool

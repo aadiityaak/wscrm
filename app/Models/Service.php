@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class Service extends Model
 {
     protected $fillable = [
-        'user_id',
+        'customer_id',
         'service_type',
         'plan_id',
         'domain_name',
@@ -28,9 +28,9 @@ class Service extends Model
         ];
     }
 
-    public function user(): BelongsTo
+    public function customer(): BelongsTo
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(Customer::class);
     }
 
     public function hostingPlan(): BelongsTo
@@ -49,9 +49,9 @@ class Service extends Model
             ->where('status', 'active');
     }
 
-    public function scopeByUser($query, int $userId)
+    public function scopeByCustomer($query, int $customerId)
     {
-        return $query->where('user_id', $userId);
+        return $query->where('customer_id', $customerId);
     }
 
     public function scopeByType($query, string $type)

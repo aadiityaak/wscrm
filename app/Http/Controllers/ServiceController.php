@@ -11,7 +11,7 @@ class ServiceController extends Controller
 {
     public function index(): Response
     {
-        $services = Auth::user()->services()
+        $services = Auth::guard('customer')->user()->services()
             ->with(['hostingPlan'])
             ->orderBy('created_at', 'desc')
             ->get();
@@ -25,7 +25,7 @@ class ServiceController extends Controller
     {
         $this->authorize('view', $service);
 
-        $service->load(['hostingPlan', 'user']);
+        $service->load(['hostingPlan', 'customer']);
 
         return Inertia::render('Services/Show', [
             'service' => $service,

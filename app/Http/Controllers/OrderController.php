@@ -15,7 +15,7 @@ class OrderController extends Controller
 {
     public function index(): Response
     {
-        $orders = Auth::user()->orders()
+        $orders = Auth::guard('customer')->user()->orders()
             ->with(['orderItems'])
             ->orderBy('created_at', 'desc')
             ->get();
@@ -76,7 +76,7 @@ class OrderController extends Controller
 
             // Create order
             $order = Order::create([
-                'user_id' => Auth::id(),
+                'customer_id' => Auth::guard('customer')->id(),
                 'order_type' => count($request->items) === 1 ? $request->items[0]['type'] : 'mixed',
                 'total_amount' => $totalAmount,
                 'billing_cycle' => $request->billing_cycle,

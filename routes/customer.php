@@ -1,0 +1,34 @@
+<?php
+
+use App\Http\Controllers\Customer\Auth\LoginController;
+use App\Http\Controllers\Customer\Auth\RegisterController;
+use App\Http\Controllers\Customer\DashboardController;
+use App\Http\Controllers\OrderController;
+use App\Http\Controllers\ServiceController;
+use Illuminate\Support\Facades\Route;
+
+Route::prefix('customer')->name('customer.')->group(function () {
+    Route::middleware('guest:customer')->group(function () {
+        Route::get('login', [LoginController::class, 'create'])->name('login');
+        Route::post('login', [LoginController::class, 'store']);
+        Route::get('register', [RegisterController::class, 'create'])->name('register');
+        Route::post('register', [RegisterController::class, 'store']);
+    });
+
+    Route::middleware('auth:customer')->group(function () {
+        Route::post('logout', [LoginController::class, 'destroy'])->name('logout');
+        
+        Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
+        
+        Route::prefix('orders')->name('orders.')->group(function () {
+            Route::get('/', [OrderController::class, 'index'])->name('index');
+            Route::post('/', [OrderController::class, 'store'])->name('store');
+            Route::get('/{order}', [OrderController::class, 'show'])->name('show');
+        });
+
+        Route::prefix('services')->name('services.')->group(function () {
+            Route::get('/', [ServiceController::class, 'index'])->name('index');
+            Route::get('/{service}', [ServiceController::class, 'show'])->name('show');
+        });
+    });
+});
