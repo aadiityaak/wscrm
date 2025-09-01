@@ -1,20 +1,8 @@
 <?php
 
-use App\Http\Controllers\DomainPriceController;
-use App\Http\Controllers\HostingPlanController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\ServiceController;
 use Illuminate\Support\Facades\Route;
-
-Route::prefix('hosting')->name('hosting.')->group(function () {
-    Route::get('/', [HostingPlanController::class, 'index'])->name('index');
-    Route::get('/{hostingPlan}', [HostingPlanController::class, 'show'])->name('show');
-});
-
-Route::prefix('domains')->name('domains.')->group(function () {
-    Route::get('/', [DomainPriceController::class, 'index'])->name('index');
-    Route::get('/search', [DomainPriceController::class, 'search'])->name('search');
-});
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::prefix('orders')->name('orders.')->group(function () {

@@ -3,42 +3,36 @@ import NavFooter from '@/components/NavFooter.vue';
 import NavMain from '@/components/NavMain.vue';
 import NavUser from '@/components/NavUser.vue';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
-import { dashboard } from '@/routes';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/vue3';
-import { BookOpen, Folder, LayoutGrid, Server, Globe, Users, ShoppingCart, Settings, DollarSign } from 'lucide-vue-next';
+import { BookOpen, Folder, LayoutGrid, Server, Globe, ShoppingCart, Settings } from 'lucide-vue-next';
 import AppLogo from './AppLogo.vue';
 
 const mainNavItems: NavItem[] = [
     {
         title: 'Dashboard',
-        href: dashboard(),
+        href: '/customer/dashboard',
         icon: LayoutGrid,
     },
     {
-        title: 'Customers',
-        href: '/admin/customers',
-        icon: Users,
-    },
-    {
-        title: 'Orders',
-        href: '/admin/orders',
-        icon: ShoppingCart,
-    },
-    {
-        title: 'Services',
-        href: '/admin/services',
-        icon: Settings,
-    },
-    {
         title: 'Hosting Plans',
-        href: '/admin/hosting-plans',
+        href: '/customer/hosting',
         icon: Server,
     },
     {
-        title: 'Domain Prices',
-        href: '/admin/domain-prices',
-        icon: DollarSign,
+        title: 'Domains',
+        href: '/customer/domains',
+        icon: Globe,
+    },
+    {
+        title: 'My Orders',
+        href: '/customer/orders',
+        icon: ShoppingCart,
+    },
+    {
+        title: 'My Services',
+        href: '/customer/services',
+        icon: Settings,
     },
 ];
 
@@ -62,7 +56,7 @@ const footerNavItems: NavItem[] = [
             <SidebarMenu>
                 <SidebarMenuItem>
                     <SidebarMenuButton size="lg" as-child>
-                        <Link :href="dashboard()">
+                        <Link href="/customer/dashboard">
                             <AppLogo />
                         </Link>
                     </SidebarMenuButton>
