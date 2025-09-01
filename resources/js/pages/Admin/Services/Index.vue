@@ -2,8 +2,14 @@
 import AppLayout from '@/layouts/AppLayout.vue';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Badge } from '@/components/ui/badge';
 import { type BreadcrumbItem } from '@/types';
-import { Head, Link } from '@inertiajs/vue3';
+import { Head, Link, router, useForm } from '@inertiajs/vue3';
+import { Search, Plus, Edit, Trash2 } from 'lucide-vue-next';
+import { ref } from 'vue';
 
 interface Customer {
   id: number;
@@ -34,12 +40,45 @@ interface Service {
 interface Props {
   services: {
     data: Service[];
+    current_page: number;
+    last_page: number;
+    per_page: number;
+    total: number;
     links: any[];
-    meta: any;
   };
+  filters?: {
+    search?: string;
+    status?: string;
+    service_type?: string;
+  };
+  customers: Customer[];
+  hostingPlans: HostingPlan[];
 }
 
 const props = defineProps<Props>();
+
+const search = ref(props.filters?.search || '');
+const statusFilter = ref(props.filters?.status || '');
+const serviceTypeFilter = ref(props.filters?.service_type || '');
+const showCreateModal = ref(false);
+const showEditModal = ref(false);
+const selectedService = ref<Service | null>(null);
+
+const createForm = useForm({
+  customer_id: '',
+  service_type: 'hosting' as 'hosting' | 'domain',
+  plan_id: '',
+  domain_name: '',
+  expires_at: '',
+  auto_renew: false,
+});
+
+const editForm = useForm({
+  status: 'active' as 'active' | 'suspended' | 'terminated' | 'pending',
+  domain_name: '',
+  expires_at: '',
+  auto_renew: false,
+});
 
 const breadcrumbs: BreadcrumbItem[] = [
   { title: 'Services', href: '/admin/services' },
@@ -73,6 +112,54 @@ const isExpiringSoon = (expiresAt: string) => {
 const expiringSoon = props.services.data.filter(s => 
   s.status === 'active' && isExpiringSoon(s.expires_at)
 ).length;
+
+const handleSearch = () => {
+  router.get('/admin/services', { 
+    search: search.value, 
+    status: statusFilter.value,
+    service_type: serviceTypeFilter.value 
+  }, { 
+    preserveState: true,
+    replace: true 
+  });
+};
+
+const submitCreate = () => {
+  createForm.post('/admin/services', {
+    onSuccess: () => {
+      showCreateModal.value = false;
+      createForm.reset();
+    },
+  });
+};
+
+const openEditModal = (service: Service) => {
+  selectedService.value = service;
+  editForm.reset();
+  editForm.status = service.status;
+  editForm.domain_name = service.domain_name;
+  editForm.expires_at = service.expires_at;
+  editForm.auto_renew = service.auto_renew;
+  showEditModal.value = true;
+};
+
+const submitEdit = () => {
+  if (!selectedService.value) return;
+  
+  editForm.put(`/admin/services/${selectedService.value.id}`, {
+    onSuccess: () => {
+      showEditModal.value = false;
+      editForm.reset();
+      selectedService.value = null;
+    },
+  });
+};
+
+const deleteService = (service: Service) => {
+  if (confirm(`Are you sure you want to delete service for ${service.domain_name}?`)) {
+    router.delete(`/admin/services/${service.id}`);
+  }
+};
 </script>
 
 <template>
@@ -85,6 +172,10 @@ const expiringSoon = props.services.data.filter(s =>
           <h1 class="text-3xl font-bold tracking-tight">Service Management</h1>
           <p class="text-muted-foreground">Manage customer hosting and domain services</p>
         </div>
+        <Button @click="showCreateModal = true">
+          <Plus class="h-4 w-4 mr-2" />
+          Add Service
+        </Button>
       </div>
 
       <div class="grid gap-4 md:grid-cols-5">
@@ -93,7 +184,7 @@ const expiringSoon = props.services.data.filter(s =>
             <CardTitle class="text-sm font-medium">Total Services</CardTitle>
           </CardHeader>
           <CardContent>
-            <div class="text-2xl font-bold">{{ services.meta.total }}</div>
+            <div class="text-2xl font-bold">{{ services.total }}</div>
           </CardContent>
         </Card>
 
@@ -147,6 +238,38 @@ const expiringSoon = props.services.data.filter(s =>
           <CardDescription>Complete list of customer services</CardDescription>
         </CardHeader>
         <CardContent>
+          <!-- Search and Filter -->
+          <div class="mb-6 flex flex-col sm:flex-row gap-4">
+            <div class="relative flex-1 max-w-sm">
+              <Search class="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                v-model="search"
+                placeholder="Search services..."
+                class="pl-8"
+                @keyup.enter="handleSearch"
+              />
+            </div>
+            <select 
+              v-model="statusFilter" 
+              class="flex h-9 w-[180px] rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            >
+              <option value="">All Status</option>
+              <option value="active">Active</option>
+              <option value="pending">Pending</option>
+              <option value="suspended">Suspended</option>
+              <option value="terminated">Terminated</option>
+            </select>
+            <select 
+              v-model="serviceTypeFilter" 
+              class="flex h-9 w-[180px] rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            >
+              <option value="">All Types</option>
+              <option value="hosting">Hosting</option>
+              <option value="domain">Domain</option>
+            </select>
+            <Button @click="handleSearch">Search</Button>
+          </div>
+
           <div class="space-y-4">
             <div v-if="services.data.length === 0" class="text-center py-8 text-muted-foreground">
               No services found.
@@ -168,9 +291,9 @@ const expiringSoon = props.services.data.filter(s =>
                     }`">
                       {{ service.service_type }}
                     </span>
-                    <span :class="`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${getStatusColor(service.status)}`">
+                    <Badge :class="getStatusColor(service.status)">
                       {{ service.status }}
-                    </span>
+                    </Badge>
                     <span v-if="isExpiringSoon(service.expires_at) && service.status === 'active'" 
                           class="inline-flex items-center rounded-full px-2 py-1 text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300">
                       Expiring Soon
@@ -191,32 +314,222 @@ const expiringSoon = props.services.data.filter(s =>
                 <div class="flex items-center gap-2">
                   <Button variant="outline" size="sm" asChild>
                     <Link :href="`/admin/services/${service.id}`">
-                      Manage
+                      View Details
                     </Link>
+                  </Button>
+                  <Button size="sm" variant="outline" @click="openEditModal(service)">
+                    <Edit class="h-3 w-3" />
+                  </Button>
+                  <Button 
+                    size="sm" 
+                    variant="outline" 
+                    @click="deleteService(service)"
+                    :disabled="service.status === 'active'"
+                  >
+                    <Trash2 class="h-3 w-3" />
                   </Button>
                 </div>
               </div>
             </div>
 
             <!-- Pagination -->
-            <div v-if="services.links && services.links.length > 3" class="flex justify-center gap-1 mt-6">
-              <Link 
-                v-for="link in services.links" 
-                :key="link.label"
-                :href="link.url"
-                :class="`px-3 py-2 text-sm border rounded ${
-                  link.active 
-                    ? 'bg-primary text-primary-foreground border-primary' 
-                    : 'hover:bg-muted'
-                } ${
-                  !link.url ? 'opacity-50 cursor-not-allowed' : ''
-                }`"
-                v-html="link.label"
-              />
+            <div v-if="services.links && services.links.length > 3" class="flex items-center justify-between pt-6 border-t">
+              <div class="text-sm text-muted-foreground">
+                Showing {{ ((services.current_page - 1) * services.per_page + 1) || 0 }} to 
+                {{ Math.min(services.current_page * services.per_page, services.total) || 0 }} of 
+                {{ services.total || 0 }} results
+              </div>
+              <div class="flex items-center gap-1">
+                <template v-for="link in services.links" :key="link.label">
+                  <Button 
+                    v-if="link.url" 
+                    variant="outline" 
+                    size="sm"
+                    :disabled="!link.url"
+                    :class="link.active ? 'bg-primary text-primary-foreground' : ''"
+                    @click="router.visit(link.url)"
+                    v-html="link.label"
+                  />
+                  <span 
+                    v-else 
+                    class="px-3 py-2 text-sm text-muted-foreground"
+                    v-html="link.label"
+                  />
+                </template>
+              </div>
             </div>
           </div>
         </CardContent>
       </Card>
     </div>
+
+    <!-- Create Service Modal -->
+    <Dialog v-model:open="showCreateModal">
+      <DialogContent class="sm:max-w-[500px]">
+        <DialogHeader>
+          <DialogTitle>Add New Service</DialogTitle>
+        </DialogHeader>
+        <form @submit.prevent="submitCreate" class="space-y-4">
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <Label for="create-customer">Customer *</Label>
+              <select 
+                id="create-customer"
+                v-model="createForm.customer_id"
+                class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                required
+              >
+                <option value="">Select Customer</option>
+                <option v-for="customer in customers" :key="customer.id" :value="customer.id">
+                  {{ customer.name }} ({{ customer.email }})
+                </option>
+              </select>
+              <p v-if="createForm.errors.customer_id" class="text-xs text-red-500 mt-1">{{ createForm.errors.customer_id }}</p>
+            </div>
+            <div>
+              <Label for="create-service-type">Service Type *</Label>
+              <select 
+                id="create-service-type"
+                v-model="createForm.service_type"
+                class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                required
+              >
+                <option value="hosting">Hosting</option>
+                <option value="domain">Domain</option>
+              </select>
+              <p v-if="createForm.errors.service_type" class="text-xs text-red-500 mt-1">{{ createForm.errors.service_type }}</p>
+            </div>
+          </div>
+
+          <div v-if="createForm.service_type === 'hosting'">
+            <Label for="create-plan">Hosting Plan *</Label>
+            <select 
+              id="create-plan"
+              v-model="createForm.plan_id"
+              class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              required
+            >
+              <option value="">Select Hosting Plan</option>
+              <option v-for="plan in hostingPlans" :key="plan.id" :value="plan.id">
+                {{ plan.plan_name }} ({{ plan.storage_gb }}GB, {{ plan.cpu_cores }} CPU, {{ plan.ram_gb }}GB RAM)
+              </option>
+            </select>
+            <p v-if="createForm.errors.plan_id" class="text-xs text-red-500 mt-1">{{ createForm.errors.plan_id }}</p>
+          </div>
+
+          <div>
+            <Label for="create-domain">Domain Name *</Label>
+            <Input
+              id="create-domain"
+              v-model="createForm.domain_name"
+              placeholder="example.com"
+              :class="{ 'border-red-500': createForm.errors.domain_name }"
+              required
+            />
+            <p v-if="createForm.errors.domain_name" class="text-xs text-red-500 mt-1">{{ createForm.errors.domain_name }}</p>
+          </div>
+
+          <div>
+            <Label for="create-expires">Expires At *</Label>
+            <Input
+              id="create-expires"
+              type="date"
+              v-model="createForm.expires_at"
+              :class="{ 'border-red-500': createForm.errors.expires_at }"
+              required
+            />
+            <p v-if="createForm.errors.expires_at" class="text-xs text-red-500 mt-1">{{ createForm.errors.expires_at }}</p>
+          </div>
+
+          <div class="flex items-center space-x-2">
+            <input
+              id="create-auto-renew"
+              type="checkbox"
+              v-model="createForm.auto_renew"
+              class="rounded border border-input"
+            />
+            <Label for="create-auto-renew">Auto Renew</Label>
+          </div>
+
+          <DialogFooter>
+            <Button type="button" variant="outline" @click="showCreateModal = false">
+              Cancel
+            </Button>
+            <Button type="submit" :disabled="createForm.processing">
+              {{ createForm.processing ? 'Creating...' : 'Create Service' }}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+
+    <!-- Edit Service Modal -->
+    <Dialog v-model:open="showEditModal">
+      <DialogContent class="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>Edit Service</DialogTitle>
+        </DialogHeader>
+        <form @submit.prevent="submitEdit" class="space-y-4">
+          <div>
+            <Label for="edit-domain">Domain Name *</Label>
+            <Input
+              id="edit-domain"
+              v-model="editForm.domain_name"
+              placeholder="example.com"
+              :class="{ 'border-red-500': editForm.errors.domain_name }"
+              required
+            />
+            <p v-if="editForm.errors.domain_name" class="text-xs text-red-500 mt-1">{{ editForm.errors.domain_name }}</p>
+          </div>
+
+          <div>
+            <Label for="edit-status">Status *</Label>
+            <select 
+              id="edit-status"
+              v-model="editForm.status"
+              class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              required
+            >
+              <option value="active">Active</option>
+              <option value="pending">Pending</option>
+              <option value="suspended">Suspended</option>
+              <option value="terminated">Terminated</option>
+            </select>
+            <p v-if="editForm.errors.status" class="text-xs text-red-500 mt-1">{{ editForm.errors.status }}</p>
+          </div>
+
+          <div>
+            <Label for="edit-expires">Expires At *</Label>
+            <Input
+              id="edit-expires"
+              type="date"
+              v-model="editForm.expires_at"
+              :class="{ 'border-red-500': editForm.errors.expires_at }"
+              required
+            />
+            <p v-if="editForm.errors.expires_at" class="text-xs text-red-500 mt-1">{{ editForm.errors.expires_at }}</p>
+          </div>
+
+          <div class="flex items-center space-x-2">
+            <input
+              id="edit-auto-renew"
+              type="checkbox"
+              v-model="editForm.auto_renew"
+              class="rounded border border-input"
+            />
+            <Label for="edit-auto-renew">Auto Renew</Label>
+          </div>
+
+          <DialogFooter>
+            <Button type="button" variant="outline" @click="showEditModal = false">
+              Cancel
+            </Button>
+            <Button type="submit" :disabled="editForm.processing">
+              {{ editForm.processing ? 'Updating...' : 'Update Service' }}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   </AppLayout>
 </template>

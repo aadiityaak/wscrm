@@ -36,9 +36,10 @@ class DomainPriceController extends Controller
     {
         $validated = $request->validate([
             'extension' => 'required|string|unique:domain_prices,extension',
-            'register_price' => 'required|numeric|min:0',
-            'renew_price' => 'required|numeric|min:0',
-            'transfer_price' => 'required|numeric|min:0',
+            'base_cost' => 'required|numeric|min:0',
+            'renewal_cost' => 'required|numeric|min:0',
+            'selling_price' => 'required|numeric|min:0',
+            'renewal_price_with_tax' => 'required|numeric|min:0',
             'is_active' => 'boolean',
         ]);
 
@@ -66,9 +67,10 @@ class DomainPriceController extends Controller
     {
         $validated = $request->validate([
             'extension' => 'required|string|unique:domain_prices,extension,' . $domainPrice->id,
-            'register_price' => 'required|numeric|min:0',
-            'renew_price' => 'required|numeric|min:0',
-            'transfer_price' => 'required|numeric|min:0',
+            'base_cost' => 'required|numeric|min:0',
+            'renewal_cost' => 'required|numeric|min:0',
+            'selling_price' => 'required|numeric|min:0',
+            'renewal_price_with_tax' => 'required|numeric|min:0',
             'is_active' => 'boolean',
         ]);
 

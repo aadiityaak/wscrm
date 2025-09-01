@@ -10,7 +10,8 @@
       "Bash(composer run:*)",
       "Bash(php artisan migrate:*)",
       "Bash(php artisan:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(git add:*)"
     ],
     "deny": [],
     "ask": []

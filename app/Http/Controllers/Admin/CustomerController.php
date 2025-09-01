@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Customer;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rules;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -44,16 +46,71 @@ class CustomerController extends Controller
         ]);
     }
 
+    public function store(Request $request)
+    {
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|string|email|max:255|unique:customers',
+            'password' => ['required', 'confirmed', Rules\Password::defaults()],
+            'phone' => 'nullable|string|max:20',
+            'address' => 'nullable|string|max:500',
+            'city' => 'nullable|string|max:100',
+            'country' => 'nullable|string|max:100',
+            'postal_code' => 'nullable|string|max:20',
+        ]);
+
+        Customer::create([
+            'name' => $request->name,
+            'email' => $request->email,
+            'password' => Hash::make($request->password),
+            'phone' => $request->phone,
+            'address' => $request->address,
+            'city' => $request->city,
+            'country' => $request->country,
+            'postal_code' => $request->postal_code,
+            'status' => 'active',
+        ]);
+
+        return redirect()->back()->with('success', 'Customer created successfully!');
+    }
+
     public function update(Request $request, Customer $customer)
     {
         $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|string|email|max:255|unique:customers,email,' . $customer->id,
+            'phone' => 'nullable|string|max:20',
+            'address' => 'nullable|string|max:500',
+            'city' => 'nullable|string|max:100',
+            'country' => 'nullable|string|max:100',
+            'postal_code' => 'nullable|string|max:20',
             'status' => 'required|in:active,inactive,suspended',
         ]);
 
-        $customer->update([
-            'status' => $request->status,
+        $updateData = $request->only([
+            'name', 'email', 'phone', 'address', 'city', 'country', 'postal_code', 'status'
         ]);
 
-        return redirect()->back()->with('success', 'Customer status updated successfully!');
+        if ($request->filled('password')) {
+            $request->validate([
+                'password' => ['confirmed', Rules\Password::defaults()],
+            ]);
+            $updateData['password'] = Hash::make($request->password);
+        }
+
+        $customer->update($updateData);
+
+        return redirect()->back()->with('success', 'Customer updated successfully!');
+    }
+
+    public function destroy(Customer $customer)
+    {
+        if ($customer->orders()->exists() || $customer->services()->exists()) {
+            return redirect()->back()->with('error', 'Cannot delete customer with existing orders or services.');
+        }
+
+        $customer->delete();
+
+        return redirect()->back()->with('success', 'Customer deleted successfully!');
     }
 }

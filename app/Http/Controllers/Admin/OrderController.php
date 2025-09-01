@@ -4,7 +4,12 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Order;
+use App\Models\Customer;
+use App\Models\HostingPlan;
+use App\Models\DomainPrice;
+use App\Models\OrderItem;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -26,9 +31,16 @@ class OrderController extends Controller
             ->paginate(20)
             ->withQueryString();
 
+        $customers = Customer::select('id', 'name', 'email')->get();
+        $hostingPlans = HostingPlan::active()->get();
+        $domainPrices = DomainPrice::where('is_active', true)->get();
+
         return Inertia::render('Admin/Orders/Index', [
             'orders' => $orders,
             'filters' => request()->only(['search', 'status']),
+            'customers' => $customers,
+            'hostingPlans' => $hostingPlans,
+            'domainPrices' => $domainPrices,
         ]);
     }
 
@@ -45,6 +57,66 @@ class OrderController extends Controller
         ]);
     }
 
+    public function store(Request $request)
+    {
+        $request->validate([
+            'customer_id' => 'required|exists:customers,id',
+            'order_type' => 'required|in:hosting,domain,mixed',
+            'billing_cycle' => 'required|in:monthly,quarterly,semi_annually,annually',
+            'items' => 'required|array|min:1',
+            'items.*.item_type' => 'required|in:hosting,domain',
+            'items.*.item_id' => 'required|integer',
+            'items.*.domain_name' => 'nullable|string|max:255',
+            'items.*.quantity' => 'required|integer|min:1',
+        ]);
+
+        DB::transaction(function () use ($request) {
+            $totalAmount = 0;
+            $items = collect($request->items);
+
+            // Calculate total amount
+            foreach ($items as $item) {
+                if ($item['item_type'] === 'hosting') {
+                    $plan = HostingPlan::findOrFail($item['item_id']);
+                    $totalAmount += $plan->selling_price * $item['quantity'];
+                } elseif ($item['item_type'] === 'domain') {
+                    $domain = DomainPrice::findOrFail($item['item_id']);
+                    $totalAmount += $domain->register_price * $item['quantity'];
+                }
+            }
+
+            $order = Order::create([
+                'customer_id' => $request->customer_id,
+                'order_type' => $request->order_type,
+                'total_amount' => $totalAmount,
+                'status' => 'pending',
+                'billing_cycle' => $request->billing_cycle,
+            ]);
+
+            // Create order items
+            foreach ($items as $item) {
+                if ($item['item_type'] === 'hosting') {
+                    $plan = HostingPlan::findOrFail($item['item_id']);
+                    $price = $plan->selling_price;
+                } else {
+                    $domain = DomainPrice::findOrFail($item['item_id']);
+                    $price = $domain->register_price;
+                }
+
+                OrderItem::create([
+                    'order_id' => $order->id,
+                    'item_type' => $item['item_type'],
+                    'item_id' => $item['item_id'],
+                    'domain_name' => $item['domain_name'],
+                    'quantity' => $item['quantity'],
+                    'price' => $price,
+                ]);
+            }
+        });
+
+        return redirect()->back()->with('success', 'Order created successfully!');
+    }
+
     public function update(Request $request, Order $order)
     {
         $request->validate([
@@ -56,5 +128,19 @@ class OrderController extends Controller
         ]);
 
         return redirect()->back()->with('success', 'Order status updated successfully!');
+    }
+
+    public function destroy(Order $order)
+    {
+        if ($order->status === 'completed') {
+            return redirect()->back()->with('error', 'Cannot delete completed orders.');
+        }
+
+        DB::transaction(function () use ($order) {
+            $order->orderItems()->delete();
+            $order->delete();
+        });
+
+        return redirect()->back()->with('success', 'Order deleted successfully!');
     }
 }

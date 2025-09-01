@@ -37,11 +37,13 @@ class HostingPlanController extends Controller
         $validated = $request->validate([
             'plan_name' => 'required|string|unique:hosting_plans,plan_name',
             'storage_gb' => 'required|numeric|min:0',
-            'bandwidth_gb' => 'required|numeric|min:0',
             'cpu_cores' => 'required|numeric|min:1',
             'ram_gb' => 'required|numeric|min:0',
-            'price_monthly' => 'required|numeric|min:0',
-            'price_yearly' => 'required|numeric|min:0',
+            'bandwidth' => 'required|string',
+            'modal_cost' => 'required|numeric|min:0',
+            'maintenance_cost' => 'required|numeric|min:0',
+            'discount_percent' => 'required|numeric|min:0|max:100',
+            'selling_price' => 'required|numeric|min:0',
             'features' => 'nullable|array',
             'is_active' => 'boolean',
         ]);
@@ -71,11 +73,13 @@ class HostingPlanController extends Controller
         $validated = $request->validate([
             'plan_name' => 'required|string|unique:hosting_plans,plan_name,' . $hostingPlan->id,
             'storage_gb' => 'required|numeric|min:0',
-            'bandwidth_gb' => 'required|numeric|min:0',
             'cpu_cores' => 'required|numeric|min:1',
             'ram_gb' => 'required|numeric|min:0',
-            'price_monthly' => 'required|numeric|min:0',
-            'price_yearly' => 'required|numeric|min:0',
+            'bandwidth' => 'required|string',
+            'modal_cost' => 'required|numeric|min:0',
+            'maintenance_cost' => 'required|numeric|min:0',
+            'discount_percent' => 'required|numeric|min:0|max:100',
+            'selling_price' => 'required|numeric|min:0',
             'features' => 'nullable|array',
             'is_active' => 'boolean',
         ]);

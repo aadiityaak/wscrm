@@ -3,19 +3,22 @@ import AppLayout from '@/layouts/AppLayout.vue';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { type BreadcrumbItem } from '@/types';
-import { Head, Link, router } from '@inertiajs/vue3';
+import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import { Search, Plus, Edit, Trash2 } from 'lucide-vue-next';
 import { ref } from 'vue';
 
 interface DomainPrice {
   id: number;
   extension: string;
-  register_price: number;
-  renew_price: number;
-  transfer_price: number;
+  base_cost: number;
+  renewal_cost: number;
+  selling_price: number;
+  renewal_price_with_tax: number;
   is_active: boolean;
 }
 
@@ -36,6 +39,27 @@ interface Props {
 const props = defineProps<Props>();
 
 const search = ref(props.filters.search || '');
+const showCreateModal = ref(false);
+const showEditModal = ref(false);
+const selectedDomain = ref<DomainPrice | null>(null);
+
+const createForm = useForm({
+  extension: '',
+  base_cost: '',
+  renewal_cost: '',
+  selling_price: '',
+  renewal_price_with_tax: '',
+  is_active: true,
+});
+
+const editForm = useForm({
+  extension: '',
+  base_cost: '',
+  renewal_cost: '',
+  selling_price: '',
+  renewal_price_with_tax: '',
+  is_active: true,
+});
 
 const breadcrumbs: BreadcrumbItem[] = [
   { title: 'Dashboard', href: '/dashboard' },
@@ -57,6 +81,39 @@ const handleSearch = () => {
   });
 };
 
+const submitCreate = () => {
+  createForm.post('/admin/domain-prices', {
+    onSuccess: () => {
+      showCreateModal.value = false;
+      createForm.reset();
+    },
+  });
+};
+
+const openEditModal = (domain: DomainPrice) => {
+  selectedDomain.value = domain;
+  editForm.reset();
+  editForm.extension = domain.extension;
+  editForm.base_cost = domain.base_cost;
+  editForm.renewal_cost = domain.renewal_cost;
+  editForm.selling_price = domain.selling_price;
+  editForm.renewal_price_with_tax = domain.renewal_price_with_tax;
+  editForm.is_active = domain.is_active;
+  showEditModal.value = true;
+};
+
+const submitEdit = () => {
+  if (!selectedDomain.value) return;
+  
+  editForm.put(`/admin/domain-prices/${selectedDomain.value.id}`, {
+    onSuccess: () => {
+      showEditModal.value = false;
+      editForm.reset();
+      selectedDomain.value = null;
+    },
+  });
+};
+
 const deleteDomainPrice = (id: number) => {
   if (confirm('Are you sure you want to delete this domain price?')) {
     router.delete(`/admin/domain-prices/${id}`);
@@ -74,11 +131,9 @@ const deleteDomainPrice = (id: number) => {
           <h1 class="text-3xl font-bold tracking-tight">Domain Prices</h1>
           <p class="text-muted-foreground">Manage domain extension pricing</p>
         </div>
-        <Button asChild>
-          <Link href="/admin/domain-prices/create">
-            <Plus class="h-4 w-4 mr-2" />
-            Add Domain Price
-          </Link>
+        <Button @click="showCreateModal = true">
+          <Plus class="h-4 w-4 mr-2" />
+          Add Domain Price
         </Button>
       </div>
 
@@ -108,9 +163,10 @@ const deleteDomainPrice = (id: number) => {
               <TableHeader>
                 <TableRow>
                   <TableHead>Extension</TableHead>
-                  <TableHead>Register Price</TableHead>
-                  <TableHead>Renew Price</TableHead>
-                  <TableHead>Transfer Price</TableHead>
+                  <TableHead>Base Cost</TableHead>
+                  <TableHead>Renewal Cost</TableHead>
+                  <TableHead>Selling Price</TableHead>
+                  <TableHead>Renewal w/ Tax</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead class="w-[100px]">Actions</TableHead>
                 </TableRow>
@@ -118,9 +174,10 @@ const deleteDomainPrice = (id: number) => {
               <TableBody>
                 <TableRow v-for="domain in domainPrices.data" :key="domain.id">
                   <TableCell class="font-medium">.{{ domain.extension }}</TableCell>
-                  <TableCell>{{ formatPrice(domain.register_price) }}</TableCell>
-                  <TableCell>{{ formatPrice(domain.renew_price) }}</TableCell>
-                  <TableCell>{{ formatPrice(domain.transfer_price) }}</TableCell>
+                  <TableCell>{{ formatPrice(domain.base_cost) }}</TableCell>
+                  <TableCell>{{ formatPrice(domain.renewal_cost) }}</TableCell>
+                  <TableCell>{{ formatPrice(domain.selling_price) }}</TableCell>
+                  <TableCell>{{ formatPrice(domain.renewal_price_with_tax) }}</TableCell>
                   <TableCell>
                     <Badge :variant="domain.is_active ? 'default' : 'secondary'">
                       {{ domain.is_active ? 'Active' : 'Inactive' }}
@@ -128,10 +185,8 @@ const deleteDomainPrice = (id: number) => {
                   </TableCell>
                   <TableCell>
                     <div class="flex items-center space-x-2">
-                      <Button size="sm" variant="outline" asChild>
-                        <Link :href="`/admin/domain-prices/${domain.id}/edit`">
-                          <Edit class="h-3 w-3" />
-                        </Link>
+                      <Button size="sm" variant="outline" @click="openEditModal(domain)">
+                        <Edit class="h-3 w-3" />
                       </Button>
                       <Button 
                         size="sm" 
@@ -170,5 +225,205 @@ const deleteDomainPrice = (id: number) => {
         </CardContent>
       </Card>
     </div>
+
+    <!-- Create Domain Price Modal -->
+    <Dialog v-model:open="showCreateModal">
+      <DialogContent class="sm:max-w-[500px]">
+        <DialogHeader>
+          <DialogTitle>Add New Domain Price</DialogTitle>
+        </DialogHeader>
+        <form @submit.prevent="submitCreate" class="space-y-4">
+          <div>
+            <Label for="create-extension">Domain Extension *</Label>
+            <Input
+              id="create-extension"
+              v-model="createForm.extension"
+              placeholder="com"
+              :class="{ 'border-red-500': createForm.errors.extension }"
+              required
+            />
+            <p class="text-sm text-muted-foreground mt-1">Enter without the dot (e.g., "com" not ".com")</p>
+            <p v-if="createForm.errors.extension" class="text-xs text-red-500 mt-1">{{ createForm.errors.extension }}</p>
+          </div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <Label for="create-base-cost">Base Cost (IDR) *</Label>
+              <Input
+                id="create-base-cost"
+                v-model="createForm.base_cost"
+                type="number"
+                step="0.01"
+                min="0"
+                :class="{ 'border-red-500': createForm.errors.base_cost }"
+                required
+              />
+              <p v-if="createForm.errors.base_cost" class="text-xs text-red-500 mt-1">{{ createForm.errors.base_cost }}</p>
+            </div>
+            <div>
+              <Label for="create-renewal-cost">Renewal Cost (IDR) *</Label>
+              <Input
+                id="create-renewal-cost"
+                v-model="createForm.renewal_cost"
+                type="number"
+                step="0.01"
+                min="0"
+                :class="{ 'border-red-500': createForm.errors.renewal_cost }"
+                required
+              />
+              <p v-if="createForm.errors.renewal_cost" class="text-xs text-red-500 mt-1">{{ createForm.errors.renewal_cost }}</p>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <Label for="create-selling-price">Selling Price (IDR) *</Label>
+              <Input
+                id="create-selling-price"
+                v-model="createForm.selling_price"
+                type="number"
+                step="0.01"
+                min="0"
+                :class="{ 'border-red-500': createForm.errors.selling_price }"
+                required
+              />
+              <p v-if="createForm.errors.selling_price" class="text-xs text-red-500 mt-1">{{ createForm.errors.selling_price }}</p>
+            </div>
+            <div>
+              <Label for="create-renewal-price-tax">Renewal Price w/ Tax (IDR) *</Label>
+              <Input
+                id="create-renewal-price-tax"
+                v-model="createForm.renewal_price_with_tax"
+                type="number"
+                step="0.01"
+                min="0"
+                :class="{ 'border-red-500': createForm.errors.renewal_price_with_tax }"
+                required
+              />
+              <p v-if="createForm.errors.renewal_price_with_tax" class="text-xs text-red-500 mt-1">{{ createForm.errors.renewal_price_with_tax }}</p>
+            </div>
+          </div>
+
+          <div class="flex items-center space-x-2">
+            <input
+              id="create-is-active"
+              type="checkbox"
+              v-model="createForm.is_active"
+              class="rounded border border-input"
+            />
+            <Label for="create-is-active">Active</Label>
+          </div>
+
+          <DialogFooter>
+            <Button type="button" variant="outline" @click="showCreateModal = false">
+              Cancel
+            </Button>
+            <Button type="submit" :disabled="createForm.processing">
+              {{ createForm.processing ? 'Creating...' : 'Create Domain Price' }}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+
+    <!-- Edit Domain Price Modal -->
+    <Dialog v-model:open="showEditModal">
+      <DialogContent class="sm:max-w-[500px]">
+        <DialogHeader>
+          <DialogTitle>Edit Domain Price</DialogTitle>
+        </DialogHeader>
+        <form @submit.prevent="submitEdit" class="space-y-4">
+          <div>
+            <Label for="edit-extension">Domain Extension *</Label>
+            <Input
+              id="edit-extension"
+              v-model="editForm.extension"
+              placeholder="com"
+              :class="{ 'border-red-500': editForm.errors.extension }"
+              required
+            />
+            <p class="text-sm text-muted-foreground mt-1">Enter without the dot (e.g., "com" not ".com")</p>
+            <p v-if="editForm.errors.extension" class="text-xs text-red-500 mt-1">{{ editForm.errors.extension }}</p>
+          </div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <Label for="edit-base-cost">Base Cost (IDR) *</Label>
+              <Input
+                id="edit-base-cost"
+                v-model="editForm.base_cost"
+                type="number"
+                step="0.01"
+                min="0"
+                :class="{ 'border-red-500': editForm.errors.base_cost }"
+                required
+              />
+              <p v-if="editForm.errors.base_cost" class="text-xs text-red-500 mt-1">{{ editForm.errors.base_cost }}</p>
+            </div>
+            <div>
+              <Label for="edit-renewal-cost">Renewal Cost (IDR) *</Label>
+              <Input
+                id="edit-renewal-cost"
+                v-model="editForm.renewal_cost"
+                type="number"
+                step="0.01"
+                min="0"
+                :class="{ 'border-red-500': editForm.errors.renewal_cost }"
+                required
+              />
+              <p v-if="editForm.errors.renewal_cost" class="text-xs text-red-500 mt-1">{{ editForm.errors.renewal_cost }}</p>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <Label for="edit-selling-price">Selling Price (IDR) *</Label>
+              <Input
+                id="edit-selling-price"
+                v-model="editForm.selling_price"
+                type="number"
+                step="0.01"
+                min="0"
+                :class="{ 'border-red-500': editForm.errors.selling_price }"
+                required
+              />
+              <p v-if="editForm.errors.selling_price" class="text-xs text-red-500 mt-1">{{ editForm.errors.selling_price }}</p>
+            </div>
+            <div>
+              <Label for="edit-renewal-price-tax">Renewal Price w/ Tax (IDR) *</Label>
+              <Input
+                id="edit-renewal-price-tax"
+                v-model="editForm.renewal_price_with_tax"
+                type="number"
+                step="0.01"
+                min="0"
+                :class="{ 'border-red-500': editForm.errors.renewal_price_with_tax }"
+                required
+              />
+              <p v-if="editForm.errors.renewal_price_with_tax" class="text-xs text-red-500 mt-1">{{ editForm.errors.renewal_price_with_tax }}</p>
+            </div>
+          </div>
+
+          <div class="flex items-center space-x-2">
+            <input
+              id="edit-is-active"
+              type="checkbox"
+              v-model="editForm.is_active"
+              class="rounded border border-input"
+            />
+            <Label for="edit-is-active">Active</Label>
+          </div>
+
+          <DialogFooter>
+            <Button type="button" variant="outline" @click="showEditModal = false">
+              Cancel
+            </Button>
+            <Button type="submit" :disabled="editForm.processing">
+              {{ editForm.processing ? 'Updating...' : 'Update Domain Price' }}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   </AppLayout>
-</template>
+</template>"}]
