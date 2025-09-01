@@ -40,7 +40,7 @@ class OrderController extends Controller
     {
         $request->validate([
             'items' => 'required|array|min:1',
-            'items.*.type' => 'required|in:hosting,domain',
+            'items.*.type' => 'required|in:hosting,domain,app,web,maintenance',
             'items.*.item_id' => 'required|integer',
             'items.*.domain_name' => 'nullable|string',
             'items.*.quantity' => 'integer|min:1',
@@ -53,12 +53,25 @@ class OrderController extends Controller
 
             // Calculate total amount
             foreach ($request->items as $item) {
-                if ($item['type'] === 'hosting') {
-                    $hostingPlan = HostingPlan::findOrFail($item['item_id']);
-                    $price = $hostingPlan->selling_price;
-                } else {
-                    $domainPrice = DomainPrice::findOrFail($item['item_id']);
-                    $price = $domainPrice->selling_price;
+                switch ($item['type']) {
+                    case 'hosting':
+                        $hostingPlan = HostingPlan::findOrFail($item['item_id']);
+                        $price = $hostingPlan->selling_price;
+                        break;
+                    case 'domain':
+                        $domainPrice = DomainPrice::findOrFail($item['item_id']);
+                        $price = $domainPrice->selling_price;
+                        break;
+                    case 'app':
+                    case 'web':
+                    case 'maintenance':
+                        // For now, use a default price or look up from a services table
+                        // You might want to create separate models/tables for these
+                        $price = 500000; // Default price in IDR
+                        break;
+                    default:
+                        $price = 0;
+                        break;
                 }
 
                 $quantity = $item['quantity'] ?? 1;
@@ -74,10 +87,13 @@ class OrderController extends Controller
                 ];
             }
 
+            // Determine order type based on items
+            $orderType = $this->determineOrderType($request->items);
+
             // Create order
             $order = Order::create([
                 'customer_id' => Auth::guard('customer')->id(),
-                'order_type' => count($request->items) === 1 ? $request->items[0]['type'] : 'mixed',
+                'order_type' => $orderType,
                 'total_amount' => $totalAmount,
                 'billing_cycle' => $request->billing_cycle,
                 'status' => 'pending',
@@ -92,5 +108,70 @@ class OrderController extends Controller
         });
 
         return redirect()->route('orders.index')->with('success', 'Order created successfully!');
+    }
+
+    private function determineOrderType(array $items): string
+    {
+        $hasHosting = false;
+        $hasDomain = false;
+        $hasApp = false;
+        $hasWeb = false;
+        $hasMaintenance = false;
+
+        foreach ($items as $item) {
+            switch ($item['type']) {
+                case 'hosting':
+                    $hasHosting = true;
+                    break;
+                case 'domain':
+                    $hasDomain = true;
+                    break;
+                case 'app':
+                    $hasApp = true;
+                    break;
+                case 'web':
+                    $hasWeb = true;
+                    break;
+                case 'maintenance':
+                    $hasMaintenance = true;
+                    break;
+            }
+        }
+
+        // Determine the order type based on combinations
+        if ($hasMaintenance) {
+            return 'maintenance';
+        }
+
+        if ($hasDomain && $hasHosting && ($hasApp || $hasWeb)) {
+            return 'domain_hosting_app_web';
+        }
+
+        if ($hasDomain && $hasHosting) {
+            return 'domain_hosting';
+        }
+
+        if ($hasApp && $hasWeb) {
+            return 'domain_hosting_app_web'; // Assuming app+web needs hosting+domain
+        }
+
+        if ($hasApp) {
+            return 'app';
+        }
+
+        if ($hasWeb) {
+            return 'web';
+        }
+
+        if ($hasHosting) {
+            return 'hosting';
+        }
+
+        if ($hasDomain) {
+            return 'domain';
+        }
+
+        // Default fallback
+        return 'domain_hosting';
     }
 }

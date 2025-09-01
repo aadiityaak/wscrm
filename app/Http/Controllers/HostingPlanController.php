@@ -27,4 +27,19 @@ class HostingPlanController extends Controller
             'hostingPlan' => $hostingPlan,
         ]);
     }
+
+    public function publicIndex(): Response
+    {
+        $hostingPlans = HostingPlan::active()
+            ->when(request('search'), function ($query, $search) {
+                $query->where('plan_name', 'like', "%{$search}%");
+            })
+            ->orderBy('selling_price')
+            ->get();
+
+        return Inertia::render('Public/Hosting/Index', [
+            'hostingPlans' => $hostingPlans,
+            'filters' => request()->only(['search']),
+        ]);
+    }
 }

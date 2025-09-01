@@ -7,6 +7,11 @@ Route::get('/', function () {
     return Inertia::render('CustomerWelcome');
 })->name('home');
 
+// Public hosting and domain pages (accessible without login)
+Route::get('/hosting', [App\Http\Controllers\HostingPlanController::class, 'publicIndex'])->name('public.hosting.index');
+Route::get('/domains', [App\Http\Controllers\DomainPriceController::class, 'publicIndex'])->name('public.domains.index');
+Route::get('/domains/search', [App\Http\Controllers\DomainPriceController::class, 'publicSearch'])->name('public.domains.search');
+
 Route::get('dashboard', [App\Http\Controllers\DashboardController::class, 'index'])
     ->middleware(['auth', 'verified'])
     ->name('dashboard');

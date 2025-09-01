@@ -34,4 +34,45 @@ class DomainPriceController extends Controller
             'available' => true, // TODO: Implement domain availability check
         ]);
     }
+
+    public function publicIndex(): Response
+    {
+        $domainPrices = DomainPrice::where('is_active', true)
+            ->when(request('search'), function ($query, $search) {
+                $query->where('extension', 'like', "%{$search}%");
+            })
+            ->orderBy('selling_price')
+            ->get();
+
+        return Inertia::render('Public/Domains/Index', [
+            'domainPrices' => $domainPrices,
+            'filters' => request()->only(['search']),
+        ]);
+    }
+
+    public function publicSearch(Request $request)
+    {
+        $request->validate([
+            'domain' => 'required|string|max:255',
+        ]);
+
+        $domain = $request->domain;
+        $extension = '';
+        
+        if (str_contains($domain, '.')) {
+            $parts = explode('.', $domain);
+            $extension = end($parts);
+            $domain = implode('.', array_slice($parts, 0, -1));
+        }
+
+        $availableExtensions = DomainPrice::where('is_active', true)
+            ->orderBy('selling_price')
+            ->get();
+
+        return Inertia::render('Public/Domains/Search', [
+            'domain' => $domain,
+            'requestedExtension' => $extension,
+            'domainPrices' => $availableExtensions,
+        ]);
+    }
 }

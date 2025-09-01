@@ -11,27 +11,25 @@ defineProps<{
 </script>
 
 <template>
-    <div class="flex min-h-svh flex-col items-center justify-center gap-6 bg-muted p-6 md:p-10">
-        <div class="flex w-full max-w-md flex-col gap-6">
-            <Link :href="home()" class="flex items-center gap-2 self-center font-medium">
-                <div class="flex h-9 w-9 items-center justify-center">
-                    <AppLogoIcon class="size-9 fill-current text-black dark:text-white" />
+    <div class="flex min-h-svh flex-col items-center justify-center bg-gradient-to-br from-muted/30 via-background to-muted/50 p-4 md:p-8 lg:p-12">
+        <div class="w-full max-w-sm sm:max-w-md lg:max-w-lg space-y-6 sm:space-y-8">
+            <!-- Logo Section with enhanced styling -->
+            <div class="text-center">
+                <Link :href="home()" class="group inline-flex items-center justify-center rounded-xl p-3 transition-all duration-300 hover:bg-primary/5 hover:scale-105">
+                    <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 transition-colors group-hover:bg-primary/15">
+                        <AppLogoIcon class="size-8 fill-current text-primary transition-transform group-hover:scale-110" />
+                    </div>
+                </Link>
+                <div class="mt-4 space-y-1">
                 </div>
-            </Link>
-
-            <div class="flex flex-col gap-6">
-                <Card class="rounded-xl">
-                    <CardHeader class="px-10 pt-8 pb-0 text-center">
-                        <CardTitle class="text-xl">{{ title }}</CardTitle>
-                        <CardDescription>
-                            {{ description }}
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent class="px-10 py-8">
-                        <slot />
-                    </CardContent>
-                </Card>
             </div>
+
+            <!-- Main Card with modern styling -->
+            <Card class="border-0 bg-card/80 backdrop-blur-sm shadow-2xl shadow-primary/5">
+                <CardContent class="p-6 sm:p-8">
+                    <slot />
+                </CardContent>
+            </Card>
         </div>
     </div>
 </template>

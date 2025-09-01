@@ -61,10 +61,10 @@ class OrderController extends Controller
     {
         $request->validate([
             'customer_id' => 'required|exists:customers,id',
-            'order_type' => 'required|in:hosting,domain,mixed',
+            'order_type' => 'required|in:domain,hosting,domain_hosting,app,web,domain_hosting_app_web,maintenance',
             'billing_cycle' => 'required|in:monthly,quarterly,semi_annually,annually',
             'items' => 'required|array|min:1',
-            'items.*.item_type' => 'required|in:hosting,domain',
+            'items.*.item_type' => 'required|in:hosting,domain,app,web,maintenance',
             'items.*.item_id' => 'required|integer',
             'items.*.domain_name' => 'nullable|string|max:255',
             'items.*.quantity' => 'required|integer|min:1',
@@ -76,12 +76,21 @@ class OrderController extends Controller
 
             // Calculate total amount
             foreach ($items as $item) {
-                if ($item['item_type'] === 'hosting') {
-                    $plan = HostingPlan::findOrFail($item['item_id']);
-                    $totalAmount += $plan->selling_price * $item['quantity'];
-                } elseif ($item['item_type'] === 'domain') {
-                    $domain = DomainPrice::findOrFail($item['item_id']);
-                    $totalAmount += $domain->register_price * $item['quantity'];
+                switch ($item['item_type']) {
+                    case 'hosting':
+                        $plan = HostingPlan::findOrFail($item['item_id']);
+                        $totalAmount += $plan->selling_price * $item['quantity'];
+                        break;
+                    case 'domain':
+                        $domain = DomainPrice::findOrFail($item['item_id']);
+                        $totalAmount += $domain->selling_price * $item['quantity'];
+                        break;
+                    case 'app':
+                    case 'web':
+                    case 'maintenance':
+                        // Default pricing for new services
+                        $totalAmount += 500000 * $item['quantity']; // IDR
+                        break;
                 }
             }
 
@@ -95,12 +104,23 @@ class OrderController extends Controller
 
             // Create order items
             foreach ($items as $item) {
-                if ($item['item_type'] === 'hosting') {
-                    $plan = HostingPlan::findOrFail($item['item_id']);
-                    $price = $plan->selling_price;
-                } else {
-                    $domain = DomainPrice::findOrFail($item['item_id']);
-                    $price = $domain->register_price;
+                switch ($item['item_type']) {
+                    case 'hosting':
+                        $plan = HostingPlan::findOrFail($item['item_id']);
+                        $price = $plan->selling_price;
+                        break;
+                    case 'domain':
+                        $domain = DomainPrice::findOrFail($item['item_id']);
+                        $price = $domain->selling_price;
+                        break;
+                    case 'app':
+                    case 'web':
+                    case 'maintenance':
+                        $price = 500000; // Default price in IDR
+                        break;
+                    default:
+                        $price = 0;
+                        break;
                 }
 
                 OrderItem::create([

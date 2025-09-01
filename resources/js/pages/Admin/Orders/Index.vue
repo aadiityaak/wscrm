@@ -75,10 +75,10 @@ const selectedOrder = ref<Order | null>(null);
 
 const createForm = useForm({
   customer_id: '',
-  order_type: 'hosting' as 'hosting' | 'domain' | 'mixed',
+  order_type: 'domain' as 'domain' | 'hosting' | 'domain_hosting' | 'app' | 'web' | 'domain_hosting_app_web' | 'maintenance',
   billing_cycle: 'monthly' as 'monthly' | 'quarterly' | 'semi_annually' | 'annually',
   items: [{
-    item_type: 'hosting' as 'hosting' | 'domain',
+    item_type: 'hosting' as 'hosting' | 'domain' | 'app' | 'web' | 'maintenance',
     item_id: '',
     domain_name: '',
     quantity: 1,
@@ -401,9 +401,13 @@ const deleteOrder = (order: Order) => {
                 class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                 required
               >
-                <option value="hosting">Hosting</option>
                 <option value="domain">Domain</option>
-                <option value="mixed">Mixed</option>
+                <option value="hosting">Hosting</option>
+                <option value="domain_hosting">Domain + Hosting</option>
+                <option value="app">App</option>
+                <option value="web">Web</option>
+                <option value="domain_hosting_app_web">Domain + Hosting + App/Web</option>
+                <option value="maintenance">Maintenance</option>
               </select>
               <p v-if="createForm.errors.order_type" class="text-xs text-red-500 mt-1">{{ createForm.errors.order_type }}</p>
             </div>
@@ -458,6 +462,9 @@ const deleteOrder = (order: Order) => {
                   >
                     <option value="hosting">Hosting</option>
                     <option value="domain">Domain</option>
+                    <option value="app">App</option>
+                    <option value="web">Web</option>
+                    <option value="maintenance">Maintenance</option>
                   </select>
                 </div>
                 <div>
@@ -474,8 +481,23 @@ const deleteOrder = (order: Order) => {
                     </template>
                     <template v-if="item.item_type === 'domain'">
                       <option v-for="domain in domainPrices" :key="domain.id" :value="domain.id">
-                        .{{ domain.extension }} - {{ formatPrice(domain.register_price) }}
+                        .{{ domain.extension }} - {{ formatPrice(domain.selling_price) }}
                       </option>
+                    </template>
+                    <template v-if="item.item_type === 'app'">
+                      <option value="1">Mobile App Development - {{ formatPrice(1500000) }}</option>
+                      <option value="2">Web App Development - {{ formatPrice(2000000) }}</option>
+                      <option value="3">Custom App - {{ formatPrice(2500000) }}</option>
+                    </template>
+                    <template v-if="item.item_type === 'web'">
+                      <option value="1">Basic Website - {{ formatPrice(500000) }}</option>
+                      <option value="2">Business Website - {{ formatPrice(1000000) }}</option>
+                      <option value="3">E-commerce Website - {{ formatPrice(2000000) }}</option>
+                    </template>
+                    <template v-if="item.item_type === 'maintenance'">
+                      <option value="1">Basic Maintenance - {{ formatPrice(200000) }}/month</option>
+                      <option value="2">Advanced Maintenance - {{ formatPrice(500000) }}/month</option>
+                      <option value="3">Premium Maintenance - {{ formatPrice(1000000) }}/month</option>
                     </template>
                   </select>
                 </div>
