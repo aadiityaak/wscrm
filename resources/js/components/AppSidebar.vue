@@ -6,7 +6,7 @@ import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, Sid
 import { dashboard } from '@/routes';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/vue3';
-import { BookOpen, Folder, LayoutGrid, Server, Globe, Users, ShoppingCart, Settings, DollarSign } from 'lucide-vue-next';
+import { BookOpen, Folder, LayoutGrid, Server, Globe, Users, ShoppingCart, Settings, DollarSign, Package, Calculator } from 'lucide-vue-next';
 import AppLogo from './AppLogo.vue';
 
 const mainNavItems: NavItem[] = [
@@ -14,6 +14,11 @@ const mainNavItems: NavItem[] = [
         title: 'Dashboard',
         href: dashboard(),
         icon: LayoutGrid,
+    },
+    {
+        title: 'Order Simulator',
+        href: '/order-simulator',
+        icon: Calculator,
     },
     {
         title: 'Customers',
@@ -29,6 +34,11 @@ const mainNavItems: NavItem[] = [
         title: 'Services',
         href: '/admin/services',
         icon: Settings,
+    },
+    {
+        title: 'Service Plans',
+        href: '/admin/service-plans',
+        icon: Package,
     },
     {
         title: 'Hosting Plans',
@@ -75,7 +85,6 @@ const footerNavItems: NavItem[] = [
         </SidebarContent>
 
         <SidebarFooter>
-            <NavFooter :items="footerNavItems" />
             <NavUser />
         </SidebarFooter>
     </Sidebar>

@@ -25,6 +25,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             HostingPlanSeeder::class,
             DomainPriceSeeder::class,
+            ServicePlanSeeder::class,
             CustomerSeeder::class,
         ]);
     }

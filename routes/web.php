@@ -12,6 +12,18 @@ Route::get('/hosting', [App\Http\Controllers\HostingPlanController::class, 'publ
 Route::get('/domains', [App\Http\Controllers\DomainPriceController::class, 'publicIndex'])->name('public.domains.index');
 Route::get('/domains/search', [App\Http\Controllers\DomainPriceController::class, 'publicSearch'])->name('public.domains.search');
 
+// Services catalog (require authentication)
+Route::middleware(['auth', 'verified'])->group(function () {
+    Route::get('/services', [App\Http\Controllers\ServicePlanController::class, 'index'])->name('services.index');
+    Route::get('/services/{servicePlan}', [App\Http\Controllers\ServicePlanController::class, 'show'])->name('services.show');
+});
+
+// Order Simulator (admin only)
+Route::middleware(['auth', 'verified'])->group(function () {
+    Route::get('/order-simulator', [App\Http\Controllers\OrderSimulatorController::class, 'index'])->name('order-simulator.index');
+    Route::post('/order-simulator/calculate', [App\Http\Controllers\OrderSimulatorController::class, 'calculate'])->name('order-simulator.calculate');
+});
+
 // API endpoints
 Route::post('/api/domains/availability', [App\Http\Controllers\DomainPriceController::class, 'checkAvailability'])
     ->name('api.domains.availability');
