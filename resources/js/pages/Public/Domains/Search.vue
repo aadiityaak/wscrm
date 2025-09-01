@@ -88,7 +88,7 @@ const otherDomains = computed(() => {
       <div class="flex items-center justify-between">
         <Link href="/" class="flex items-center space-x-2">
           <AppLogo />
-          <span class="text-xl font-bold">WHMCS</span>
+          <span class="text-xl font-bold">Ws.</span>
         </Link>
         <div class="flex items-center space-x-4">
           <Button variant="ghost" asChild>
@@ -322,7 +322,7 @@ const otherDomains = computed(() => {
         <div class="flex flex-col md:flex-row justify-between items-center">
           <Link href="/" class="flex items-center space-x-2 mb-4 md:mb-0">
             <AppLogo />
-            <span class="text-xl font-bold text-white">WHMCS</span>
+            <span class="text-xl font-bold text-white">Ws.</span>
           </Link>
           <div class="flex space-x-6 text-sm">
             <Link href="/hosting" class="hover:text-white">Hosting</Link>
@@ -332,7 +332,7 @@ const otherDomains = computed(() => {
           </div>
         </div>
         <div class="border-t border-gray-700 mt-6 pt-6 text-center text-sm">
-          <p>&copy; 2024 WHMCS. All rights reserved.</p>
+          <p>&copy; 2024 WebSweetStudio. All rights reserved.</p>
         </div>
       </div>
     </footer>

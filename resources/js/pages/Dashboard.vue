@@ -119,7 +119,7 @@ const formatGrowth = (growth: number) => {
       <div class="flex items-center justify-between">
         <div>
           <h1 class="text-3xl font-bold tracking-tight">Dashboard</h1>
-          <p class="text-muted-foreground">Welcome back! Here's what's happening with your WHMCS.</p>
+          <p class="text-muted-foreground">Welcome back! Here's what's happening with your dashboard.</p>
         </div>
       </div>
 
