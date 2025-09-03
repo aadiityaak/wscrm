@@ -15,7 +15,7 @@ Route::get('/domains/search', [App\Http\Controllers\DomainPriceController::class
 // Services catalog (require authentication)
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/services', [App\Http\Controllers\ServicePlanController::class, 'index'])->name('services.index');
-    Route::get('/services/{servicePlan}', [App\Http\Controllers\ServicePlanController::class, 'show'])->name('services.show');
+    Route::get('/services/{servicePlan}', [App\Http\Controllers\ServicePlanController::class, 'show'])->name('service-plans.show');
 });
 
 // Order Simulator (admin only)

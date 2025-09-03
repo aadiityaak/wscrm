@@ -120,6 +120,7 @@ const calculateOrder = async () => {
 
   isCalculating.value = true;
   
+  
   try {
     const response = await axios.post('/order-simulator/calculate', {
       domain_id: form.domain_id,

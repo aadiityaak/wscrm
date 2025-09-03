@@ -76,6 +76,7 @@ class OrderSimulatorController extends Controller
             'domain_name' => 'nullable|string'
         ]);
 
+
         $subtotal = 0;
         $items = [];
 
@@ -113,6 +114,7 @@ class OrderSimulatorController extends Controller
         // Calculate service costs
         if ($request->service_ids) {
             $services = ServicePlan::whereIn('id', $request->service_ids)->get();
+            
             
             foreach ($services as $service) {
                 $items[] = [
