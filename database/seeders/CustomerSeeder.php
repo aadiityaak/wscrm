@@ -13,7 +13,8 @@ class CustomerSeeder extends Seeder
      */
     public function run(): void
     {
-        Customer::create([
+        // Create specific test customers
+        Customer::factory()->create([
             'name' => 'Test Customer',
             'email' => 'customer@example.com',
             'password' => Hash::make('password'),
@@ -25,7 +26,7 @@ class CustomerSeeder extends Seeder
             'status' => 'active',
         ]);
 
-        Customer::create([
+        Customer::factory()->create([
             'name' => 'John Doe',
             'email' => 'john@customer.com',
             'password' => Hash::make('password'),
@@ -36,5 +37,26 @@ class CustomerSeeder extends Seeder
             'postal_code' => '54321',
             'status' => 'active',
         ]);
+
+        // Create additional random customers using factory
+        Customer::factory()->count(18)->create();
+
+        // Create some inactive customers
+        Customer::factory()->count(5)->inactive()->create();
+
+        // Create customers from different cities
+        $indonesianCities = [
+            'Jakarta', 'Surabaya', 'Bandung', 'Medan', 'Semarang',
+            'Makassar', 'Palembang', 'Tangerang', 'Depok', 'Bekasi',
+        ];
+
+        foreach ($indonesianCities as $city) {
+            Customer::factory()->create([
+                'city' => $city,
+                'country' => 'Indonesia',
+            ]);
+        }
+
+        $this->command->info('Customers created successfully!');
     }
 }

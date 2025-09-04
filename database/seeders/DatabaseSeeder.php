@@ -27,6 +27,9 @@ class DatabaseSeeder extends Seeder
             DomainPriceSeeder::class,
             ServicePlanSeeder::class,
             CustomerSeeder::class,
+            OrderSeeder::class,
+            ServiceSeeder::class,
+            InvoiceSeeder::class,
         ]);
     }
 }
