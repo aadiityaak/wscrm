@@ -105,11 +105,35 @@ const getStatusClass = (status: string) => {
 };
 
 const submitCreate = () => {
-  createForm.post('/admin/customers', {
-    onSuccess: () => {
+  console.log('Submitting create form...', createForm.data());
+  
+  // Get fresh CSRF token
+  const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+  console.log('Using CSRF token:', csrfToken);
+  
+  createForm.transform((data) => ({
+    ...data,
+    _token: csrfToken
+  })).post('/admin/customers', {
+    headers: {
+      'X-CSRF-TOKEN': csrfToken
+    },
+    onSuccess: (page) => {
+      console.log('Customer created successfully');
       showCreateModal.value = false;
       createForm.reset();
     },
+    onError: (errors) => {
+      console.error('Create customer error:', errors);
+      // If CSRF error, reload page
+      if (errors[419] || Object.values(errors).some(e => String(e).includes('419'))) {
+        console.warn('CSRF error detected, reloading...');
+        window.location.reload();
+      }
+    },
+    onFinish: () => {
+      console.log('Create request finished');
+    }
   });
 };
 
@@ -131,10 +155,15 @@ const submitEdit = () => {
   if (!selectedCustomer.value) return;
   
   editForm.put(`/admin/customers/${selectedCustomer.value.id}`, {
+    preserveState: false,
+    preserveScroll: true,
     onSuccess: () => {
       showEditModal.value = false;
       editForm.reset();
       selectedCustomer.value = null;
+    },
+    onError: (errors) => {
+      console.error('Update customer error:', errors);
     },
   });
 };
