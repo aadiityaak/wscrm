@@ -5,8 +5,11 @@ import { type NavItem } from '@/types';
 import { Link, usePage } from '@inertiajs/vue3';
 import { BookOpen, Folder, LayoutGrid, Server, Globe, Users, ShoppingCart, Settings, DollarSign, Package, Calculator } from 'lucide-vue-next';
 import AppLogo from './AppLogo.vue';
+import AppLogoIcon from './AppLogoIcon.vue';
+import { useSidebar } from '@/composables/useSidebar';
 
 const $page = usePage();
+const { isMinimized } = useSidebar();
 
 const mainNavItems: NavItem[] = [
     {
@@ -66,11 +69,27 @@ const footerNavItems: NavItem[] = [
 </script>
 
 <template>
-    <aside class="fixed inset-y-0 left-0 w-64 bg-sidebar border-r border-border flex flex-col">
+    <aside :class="[
+        'fixed inset-y-0 left-0 bg-sidebar border-r border-border flex flex-col transition-all duration-300',
+        isMinimized ? 'w-16' : 'w-64'
+    ]">
         <!-- Header -->
         <div class="p-4 border-b border-border">
-            <Link :href="dashboard()" class="flex items-center gap-2">
+            <Link 
+                v-if="!isMinimized" 
+                :href="dashboard()" 
+                class="flex items-center gap-2"
+            >
                 <AppLogo />
+            </Link>
+            <Link 
+                v-else 
+                :href="dashboard()" 
+                class="flex items-center justify-center"
+            >
+                <div class="flex aspect-square size-8 items-center justify-center rounded-md">
+                    <AppLogoIcon class="size-6 w-6 h-6" />
+                </div>
             </Link>
         </div>
 
@@ -81,18 +100,22 @@ const footerNavItems: NavItem[] = [
                     v-for="item in mainNavItems" 
                     :key="item.title"
                     :href="item.href"
-                    class="flex items-center gap-2 px-3 py-2 text-sm rounded-md hover:bg-sidebar-accent transition-colors"
-                    :class="item.href === $page.url ? 'bg-sidebar-accent font-medium' : ''"
+                    :class="[
+                        'flex items-center gap-2 px-3 py-2 text-sm rounded-md hover:bg-sidebar-accent transition-colors',
+                        item.href === $page.url ? 'bg-sidebar-accent font-medium' : '',
+                        isMinimized ? 'justify-center' : ''
+                    ]"
+                    :title="isMinimized ? item.title : ''"
                 >
-                    <component :is="item.icon" class="w-4 h-4" />
-                    {{ item.title }}
+                    <component :is="item.icon" class="w-4 h-4 flex-shrink-0" />
+                    <span v-if="!isMinimized" class="truncate">{{ item.title }}</span>
                 </Link>
             </div>
         </nav>
 
         <!-- Footer -->
         <div class="p-4 border-t border-border">
-            <NavUser />
+            <NavUser :minimized="isMinimized" />
         </div>
     </aside>
 </template>
