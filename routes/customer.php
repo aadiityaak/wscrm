@@ -3,8 +3,8 @@
 use App\Http\Controllers\Customer\Auth\LoginController;
 use App\Http\Controllers\Customer\Auth\RegisterController;
 use App\Http\Controllers\Customer\DashboardController;
-use App\Http\Controllers\Customer\HostingController;
 use App\Http\Controllers\Customer\DomainController;
+use App\Http\Controllers\Customer\HostingController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\ServiceController;
 use Illuminate\Support\Facades\Route;
@@ -19,9 +19,9 @@ Route::prefix('customer')->name('customer.')->group(function () {
 
     Route::middleware('auth:customer')->group(function () {
         Route::post('logout', [LoginController::class, 'destroy'])->name('logout');
-        
+
         Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
-        
+
         Route::prefix('hosting')->name('hosting.')->group(function () {
             Route::get('/', [HostingController::class, 'index'])->name('index');
             Route::get('/{hostingPlan}', [HostingController::class, 'show'])->name('show');
@@ -31,7 +31,7 @@ Route::prefix('customer')->name('customer.')->group(function () {
             Route::get('/', [DomainController::class, 'index'])->name('index');
             Route::get('/search', [DomainController::class, 'search'])->name('search');
         });
-        
+
         Route::prefix('orders')->name('orders.')->group(function () {
             Route::get('/', [OrderController::class, 'index'])->name('index');
             Route::post('/', [OrderController::class, 'store'])->name('store');

@@ -21,7 +21,7 @@ class OrderSimulatorController extends Controller
                     'id' => $domain->id,
                     'extension' => $domain->extension,
                     'price' => $domain->selling_price,
-                    'label' => $domain->extension . ' - Rp ' . number_format($domain->selling_price, 0, ',', '.') . '/tahun'
+                    'label' => $domain->extension.' - Rp '.number_format($domain->selling_price, 0, ',', '.').'/tahun',
                 ];
             });
 
@@ -37,7 +37,7 @@ class OrderSimulatorController extends Controller
                     'cpu_cores' => $plan->cpu_cores,
                     'ram_gb' => $plan->ram_gb,
                     'price' => $plan->selling_price,
-                    'label' => $plan->plan_name . ' (' . $plan->storage_gb . 'GB) - Rp ' . number_format($plan->selling_price, 0, ',', '.')
+                    'label' => $plan->plan_name.' ('.$plan->storage_gb.'GB) - Rp '.number_format($plan->selling_price, 0, ',', '.'),
                 ];
             });
 
@@ -52,7 +52,7 @@ class OrderSimulatorController extends Controller
                     'category' => $service->category,
                     'price' => $service->price,
                     'description' => $service->description,
-                    'label' => $service->name . ' - ' . ($service->price > 0 ? 'Rp ' . number_format($service->price, 0, ',', '.') : 'Hubungi Kami')
+                    'label' => $service->name.' - '.($service->price > 0 ? 'Rp '.number_format($service->price, 0, ',', '.') : 'Hubungi Kami'),
                 ];
             });
 
@@ -67,15 +67,14 @@ class OrderSimulatorController extends Controller
     {
         $request->validate([
             'domain_id' => 'nullable|exists:domain_prices,id',
-            'hosting_id' => 'nullable|exists:hosting_plans,id', 
+            'hosting_id' => 'nullable|exists:hosting_plans,id',
             'service_ids' => 'nullable|array',
             'service_ids.*' => 'exists:service_plans,id',
             'discount_type' => 'nullable|in:percent,nominal',
             'discount_percent' => 'nullable|numeric|min:0|max:100',
             'discount_nominal' => 'nullable|numeric|min:0',
-            'domain_name' => 'nullable|string'
+            'domain_name' => 'nullable|string',
         ]);
-
 
         $subtotal = 0;
         $items = [];
@@ -83,15 +82,15 @@ class OrderSimulatorController extends Controller
         // Calculate domain cost
         if ($request->domain_id) {
             $domain = DomainPrice::find($request->domain_id);
-            $domainName = $request->domain_name ?: 'example' . $domain->extension;
-            
+            $domainName = $request->domain_name ?: 'example'.$domain->extension;
+
             $items[] = [
                 'type' => 'domain',
                 'name' => $domainName,
                 'description' => 'Domain Registration (1 Year)',
                 'price' => $domain->selling_price,
                 'quantity' => 1,
-                'total' => $domain->selling_price
+                'total' => $domain->selling_price,
             ];
             $subtotal += $domain->selling_price;
         }
@@ -99,14 +98,14 @@ class OrderSimulatorController extends Controller
         // Calculate hosting cost
         if ($request->hosting_id) {
             $hosting = HostingPlan::find($request->hosting_id);
-            
+
             $items[] = [
                 'type' => 'hosting',
                 'name' => $hosting->plan_name,
-                'description' => $hosting->storage_gb . 'GB Storage, ' . $hosting->cpu_cores . ' CPU, ' . $hosting->ram_gb . 'GB RAM (1 Year)',
+                'description' => $hosting->storage_gb.'GB Storage, '.$hosting->cpu_cores.' CPU, '.$hosting->ram_gb.'GB RAM (1 Year)',
                 'price' => $hosting->selling_price,
                 'quantity' => 1,
-                'total' => $hosting->selling_price
+                'total' => $hosting->selling_price,
             ];
             $subtotal += $hosting->selling_price;
         }
@@ -114,8 +113,7 @@ class OrderSimulatorController extends Controller
         // Calculate service costs
         if ($request->service_ids) {
             $services = ServicePlan::whereIn('id', $request->service_ids)->get();
-            
-            
+
             foreach ($services as $service) {
                 $items[] = [
                     'type' => 'service',
@@ -123,7 +121,7 @@ class OrderSimulatorController extends Controller
                     'description' => $service->description ?: 'Service Package',
                     'price' => $service->price,
                     'quantity' => 1,
-                    'total' => $service->price
+                    'total' => $service->price,
                 ];
                 $subtotal += $service->price;
             }
@@ -133,7 +131,7 @@ class OrderSimulatorController extends Controller
         $discountType = $request->discount_type ?: 'percent';
         $discountPercent = 0;
         $discountAmount = 0;
-        
+
         if ($discountType === 'percent' && $request->discount_percent) {
             $discountPercent = $request->discount_percent;
             $discountAmount = ($subtotal * $discountPercent) / 100;
@@ -141,7 +139,7 @@ class OrderSimulatorController extends Controller
             $discountAmount = min($request->discount_nominal, $subtotal); // Don't exceed subtotal
             $discountPercent = $subtotal > 0 ? ($discountAmount / $subtotal) * 100 : 0;
         }
-        
+
         $total = $subtotal - $discountAmount;
 
         // Calculate tax (temporarily set to 0%)
@@ -161,7 +159,7 @@ class OrderSimulatorController extends Controller
                 'tax_percent' => $taxPercent,
                 'tax_amount' => $taxAmount,
                 'grand_total' => $grandTotal,
-            ]
+            ],
         ]);
     }
 }

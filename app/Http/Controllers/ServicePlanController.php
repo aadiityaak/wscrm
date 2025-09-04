@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\ServicePlan;
-use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -23,15 +22,15 @@ class ServicePlanController extends Controller
                 'web_package' => 'Paket Website',
                 'addon' => 'Add-on Services',
                 'license' => 'Lisensi Premium',
-                'custom_system' => 'Custom System'
-            ]
+                'custom_system' => 'Custom System',
+            ],
         ]);
     }
 
     public function show(ServicePlan $servicePlan): Response
     {
         return Inertia::render('Services/Show', [
-            'servicePlan' => $servicePlan
+            'servicePlan' => $servicePlan,
         ]);
     }
 }

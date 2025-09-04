@@ -3,12 +3,12 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Order;
 use App\Models\Customer;
-use App\Models\HostingPlan;
 use App\Models\DomainPrice;
-use App\Models\ServicePlan;
+use App\Models\HostingPlan;
+use App\Models\Order;
 use App\Models\OrderItem;
+use App\Models\ServicePlan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
@@ -22,7 +22,7 @@ class OrderController extends Controller
             ->when(request('search'), function ($query, $search) {
                 $query->whereHas('customer', function ($q) use ($search) {
                     $q->where('name', 'like', "%{$search}%")
-                      ->orWhere('email', 'like', "%{$search}%");
+                        ->orWhere('email', 'like', "%{$search}%");
                 })->orWhere('id', 'like', "%{$search}%");
             })
             ->when(request('status'), function ($query, $status) {
@@ -52,7 +52,7 @@ class OrderController extends Controller
         $order->load([
             'customer',
             'orderItems',
-            'invoice'
+            'invoice',
         ]);
 
         return Inertia::render('Admin/Orders/Show', [

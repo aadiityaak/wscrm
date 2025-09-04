@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Log;
 class DomainAvailabilityService
 {
     private string $apiKey;
+
     private string $baseUrl;
 
     public function __construct()
@@ -19,8 +20,7 @@ class DomainAvailabilityService
     /**
      * Check domain availability using RNA API
      *
-     * @param string $domain - Full domain name (e.g., 'example.com')
-     * @return array
+     * @param  string  $domain  - Full domain name (e.g., 'example.com')
      */
     public function checkAvailability(string $domain): array
     {
@@ -30,26 +30,26 @@ class DomainAvailabilityService
                 'Accept' => 'application/json',
                 'Content-Type' => 'application/json',
             ])->timeout(10)
-              ->get($this->baseUrl . '/domains/availability', [
-                  'domain' => $domain
-              ]);
+                ->get($this->baseUrl.'/domains/availability', [
+                    'domain' => $domain,
+                ]);
 
             if ($response->successful()) {
                 $data = $response->json();
-                
+
                 return [
                     'success' => true,
                     'available' => $data['available'] ?? false,
                     'domain' => $domain,
                     'status' => $data['status'] ?? 'unknown',
                     'message' => $data['message'] ?? null,
-                    'data' => $data
+                    'data' => $data,
                 ];
             } else {
                 Log::warning('RNA API domain check failed', [
                     'domain' => $domain,
                     'status' => $response->status(),
-                    'response' => $response->body()
+                    'response' => $response->body(),
                 ]);
 
                 // Use fallback when API fails
@@ -59,7 +59,7 @@ class DomainAvailabilityService
         } catch (\Exception $e) {
             Log::error('RNA API domain check exception', [
                 'domain' => $domain,
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ]);
 
             // Fallback: basic heuristic for demo purposes
@@ -73,12 +73,12 @@ class DomainAvailabilityService
      */
     private function getFallbackAvailability(string $domain): array
     {
-        // Simple heuristic: popular domains are likely taken, 
+        // Simple heuristic: popular domains are likely taken,
         // unusual/long domains are more likely available
         $commonDomains = ['google', 'facebook', 'twitter', 'instagram', 'youtube', 'amazon', 'apple'];
         $domainParts = explode('.', $domain);
         $baseDomain = strtolower($domainParts[0]);
-        
+
         $isCommonDomain = false;
         foreach ($commonDomains as $common) {
             if (strpos($baseDomain, $common) !== false) {
@@ -86,33 +86,32 @@ class DomainAvailabilityService
                 break;
             }
         }
-        
+
         // Simple scoring: short common domains likely taken, long unique ones likely available
-        $isLikelyAvailable = !$isCommonDomain && (strlen($baseDomain) > 8 || preg_match('/\d+/', $baseDomain));
-        
+        $isLikelyAvailable = ! $isCommonDomain && (strlen($baseDomain) > 8 || preg_match('/\d+/', $baseDomain));
+
         return [
             'success' => true,
             'available' => $isLikelyAvailable,
             'domain' => $domain,
             'status' => $isLikelyAvailable ? 'available' : 'taken',
             'message' => 'Availability check using fallback method (API unavailable)',
-            'fallback' => true
+            'fallback' => true,
         ];
     }
 
     /**
      * Check multiple domains availability
      *
-     * @param array $domains - Array of domain names
-     * @return array
+     * @param  array  $domains  - Array of domain names
      */
     public function checkMultipleAvailability(array $domains): array
     {
         $results = [];
-        
+
         foreach ($domains as $domain) {
             $results[$domain] = $this->checkAvailability($domain);
-            
+
             // Add small delay to avoid rate limiting
             usleep(100000); // 0.1 second
         }
@@ -123,15 +122,14 @@ class DomainAvailabilityService
     /**
      * Check availability with suggestions
      *
-     * @param string $baseDomain - Base domain without extension (e.g., 'example')
-     * @param array $extensions - Array of extensions to check (e.g., ['com', 'net', 'org'])
-     * @return array
+     * @param  string  $baseDomain  - Base domain without extension (e.g., 'example')
+     * @param  array  $extensions  - Array of extensions to check (e.g., ['com', 'net', 'org'])
      */
     public function checkWithSuggestions(string $baseDomain, array $extensions = ['com', 'net', 'org', 'id', 'co.id']): array
     {
         $domains = [];
         foreach ($extensions as $ext) {
-            $domains[] = $baseDomain . '.' . $ext;
+            $domains[] = $baseDomain.'.'.$ext;
         }
 
         return $this->checkMultipleAvailability($domains);

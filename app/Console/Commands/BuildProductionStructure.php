@@ -32,8 +32,8 @@ class BuildProductionStructure extends Command
         $this->info('Building production structure...');
 
         $distPath = base_path('dist');
-        $laravelPath = $distPath . '/laravel';
-        $publicHtmlPath = $distPath . '/public_html';
+        $laravelPath = $distPath.'/laravel';
+        $publicHtmlPath = $distPath.'/public_html';
 
         // Create directories
         File::makeDirectory($laravelPath, 0755, true, true);
@@ -54,8 +54,8 @@ class BuildProductionStructure extends Command
         $this->info('Created production.zip');
 
         $this->info('✅ Production build completed successfully!');
-        $this->info('📁 Files created in: ' . $distPath);
-        $this->info('📦 Production archive: ' . $distPath . '/production.zip');
+        $this->info('📁 Files created in: '.$distPath);
+        $this->info('📦 Production archive: '.$distPath.'/production.zip');
 
         return self::SUCCESS;
     }
@@ -81,42 +81,42 @@ class BuildProductionStructure extends Command
             '.gitignore',
             '.editorconfig',
             '.styleci.yml',
-            'README.md'
+            'README.md',
         ];
 
         $basePath = base_path();
-        
+
         foreach (File::allFiles($basePath) as $file) {
-            $relativePath = str_replace($basePath . DIRECTORY_SEPARATOR, '', $file->getPathname());
+            $relativePath = str_replace($basePath.DIRECTORY_SEPARATOR, '', $file->getPathname());
             $relativePath = str_replace('\\', '/', $relativePath);
-            
+
             // Skip excluded paths
             $shouldSkip = false;
             foreach ($excludePaths as $excludePath) {
-                if (str_starts_with($relativePath, $excludePath . '/') || $relativePath === $excludePath) {
+                if (str_starts_with($relativePath, $excludePath.'/') || $relativePath === $excludePath) {
                     $shouldSkip = true;
                     break;
                 }
             }
-            
+
             if ($shouldSkip) {
                 continue;
             }
 
-            $destinationFile = $destination . DIRECTORY_SEPARATOR . $relativePath;
+            $destinationFile = $destination.DIRECTORY_SEPARATOR.$relativePath;
             $destinationDir = dirname($destinationFile);
-            
-            if (!File::exists($destinationDir)) {
+
+            if (! File::exists($destinationDir)) {
                 File::makeDirectory($destinationDir, 0755, true);
             }
-            
+
             File::copy($file->getPathname(), $destinationFile);
         }
 
         // Copy .env.production as .env if it exists
         $envProduction = base_path('.env.production');
         if (File::exists($envProduction)) {
-            File::copy($envProduction, $destination . '/.env');
+            File::copy($envProduction, $destination.'/.env');
         }
 
         // Create necessary storage directories
@@ -125,51 +125,51 @@ class BuildProductionStructure extends Command
             'framework/cache/data',
             'framework/sessions',
             'framework/views',
-            'logs'
+            'logs',
         ];
 
         foreach ($storageDirs as $dir) {
-            File::makeDirectory($destination . '/storage/' . $dir, 0755, true, true);
+            File::makeDirectory($destination.'/storage/'.$dir, 0755, true, true);
         }
     }
 
     private function copyPublicFiles(string $destination): void
     {
         $publicPath = base_path('public');
-        
-        if (!File::exists($publicPath)) {
+
+        if (! File::exists($publicPath)) {
             return;
         }
 
         foreach (File::allFiles($publicPath) as $file) {
-            $relativePath = str_replace($publicPath . DIRECTORY_SEPARATOR, '', $file->getPathname());
-            $destinationFile = $destination . DIRECTORY_SEPARATOR . $relativePath;
+            $relativePath = str_replace($publicPath.DIRECTORY_SEPARATOR, '', $file->getPathname());
+            $destinationFile = $destination.DIRECTORY_SEPARATOR.$relativePath;
             $destinationDir = dirname($destinationFile);
-            
-            if (!File::exists($destinationDir)) {
+
+            if (! File::exists($destinationDir)) {
                 File::makeDirectory($destinationDir, 0755, true);
             }
-            
+
             File::copy($file->getPathname(), $destinationFile);
         }
     }
 
     private function createZip(string $distPath): void
     {
-        $zipFile = $distPath . '/production.zip';
-        
+        $zipFile = $distPath.'/production.zip';
+
         if (File::exists($zipFile)) {
             File::delete($zipFile);
         }
 
-        $zip = new ZipArchive();
-        if ($zip->open($zipFile, ZipArchive::CREATE | ZipArchive::OVERWRITE) === TRUE) {
+        $zip = new ZipArchive;
+        if ($zip->open($zipFile, ZipArchive::CREATE | ZipArchive::OVERWRITE) === true) {
             // Add laravel directory
-            $this->addDirectoryToZip($zip, $distPath . '/laravel', 'laravel');
-            
-            // Add public_html directory  
-            $this->addDirectoryToZip($zip, $distPath . '/public_html', 'public_html');
-            
+            $this->addDirectoryToZip($zip, $distPath.'/laravel', 'laravel');
+
+            // Add public_html directory
+            $this->addDirectoryToZip($zip, $distPath.'/public_html', 'public_html');
+
             $zip->close();
         }
     }
@@ -183,7 +183,7 @@ class BuildProductionStructure extends Command
 
         foreach ($iterator as $file) {
             $filePath = $file->getRealPath();
-            $relativePath = $zipDir . '/' . str_replace($dir . DIRECTORY_SEPARATOR, '', $filePath);
+            $relativePath = $zipDir.'/'.str_replace($dir.DIRECTORY_SEPARATOR, '', $filePath);
             $relativePath = str_replace('\\', '/', $relativePath);
 
             if ($file->isDir()) {

@@ -60,7 +60,7 @@ class DomainPriceController extends Controller
         $inputDomain = $request->domain;
         $extension = '';
         $baseDomain = $inputDomain;
-        
+
         // Parse domain and extension
         if (str_contains($inputDomain, '.')) {
             $parts = explode('.', $inputDomain);
@@ -75,7 +75,7 @@ class DomainPriceController extends Controller
 
         // Check domain availability using RNA API
         $availabilityResults = [];
-        
+
         try {
             if ($extension) {
                 // Check specific domain if extension provided
@@ -89,7 +89,7 @@ class DomainPriceController extends Controller
             // Log error but continue without availability data
             \Log::error('Domain availability check failed', [
                 'domain' => $inputDomain,
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ]);
         }
 

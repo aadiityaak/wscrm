@@ -3,11 +3,10 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Service;
 use App\Models\Customer;
 use App\Models\HostingPlan;
+use App\Models\Service;
 use Illuminate\Http\Request;
-use Carbon\Carbon;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -18,10 +17,10 @@ class ServiceController extends Controller
         $services = Service::with(['customer', 'hostingPlan'])
             ->when(request('search'), function ($query, $search) {
                 $query->where('domain_name', 'like', "%{$search}%")
-                      ->orWhereHas('customer', function ($q) use ($search) {
-                          $q->where('name', 'like', "%{$search}%")
+                    ->orWhereHas('customer', function ($q) use ($search) {
+                        $q->where('name', 'like', "%{$search}%")
                             ->orWhere('email', 'like', "%{$search}%");
-                      });
+                    });
             })
             ->when(request('status'), function ($query, $status) {
                 $query->where('status', $status);
@@ -48,7 +47,7 @@ class ServiceController extends Controller
     {
         $service->load([
             'customer',
-            'hostingPlan'
+            'hostingPlan',
         ]);
 
         return Inertia::render('Admin/Services/Show', [

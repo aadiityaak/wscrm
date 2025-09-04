@@ -4,10 +4,10 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\DomainPrice;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
-use Illuminate\Http\RedirectResponse;
 
 class DomainPriceController extends Controller
 {
@@ -66,7 +66,7 @@ class DomainPriceController extends Controller
     public function update(Request $request, DomainPrice $domainPrice): RedirectResponse
     {
         $validated = $request->validate([
-            'extension' => 'required|string|unique:domain_prices,extension,' . $domainPrice->id,
+            'extension' => 'required|string|unique:domain_prices,extension,'.$domainPrice->id,
             'base_cost' => 'required|numeric|min:0',
             'renewal_cost' => 'required|numeric|min:0',
             'selling_price' => 'required|numeric|min:0',

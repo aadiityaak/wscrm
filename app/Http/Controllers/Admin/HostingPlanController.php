@@ -4,10 +4,10 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\HostingPlan;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
-use Illuminate\Http\RedirectResponse;
 
 class HostingPlanController extends Controller
 {
@@ -71,7 +71,7 @@ class HostingPlanController extends Controller
     public function update(Request $request, HostingPlan $hostingPlan): RedirectResponse
     {
         $validated = $request->validate([
-            'plan_name' => 'required|string|unique:hosting_plans,plan_name,' . $hostingPlan->id,
+            'plan_name' => 'required|string|unique:hosting_plans,plan_name,'.$hostingPlan->id,
             'storage_gb' => 'required|numeric|min:0',
             'cpu_cores' => 'required|numeric|min:1',
             'ram_gb' => 'required|numeric|min:0',

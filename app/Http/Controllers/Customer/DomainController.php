@@ -33,7 +33,7 @@ class DomainController extends Controller
 
         $domain = $request->domain;
         $extension = '';
-        
+
         if (str_contains($domain, '.')) {
             $parts = explode('.', $domain);
             $extension = end($parts);

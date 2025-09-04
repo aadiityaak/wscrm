@@ -32,18 +32,19 @@ class UpdateAdminPassword extends Command
 
         $user = User::where('email', $email)->first();
 
-        if (!$user) {
+        if (! $user) {
             $this->error('Admin user not found!');
+
             return 1;
         }
 
         $user->update([
-            'password' => Hash::make($password)
+            'password' => Hash::make($password),
         ]);
 
         $this->info('Admin password updated successfully!');
-        $this->line('Email: ' . $email);
-        $this->line('Password: ' . $password);
+        $this->line('Email: '.$email);
+        $this->line('Password: '.$password);
 
         return 0;
     }

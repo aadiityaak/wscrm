@@ -54,7 +54,7 @@ class ServicePlanSeeder extends Seeder
                 ],
                 'is_active' => true,
             ],
-            
+
             // Add-ons
             [
                 'name' => 'Tambah Toko Online',
@@ -82,7 +82,7 @@ class ServicePlanSeeder extends Seeder
                 ],
                 'is_active' => true,
             ],
-            
+
             // Licenses
             [
                 'name' => 'Lisensi Elementor, WP Rocket',

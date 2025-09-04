@@ -12,7 +12,7 @@ class DashboardController extends Controller
     public function index(): Response
     {
         $customer = Auth::guard('customer')->user();
-        
+
         $services = $customer->services()
             ->with(['hostingPlan'])
             ->orderBy('created_at', 'desc')

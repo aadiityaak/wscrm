@@ -5,13 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\Customer;
 use App\Models\Order;
 use App\Models\Service;
-use App\Models\HostingPlan;
-use App\Models\DomainPrice;
-use App\Models\Invoice;
-use Illuminate\Http\Request;
+use Carbon\Carbon;
 use Inertia\Inertia;
 use Inertia\Response;
-use Carbon\Carbon;
 
 class DashboardController extends Controller
 {
@@ -66,16 +62,16 @@ class DashboardController extends Controller
             ->get();
 
         // Calculate growth percentages
-        $customerGrowth = $newCustomersLastMonth > 0 
-            ? (($newCustomersThisMonth - $newCustomersLastMonth) / $newCustomersLastMonth) * 100 
+        $customerGrowth = $newCustomersLastMonth > 0
+            ? (($newCustomersThisMonth - $newCustomersLastMonth) / $newCustomersLastMonth) * 100
             : ($newCustomersThisMonth > 0 ? 100 : 0);
 
-        $orderGrowth = $ordersLastMonth > 0 
-            ? (($ordersThisMonth - $ordersLastMonth) / $ordersLastMonth) * 100 
+        $orderGrowth = $ordersLastMonth > 0
+            ? (($ordersThisMonth - $ordersLastMonth) / $ordersLastMonth) * 100
             : ($ordersThisMonth > 0 ? 100 : 0);
 
-        $revenueGrowth = $revenueLastMonth > 0 
-            ? (($revenueThisMonth - $revenueLastMonth) / $revenueLastMonth) * 100 
+        $revenueGrowth = $revenueLastMonth > 0
+            ? (($revenueThisMonth - $revenueLastMonth) / $revenueLastMonth) * 100
             : ($revenueThisMonth > 0 ? 100 : 0);
 
         return Inertia::render('Dashboard', [

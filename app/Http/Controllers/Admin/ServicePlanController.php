@@ -14,22 +14,22 @@ class ServicePlanController extends Controller
     {
         $servicePlans = ServicePlan::when(request('search'), function ($query, $search) {
             $query->where('name', 'like', "%{$search}%")
-                  ->orWhere('description', 'like', "%{$search}%")
-                  ->orWhere('category', 'like', "%{$search}%");
+                ->orWhere('description', 'like', "%{$search}%")
+                ->orWhere('category', 'like', "%{$search}%");
         })
-        ->when(request('category'), function ($query, $category) {
-            $query->where('category', $category);
-        })
-        ->orderBy('category')
-        ->orderBy('price')
-        ->paginate(20)
-        ->withQueryString();
+            ->when(request('category'), function ($query, $category) {
+                $query->where('category', $category);
+            })
+            ->orderBy('category')
+            ->orderBy('price')
+            ->paginate(20)
+            ->withQueryString();
 
         $categories = [
             'web_package' => 'Paket Website',
-            'addon' => 'Add-on Services', 
+            'addon' => 'Add-on Services',
             'license' => 'Lisensi Premium',
-            'custom_system' => 'Custom System'
+            'custom_system' => 'Custom System',
         ];
 
         return Inertia::render('Admin/ServicePlans/Index', [
@@ -95,6 +95,7 @@ class ServicePlanController extends Controller
     public function destroy(ServicePlan $servicePlan)
     {
         $servicePlan->delete();
+
         return redirect()->back()->with('success', 'Service plan deleted successfully!');
     }
 }

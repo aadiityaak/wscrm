@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Customer;
 
 use App\Http\Controllers\Controller;
 use App\Models\HostingPlan;
-use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -27,7 +26,7 @@ class HostingController extends Controller
 
     public function show(HostingPlan $hostingPlan): Response
     {
-        if (!$hostingPlan->is_active) {
+        if (! $hostingPlan->is_active) {
             abort(404);
         }
 
