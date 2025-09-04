@@ -74,6 +74,42 @@ class DashboardController extends Controller
             ? (($revenueThisMonth - $revenueLastMonth) / $revenueLastMonth) * 100
             : ($revenueThisMonth > 0 ? 100 : 0);
 
+        // Daily orders for current month chart
+        $dailyOrders = [];
+        $currentMonth = $now->copy()->startOfMonth();
+        $daysInMonth = $currentMonth->daysInMonth;
+
+        for ($day = 1; $day <= $daysInMonth; $day++) {
+            $date = $currentMonth->copy()->day($day);
+            $dayOrders = Order::whereDate('created_at', $date)->count();
+            $dailyOrders[] = [
+                'date' => $date->format('Y-m-d'),
+                'day' => $day,
+                'orders' => $dayOrders,
+            ];
+        }
+
+        // Previous months statistics (last 6 months)
+        $monthlyStats = [];
+        for ($i = 5; $i >= 0; $i--) {
+            $monthStart = $now->copy()->subMonths($i)->startOfMonth();
+            $monthEnd = $monthStart->copy()->endOfMonth();
+
+            $monthOrders = Order::whereBetween('created_at', [$monthStart, $monthEnd])->count();
+            $monthRevenue = Order::where('status', 'completed')
+                ->whereBetween('created_at', [$monthStart, $monthEnd])
+                ->sum('total_amount');
+            $monthCustomers = Customer::whereBetween('created_at', [$monthStart, $monthEnd])->count();
+
+            $monthlyStats[] = [
+                'month' => $monthStart->format('M Y'),
+                'month_short' => $monthStart->format('M'),
+                'orders' => $monthOrders,
+                'revenue' => $monthRevenue,
+                'customers' => $monthCustomers,
+            ];
+        }
+
         return Inertia::render('Dashboard', [
             'stats' => [
                 'customers' => [
@@ -103,6 +139,10 @@ class DashboardController extends Controller
                 'orders' => $recentOrders,
                 'customers' => $recentCustomers,
                 'expiringServices' => $expiringServices,
+            ],
+            'chartData' => [
+                'dailyOrders' => $dailyOrders,
+                'monthlyStats' => $monthlyStats,
             ],
         ]);
     }

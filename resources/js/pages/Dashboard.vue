@@ -5,7 +5,9 @@ import { Button } from '@/components/ui/button';
 import { dashboard } from '@/routes';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link } from '@inertiajs/vue3';
-import { TrendingUp, TrendingDown, Users, ShoppingCart, DollarSign, Settings, AlertTriangle } from 'lucide-vue-next';
+import { TrendingUp, TrendingDown, Users, ShoppingCart, DollarSign, Settings, AlertTriangle, BarChart3, Calendar } from 'lucide-vue-next';
+import OrderChart from '@/components/OrderChart.vue';
+import MonthlyStatsStrips from '@/components/MonthlyStatsStrips.vue';
 
 interface Stats {
   customers: {
@@ -65,12 +67,30 @@ interface Service {
   };
 }
 
+interface ChartDataPoint {
+  date: string;
+  day: number;
+  orders: number;
+}
+
+interface MonthlyStats {
+  month: string;
+  month_short: string;
+  orders: number;
+  revenue: number;
+  customers: number;
+}
+
 interface Props {
   stats: Stats;
   recentActivities: {
     orders: Order[];
     customers: Customer[];
     expiringServices: Service[];
+  };
+  chartData: {
+    dailyOrders: ChartDataPoint[];
+    monthlyStats: MonthlyStats[];
   };
 }
 
@@ -209,6 +229,41 @@ const formatGrowth = (growth: number) => {
             <p class="text-xs text-muted-foreground mt-1">
               {{ stats.services.total }} total services
             </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      <!-- Charts Section -->
+      <div class="grid gap-6 lg:grid-cols-2">
+        <!-- Daily Orders Chart -->
+        <Card>
+          <CardHeader>
+            <div class="flex items-center justify-between">
+              <div>
+                <CardTitle class="text-lg flex items-center gap-2">
+                  <BarChart3 class="h-5 w-5" />
+                  Orders This Month
+                </CardTitle>
+                <CardDescription>Daily order trends for current month</CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <OrderChart :data="chartData.dailyOrders" :height="220" />
+          </CardContent>
+        </Card>
+
+        <!-- Monthly Overview -->
+        <Card>
+          <CardHeader>
+            <CardTitle class="text-lg flex items-center gap-2">
+              <Calendar class="h-5 w-5" />
+              Monthly Overview
+            </CardTitle>
+            <CardDescription>Statistics for the last 6 months</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <MonthlyStatsStrips :data="chartData.monthlyStats" />
           </CardContent>
         </Card>
       </div>
