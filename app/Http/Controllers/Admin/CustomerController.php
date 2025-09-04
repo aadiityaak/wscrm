@@ -18,7 +18,7 @@ class CustomerController extends Controller
             ->withCount(['orders', 'services'])
             ->when(request('search'), function ($query, $search) {
                 $query->where('name', 'like', "%{$search}%")
-                      ->orWhere('email', 'like', "%{$search}%");
+                    ->orWhere('email', 'like', "%{$search}%");
             })
             ->when(request('status'), function ($query, $status) {
                 $query->where('status', $status);
@@ -38,7 +38,7 @@ class CustomerController extends Controller
         $customer->load([
             'orders.orderItems',
             'services.hostingPlan',
-            'invoices'
+            'invoices',
         ]);
 
         return Inertia::render('Admin/Customers/Show', [
@@ -78,7 +78,7 @@ class CustomerController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:customers,email,' . $customer->id,
+            'email' => 'required|string|email|max:255|unique:customers,email,'.$customer->id,
             'phone' => 'nullable|string|max:20',
             'address' => 'nullable|string|max:500',
             'city' => 'nullable|string|max:100',
@@ -88,7 +88,7 @@ class CustomerController extends Controller
         ]);
 
         $updateData = $request->only([
-            'name', 'email', 'phone', 'address', 'city', 'country', 'postal_code', 'status'
+            'name', 'email', 'phone', 'address', 'city', 'country', 'postal_code', 'status',
         ]);
 
         if ($request->filled('password')) {

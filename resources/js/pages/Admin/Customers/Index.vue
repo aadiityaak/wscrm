@@ -3,11 +3,10 @@ import AppLayout from '@/layouts/AppLayout.vue';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
-import { Search, Users, UserCheck, UserX, Clock, Plus, Edit, Trash2 } from 'lucide-vue-next';
+import { Search, Users, UserCheck, UserX, Clock, Plus, Edit, Trash2, X } from 'lucide-vue-next';
 import { ref } from 'vue';
 
 interface Customer {
@@ -15,7 +14,10 @@ interface Customer {
   name: string;
   email: string;
   phone?: string;
+  address?: string;
   city?: string;
+  country?: string;
+  postal_code?: string;
   status: 'active' | 'inactive' | 'suspended';
   created_at: string;
   orders_count: number;
@@ -142,6 +144,7 @@ const deleteCustomer = (customer: Customer) => {
     router.delete(`/admin/customers/${customer.id}`);
   }
 };
+
 </script>
 
 <template>
@@ -334,17 +337,26 @@ const deleteCustomer = (customer: Customer) => {
     </div>
 
     <!-- Create Customer Modal -->
-    <Dialog v-model:open="showCreateModal">
-      <DialogContent class="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle>Add New Customer</DialogTitle>
-        </DialogHeader>
+    <div v-if="showCreateModal" class="fixed inset-0 z-50 flex items-center justify-center">
+      <!-- Overlay -->
+      <div class="fixed inset-0 bg-black/50" @click="showCreateModal = false"></div>
+      
+      <!-- Modal Content -->
+      <div class="relative bg-white dark:bg-gray-900 rounded-lg shadow-xl w-full max-w-md mx-4 p-6">
+        <!-- Header -->
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-lg font-semibold">Add New Customer</h2>
+          <button @click="showCreateModal = false" class="text-gray-500 hover:text-gray-700">
+            <X class="h-4 w-4" />
+          </button>
+        </div>
         <form @submit.prevent="submitCreate" class="space-y-4">
           <div class="grid grid-cols-2 gap-4">
             <div>
               <Label for="create-name">Name *</Label>
               <Input
                 id="create-name"
+                autocomplete="name"
                 v-model="createForm.name"
                 :class="{ 'border-red-500': createForm.errors.name }"
                 required
@@ -356,6 +368,7 @@ const deleteCustomer = (customer: Customer) => {
               <Input
                 id="create-email"
                 type="email"
+                autocomplete="email"
                 v-model="createForm.email"
                 :class="{ 'border-red-500': createForm.errors.email }"
                 required
@@ -370,6 +383,7 @@ const deleteCustomer = (customer: Customer) => {
               <Input
                 id="create-password"
                 type="password"
+                autocomplete="new-password"
                 v-model="createForm.password"
                 :class="{ 'border-red-500': createForm.errors.password }"
                 required
@@ -381,6 +395,7 @@ const deleteCustomer = (customer: Customer) => {
               <Input
                 id="create-password-confirmation"
                 type="password"
+                autocomplete="new-password"
                 v-model="createForm.password_confirmation"
                 required
               />
@@ -439,30 +454,40 @@ const deleteCustomer = (customer: Customer) => {
             </div>
           </div>
 
-          <DialogFooter>
+          <!-- Footer -->
+          <div class="flex justify-end gap-2 mt-6">
             <Button type="button" variant="outline" @click="showCreateModal = false">
               Cancel
             </Button>
             <Button type="submit" :disabled="createForm.processing">
               {{ createForm.processing ? 'Creating...' : 'Create Customer' }}
             </Button>
-          </DialogFooter>
+          </div>
         </form>
-      </DialogContent>
-    </Dialog>
+      </div>
+    </div>
 
     <!-- Edit Customer Modal -->
-    <Dialog v-model:open="showEditModal">
-      <DialogContent class="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle>Edit Customer</DialogTitle>
-        </DialogHeader>
+    <div v-if="showEditModal" class="fixed inset-0 z-50 flex items-center justify-center">
+      <!-- Overlay -->
+      <div class="fixed inset-0 bg-black/50" @click="showEditModal = false"></div>
+      
+      <!-- Modal Content -->
+      <div class="relative bg-white dark:bg-gray-900 rounded-lg shadow-xl w-full max-w-md mx-4 p-6">
+        <!-- Header -->
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-lg font-semibold">Edit Customer</h2>
+          <button @click="showEditModal = false" class="text-gray-500 hover:text-gray-700">
+            <X class="h-4 w-4" />
+          </button>
+        </div>
         <form @submit.prevent="submitEdit" class="space-y-4">
           <div class="grid grid-cols-2 gap-4">
             <div>
               <Label for="edit-name">Name *</Label>
               <Input
                 id="edit-name"
+                autocomplete="name"
                 v-model="editForm.name"
                 :class="{ 'border-red-500': editForm.errors.name }"
                 required
@@ -474,6 +499,7 @@ const deleteCustomer = (customer: Customer) => {
               <Input
                 id="edit-email"
                 type="email"
+                autocomplete="email"
                 v-model="editForm.email"
                 :class="{ 'border-red-500': editForm.errors.email }"
                 required
@@ -488,6 +514,7 @@ const deleteCustomer = (customer: Customer) => {
               <Input
                 id="edit-password"
                 type="password"
+                autocomplete="new-password"
                 v-model="editForm.password"
                 :class="{ 'border-red-500': editForm.errors.password }"
               />
@@ -498,6 +525,7 @@ const deleteCustomer = (customer: Customer) => {
               <Input
                 id="edit-password-confirmation"
                 type="password"
+                autocomplete="new-password"
                 v-model="editForm.password_confirmation"
               />
             </div>
@@ -569,16 +597,17 @@ const deleteCustomer = (customer: Customer) => {
             </div>
           </div>
 
-          <DialogFooter>
+          <!-- Footer -->
+          <div class="flex justify-end gap-2 mt-6">
             <Button type="button" variant="outline" @click="showEditModal = false">
               Cancel
             </Button>
             <Button type="submit" :disabled="editForm.processing">
               {{ editForm.processing ? 'Updating...' : 'Update Customer' }}
             </Button>
-          </DialogFooter>
+          </div>
         </form>
-      </DialogContent>
-    </Dialog>
+      </div>
+    </div>
   </AppLayout>
 </template>
