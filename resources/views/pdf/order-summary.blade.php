@@ -210,6 +210,26 @@
             • Revisi minor gratis, revisi major dikenakan biaya tambahan
         </div>
         
+        @if($banks && count($banks) > 0)
+        <div style="margin: 20px 0;">
+            <strong>Pembayaran via Transfer Bank:</strong><br>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 10px; margin-top: 10px;">
+                @foreach($banks as $bank)
+                <div style="border: 1px solid #dee2e6; padding: 10px; border-radius: 5px; background-color: #f8f9fa;">
+                    <div style="font-weight: bold; color: #333; margin-bottom: 3px;">{{ $bank->bank_name }}</div>
+                    <div style="font-size: 12px; color: #666;">
+                        {{ $bank->account_number }}<br>
+                        a.n. {{ $bank->account_name }}
+                        @if($bank->admin_fee > 0)
+                        <br><span style="color: #dc3545;">Biaya Admin: Rp {{ number_format($bank->admin_fee, 0, ',', '.') }}</span>
+                        @endif
+                    </div>
+                </div>
+                @endforeach
+            </div>
+        </div>
+        @endif
+        
         <div class="contact">
             <strong>WebSweetStudio</strong> - Jasa Pembuatan Website Profesional<br>
             Terima kasih atas kepercayaan Anda!

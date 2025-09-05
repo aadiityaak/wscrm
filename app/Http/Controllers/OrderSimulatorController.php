@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Bank;
 use App\Models\DomainPrice;
 use App\Models\HostingPlan;
 use App\Models\ServicePlan;
@@ -172,10 +173,14 @@ class OrderSimulatorController extends Controller
             return response()->json(['error' => 'Invalid calculation data'], 400);
         }
 
+        // Get active banks for payment
+        $banks = Bank::where('is_active', true)->get();
+
         $pdf = Pdf::loadView('pdf.order-summary', [
             'calculation' => $calculation,
             'date' => now()->format('d F Y'),
             'time' => now()->format('H:i:s'),
+            'banks' => $banks,
         ]);
 
         return $pdf->download('Order-Summary-' . now()->format('Y-m-d') . '.pdf');
