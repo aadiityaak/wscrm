@@ -8,6 +8,7 @@ use App\Models\ServicePlan;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class OrderSimulatorController extends Controller
 {
@@ -161,5 +162,22 @@ class OrderSimulatorController extends Controller
                 'grand_total' => $grandTotal,
             ],
         ]);
+    }
+
+    public function downloadPdf(Request $request)
+    {
+        $calculation = json_decode($request->calculation, true);
+        
+        if (!$calculation) {
+            return response()->json(['error' => 'Invalid calculation data'], 400);
+        }
+
+        $pdf = Pdf::loadView('pdf.order-summary', [
+            'calculation' => $calculation,
+            'date' => now()->format('d F Y'),
+            'time' => now()->format('H:i:s'),
+        ]);
+
+        return $pdf->download('Order-Summary-' . now()->format('Y-m-d') . '.pdf');
     }
 }

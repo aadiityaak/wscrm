@@ -22,6 +22,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/order-simulator', [App\Http\Controllers\OrderSimulatorController::class, 'index'])->name('order-simulator.index');
     Route::post('/order-simulator/calculate', [App\Http\Controllers\OrderSimulatorController::class, 'calculate'])->name('order-simulator.calculate');
+    Route::post('/order-simulator/download-pdf', [App\Http\Controllers\OrderSimulatorController::class, 'downloadPdf'])->name('order-simulator.download-pdf');
 });
 
 // API endpoints

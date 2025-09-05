@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { type BreadcrumbItem } from '@/types';
 import { Head, router } from '@inertiajs/vue3';
-import { Calculator, Globe, Server, Package, Percent, Receipt, ShoppingCart } from 'lucide-vue-next';
+import { Calculator, Globe, Server, Package, Percent, Receipt, ShoppingCart, Download } from 'lucide-vue-next';
 import { ref, reactive, computed } from 'vue';
 import axios from 'axios';
 
@@ -153,6 +153,29 @@ const resetForm = () => {
   form.discount_percent = 0;
   form.discount_nominal = 0;
   calculation.value = null;
+};
+
+// Download PDF
+const downloadPDF = () => {
+  if (!calculation.value) return;
+
+  const formData = new FormData();
+  formData.append('calculation', JSON.stringify(calculation.value));
+  
+  axios.post('/order-simulator/download-pdf', formData, {
+    responseType: 'blob'
+  }).then(response => {
+    const blob = new Blob([response.data], { type: 'application/pdf' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `Order-Summary-${new Date().toISOString().split('T')[0]}.pdf`;
+    link.click();
+    window.URL.revokeObjectURL(url);
+  }).catch(error => {
+    console.error('Error downloading PDF:', error);
+    alert('Terjadi kesalahan saat mengunduh PDF. Silakan coba lagi.');
+  });
 };
 
 // Toggle service selection
@@ -509,11 +532,17 @@ const getCategoryName = (category: string) => {
                   <span class="text-primary">{{ formatCurrency(calculation.grand_total) }}</span>
                 </div>
 
-                <!-- Action Button -->
-                <Button class="w-full mt-4" size="lg">
-                  <ShoppingCart class="h-4 w-4 mr-2" />
-                  Buat Pesanan
-                </Button>
+                <!-- Action Buttons -->
+                <div class="space-y-2 mt-4">
+                  <Button class="w-full" size="lg">
+                    <ShoppingCart class="h-4 w-4 mr-2" />
+                    Buat Pesanan
+                  </Button>
+                  <Button variant="outline" class="w-full" @click="downloadPDF">
+                    <Download class="h-4 w-4 mr-2" />
+                    Download PDF
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>

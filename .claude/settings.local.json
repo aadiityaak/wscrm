@@ -92,7 +92,8 @@
       "Read(/D:\\wscrm\\resources\\js\\pages\\Admin\\Customers/**)",
       "Read(/D:\\wscrm\\resources\\js\\pages\\Services/**)",
       "Read(//g/**)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(composer:*)"
     ],
     "deny": [],
     "ask": []
