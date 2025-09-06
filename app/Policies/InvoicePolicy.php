@@ -5,7 +5,6 @@ namespace App\Policies;
 use App\Models\Customer;
 use App\Models\Invoice;
 use App\Models\User;
-use Illuminate\Auth\Access\Response;
 use Illuminate\Support\Facades\Auth;
 
 class InvoicePolicy
@@ -27,18 +26,19 @@ class InvoicePolicy
         if ($user instanceof User) {
             return true;
         }
-        
+
         // If it's a customer, check if the invoice belongs to them
         if ($user instanceof Customer) {
             return $invoice->customer_id === $user->id;
         }
-        
+
         // Check if customer is authenticated via customer guard
         if (Auth::guard('customer')->check()) {
             $customer = Auth::guard('customer')->user();
+
             return $invoice->customer_id === $customer->id;
         }
-        
+
         return false;
     }
 

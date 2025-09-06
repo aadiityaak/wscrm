@@ -6,10 +6,10 @@ use App\Models\Bank;
 use App\Models\DomainPrice;
 use App\Models\HostingPlan;
 use App\Models\ServicePlan;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
-use Barryvdh\DomPDF\Facade\Pdf;
 
 class OrderSimulatorController extends Controller
 {
@@ -168,8 +168,8 @@ class OrderSimulatorController extends Controller
     public function downloadPdf(Request $request)
     {
         $calculation = json_decode($request->calculation, true);
-        
-        if (!$calculation) {
+
+        if (! $calculation) {
             return response()->json(['error' => 'Invalid calculation data'], 400);
         }
 
@@ -183,6 +183,6 @@ class OrderSimulatorController extends Controller
             'banks' => $banks,
         ]);
 
-        return $pdf->download('Order-Summary-' . now()->format('Y-m-d') . '.pdf');
+        return $pdf->download('Order-Summary-'.now()->format('Y-m-d').'.pdf');
     }
 }

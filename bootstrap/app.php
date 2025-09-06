@@ -23,9 +23,12 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
 
         // Use custom CSRF middleware that excludes API routes
-        $middleware->validateCsrfTokens(except: [
-            'api/*',
-        ]);
+        // But skip CSRF entirely in testing environment
+        if (! app()->environment('testing')) {
+            $middleware->validateCsrfTokens(except: [
+                'api/*',
+            ]);
+        }
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //

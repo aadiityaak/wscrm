@@ -12,6 +12,7 @@ test('sends verification notification', function () {
     ]);
 
     $this->actingAs($user)
+        ->withoutMiddleware(\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class)
         ->post(route('verification.send'))
         ->assertRedirect(route('home'));
 
@@ -26,6 +27,7 @@ test('does not send verification notification if email is verified', function ()
     ]);
 
     $this->actingAs($user)
+        ->withoutMiddleware(\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class)
         ->post(route('verification.send'))
         ->assertRedirect(route('dashboard', absolute: false));
 

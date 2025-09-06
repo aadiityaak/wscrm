@@ -42,7 +42,7 @@ Route::prefix('customer')->name('customer.')->group(function () {
             Route::get('/', [ServiceController::class, 'index'])->name('index');
             Route::get('/{service}', [ServiceController::class, 'show'])->name('show');
         });
-        
+
         Route::prefix('invoices')->name('invoices.')->group(function () {
             Route::get('/', [\App\Http\Controllers\Customer\InvoiceController::class, 'index'])->name('index');
             Route::get('/{invoice}', [\App\Http\Controllers\Customer\InvoiceController::class, 'show'])->name('show');
