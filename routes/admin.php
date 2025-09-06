@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\BankController;
 use App\Http\Controllers\Admin\CustomerController;
 use App\Http\Controllers\Admin\DomainPriceController;
 use App\Http\Controllers\Admin\HostingPlanController;
+use App\Http\Controllers\Admin\InvoiceController;
 use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\ServiceController;
 use App\Http\Controllers\Admin\ServicePlanController;
@@ -14,6 +15,8 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'verified'])->group(
     Route::resource('orders', OrderController::class)->only(['index', 'show', 'store', 'update', 'destroy']);
     Route::resource('services', ServiceController::class)->only(['index', 'show', 'store', 'update', 'destroy']);
     Route::resource('service-plans', ServicePlanController::class)->only(['index', 'show', 'store', 'update', 'destroy']);
+    Route::resource('invoices', InvoiceController::class)->only(['index', 'show', 'store', 'update']);
+    Route::post('invoices/generate-renewals', [InvoiceController::class, 'generateRenewalInvoices'])->name('invoices.generate-renewals');
     Route::resource('domain-prices', DomainPriceController::class);
     Route::resource('hosting-plans', HostingPlanController::class);
     Route::resource('banks', BankController::class);

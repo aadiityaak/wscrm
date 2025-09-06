@@ -18,6 +18,7 @@ test('password can be updated', function () {
 
     $response = $this
         ->actingAs($user)
+        ->withoutMiddleware(\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class)
         ->from(route('password.edit'))
         ->put(route('password.update'), [
             'current_password' => 'password',
@@ -37,6 +38,7 @@ test('correct password must be provided to update password', function () {
 
     $response = $this
         ->actingAs($user)
+        ->withoutMiddleware(\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class)
         ->from(route('password.edit'))
         ->put(route('password.update'), [
             'current_password' => 'wrong-password',

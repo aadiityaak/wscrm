@@ -4,10 +4,10 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Bank;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
-use Illuminate\Http\RedirectResponse;
 
 class BankController extends Controller
 {
@@ -89,7 +89,7 @@ class BankController extends Controller
     {
         $validated = $request->validate([
             'bank_name' => 'required|string|max:255',
-            'bank_code' => 'required|string|max:10|unique:banks,bank_code,' . $bank->id,
+            'bank_code' => 'required|string|max:10|unique:banks,bank_code,'.$bank->id,
             'account_number' => 'required|string|max:255',
             'account_name' => 'required|string|max:255',
             'branch' => 'nullable|string|max:255',
@@ -129,7 +129,7 @@ class BankController extends Controller
     public function toggleStatus(Bank $bank): RedirectResponse
     {
         $bank->update([
-            'is_active' => !$bank->is_active,
+            'is_active' => ! $bank->is_active,
         ]);
 
         $status = $bank->is_active ? 'diaktifkan' : 'dinonaktifkan';

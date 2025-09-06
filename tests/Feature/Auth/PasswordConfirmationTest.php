@@ -13,9 +13,11 @@ test('confirm password screen can be rendered', function () {
 test('password can be confirmed', function () {
     $user = User::factory()->create();
 
-    $response = $this->actingAs($user)->post(route('password.confirm.store'), [
-        'password' => 'password',
-    ]);
+    $response = $this->actingAs($user)
+        ->withoutMiddleware(\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class)
+        ->post(route('password.confirm.store'), [
+            'password' => 'password',
+        ]);
 
     $response->assertRedirect();
     $response->assertSessionHasNoErrors();
@@ -24,9 +26,11 @@ test('password can be confirmed', function () {
 test('password is not confirmed with invalid password', function () {
     $user = User::factory()->create();
 
-    $response = $this->actingAs($user)->post(route('password.confirm.store'), [
-        'password' => 'wrong-password',
-    ]);
+    $response = $this->actingAs($user)
+        ->withoutMiddleware(\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class)
+        ->post(route('password.confirm.store'), [
+            'password' => 'wrong-password',
+        ]);
 
     $response->assertSessionHasErrors();
 });

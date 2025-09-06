@@ -49,6 +49,14 @@ class BuildProductionStructure extends Command
         $this->copyPublicFiles($publicHtmlPath);
         $this->info('Copied public files to public_html');
 
+        // Create public directory in Laravel folder and copy build assets
+        $this->createLaravelPublicBuild($laravelPath, $publicHtmlPath);
+        $this->info('Created Laravel public/build directory');
+
+        // Modify index.php for production structure
+        $this->modifyIndexPhpForProduction($publicHtmlPath);
+        $this->info('Modified index.php for production structure');
+
         // Create production.zip
         $this->createZip($distPath);
         $this->info('Created production.zip');
@@ -141,16 +149,116 @@ class BuildProductionStructure extends Command
             return;
         }
 
-        foreach (File::allFiles($publicPath) as $file) {
-            $relativePath = str_replace($publicPath.DIRECTORY_SEPARATOR, '', $file->getPathname());
-            $destinationFile = $destination.DIRECTORY_SEPARATOR.$relativePath;
-            $destinationDir = dirname($destinationFile);
+        // Use system commands for efficiency
+        if (PHP_OS_FAMILY === 'Windows') {
+            // Windows - use xcopy for better hidden file support
+            exec("xcopy \"{$publicPath}\" \"{$destination}\" /E /H /Y /Q > nul 2>&1");
+        } else {
+            // Unix/Linux - use cp with recursive and hidden file flags
+            exec("cp -r {$publicPath}/. {$destination}/ 2>/dev/null");
+        }
 
-            if (! File::exists($destinationDir)) {
-                File::makeDirectory($destinationDir, 0755, true);
+        // Fallback to PHP if system commands fail
+        if (! File::exists($destination.'/index.php')) {
+            foreach (File::allFiles($publicPath) as $file) {
+                $relativePath = str_replace($publicPath.DIRECTORY_SEPARATOR, '', $file->getPathname());
+                $destinationFile = $destination.DIRECTORY_SEPARATOR.$relativePath;
+                $destinationDir = dirname($destinationFile);
+
+                if (! File::exists($destinationDir)) {
+                    File::makeDirectory($destinationDir, 0755, true);
+                }
+
+                File::copy($file->getPathname(), $destinationFile);
             }
 
-            File::copy($file->getPathname(), $destinationFile);
+            // Copy .htaccess explicitly
+            $htaccess = $publicPath.'/.htaccess';
+            if (File::exists($htaccess)) {
+                File::copy($htaccess, $destination.'/.htaccess');
+            }
+        }
+
+        // Remove development files from production build
+        $devFiles = ['hot', 'mix-manifest.json'];
+        foreach ($devFiles as $devFile) {
+            $devFilePath = $destination.'/'.$devFile;
+            if (File::exists($devFilePath)) {
+                File::delete($devFilePath);
+            }
+        }
+    }
+
+    private function modifyIndexPhpForProduction(string $publicHtmlPath): void
+    {
+        $indexPhpPath = $publicHtmlPath.'/index.php';
+        
+        if (!File::exists($indexPhpPath)) {
+            $this->error('index.php not found in public_html directory');
+            return;
+        }
+        
+        $content = File::get($indexPhpPath);
+        
+        // Replace paths to point to ../laravel/ instead of ../
+        $content = str_replace(
+            "require __DIR__.'/../vendor/autoload.php';",
+            "require __DIR__.'/../laravel/vendor/autoload.php';",
+            $content
+        );
+        
+        $content = str_replace(
+            "require_once __DIR__.'/../bootstrap/app.php';",
+            "require_once __DIR__.'/../laravel/bootstrap/app.php';",
+            $content
+        );
+        
+        $content = str_replace(
+            "file_exists(\$maintenance = __DIR__.'/../storage/framework/maintenance.php')",
+            "file_exists(\$maintenance = __DIR__.'/../laravel/storage/framework/maintenance.php')",
+            $content
+        );
+        
+        File::put($indexPhpPath, $content);
+    }
+
+    private function createLaravelPublicBuild(string $laravelPath, string $publicHtmlPath): void
+    {
+        $laravelPublicPath = $laravelPath.'/public';
+        $laravelBuildPath = $laravelPublicPath.'/build';
+        $publicHtmlBuildPath = $publicHtmlPath.'/build';
+
+        // Create public directory in Laravel folder
+        File::makeDirectory($laravelPublicPath, 0755, true, true);
+        File::makeDirectory($laravelBuildPath, 0755, true, true);
+
+        // Copy build directory from public_html to laravel/public
+        if (File::exists($publicHtmlBuildPath)) {
+            // Copy manifest.json
+            if (File::exists($publicHtmlBuildPath.'/manifest.json')) {
+                File::copy($publicHtmlBuildPath.'/manifest.json', $laravelBuildPath.'/manifest.json');
+            }
+
+            // Copy assets directory
+            $assetsSource = $publicHtmlBuildPath.'/assets';
+            $assetsDestination = $laravelBuildPath.'/assets';
+            
+            if (File::exists($assetsSource)) {
+                File::makeDirectory($assetsDestination, 0755, true, true);
+                
+                // Copy all files in assets directory
+                foreach (File::allFiles($assetsSource) as $file) {
+                    $relativePath = str_replace($assetsSource.DIRECTORY_SEPARATOR, '', $file->getPathname());
+                    $destinationFile = $assetsDestination.DIRECTORY_SEPARATOR.$relativePath;
+                    $destinationDir = dirname($destinationFile);
+                    
+                    if (!File::exists($destinationDir)) {
+                        File::makeDirectory($destinationDir, 0755, true);
+                    }
+                    
+                    File::copy($file->getPathname(), $destinationFile);
+                }
+            }
         }
     }
 
@@ -165,10 +273,10 @@ class BuildProductionStructure extends Command
         $zip = new ZipArchive;
         if ($zip->open($zipFile, ZipArchive::CREATE | ZipArchive::OVERWRITE) === true) {
             // Add laravel directory
-            $this->addDirectoryToZip($zip, $distPath.'/laravel', 'laravel');
+            $this->addDirectoryToZip($zip, realpath($distPath.'/laravel'), 'laravel');
 
             // Add public_html directory
-            $this->addDirectoryToZip($zip, $distPath.'/public_html', 'public_html');
+            $this->addDirectoryToZip($zip, realpath($distPath.'/public_html'), 'public_html');
 
             $zip->close();
         }
@@ -176,20 +284,33 @@ class BuildProductionStructure extends Command
 
     private function addDirectoryToZip(ZipArchive $zip, string $dir, string $zipDir): void
     {
+        if (! $dir || ! is_dir($dir)) {
+            return;
+        }
+
+        $realDir = realpath($dir);
         $iterator = new RecursiveIteratorIterator(
-            new RecursiveDirectoryIterator($dir, RecursiveDirectoryIterator::SKIP_DOTS),
+            new RecursiveDirectoryIterator($realDir, RecursiveDirectoryIterator::SKIP_DOTS),
             RecursiveIteratorIterator::SELF_FIRST
         );
 
         foreach ($iterator as $file) {
             $filePath = $file->getRealPath();
-            $relativePath = $zipDir.'/'.str_replace($dir.DIRECTORY_SEPARATOR, '', $filePath);
+
+            // Calculate relative path from base directory
+            $relativePath = str_replace($realDir, '', $filePath);
+            $relativePath = ltrim($relativePath, DIRECTORY_SEPARATOR);
             $relativePath = str_replace('\\', '/', $relativePath);
 
+            // Create zip path
+            $zipPath = $relativePath ? $zipDir.'/'.$relativePath : $zipDir;
+
             if ($file->isDir()) {
-                $zip->addEmptyDir($relativePath);
+                if ($zipPath !== $zipDir) { // Don't add the root directory
+                    $zip->addEmptyDir($zipPath);
+                }
             } elseif ($file->isFile()) {
-                $zip->addFile($filePath, $relativePath);
+                $zip->addFile($filePath, $zipPath);
             }
         }
     }

@@ -19,7 +19,7 @@ class BankFactory extends Factory
         $accountNumber = fake()->numerify('##########');
         $accountName = fake()->company();
         $bankCode = fake()->unique()->regexify('[A-Z]{3,8}'); // Generate unique bank code
-        $bankName = 'Bank ' . fake()->company();
+        $bankName = 'Bank '.fake()->company();
 
         return [
             'bank_name' => $bankName,

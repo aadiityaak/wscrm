@@ -15,10 +15,10 @@ beforeEach(function () {
 
 test('admin can view banks index page', function () {
     Bank::factory()->count(3)->create();
-    
+
     $response = $this->actingAs($this->admin)
         ->get('/admin/banks');
-    
+
     $response->assertStatus(200)
         ->assertInertia(fn ($page) => $page
             ->component('Admin/Banks/Index')
@@ -36,12 +36,13 @@ test('admin can create a new bank', function () {
         'admin_fee' => 2500.00,
         'is_active' => true,
     ];
-    
+
     $response = $this->actingAs($this->admin)
+        ->withoutMiddleware(\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class)
         ->post('/admin/banks', $bankData);
-    
+
     $response->assertRedirect('/admin/banks');
-    
+
     $this->assertDatabaseHas('banks', [
         'bank_name' => 'Test Bank',
         'bank_code' => 'TESTBANK',
@@ -54,10 +55,10 @@ test('admin can create a new bank', function () {
 
 test('admin can view a specific bank', function () {
     $bank = Bank::factory()->create();
-    
+
     $response = $this->actingAs($this->admin)
         ->get("/admin/banks/{$bank->id}");
-    
+
     $response->assertStatus(200)
         ->assertInertia(fn ($page) => $page
             ->component('Admin/Banks/Show')
@@ -70,7 +71,7 @@ test('admin can update a bank', function () {
         'bank_name' => 'Old Bank Name',
         'is_active' => true,
     ]);
-    
+
     $updateData = [
         'bank_name' => 'Updated Bank Name',
         'bank_code' => $bank->bank_code,
@@ -80,12 +81,13 @@ test('admin can update a bank', function () {
         'admin_fee' => $bank->admin_fee,
         'is_active' => false,
     ];
-    
+
     $response = $this->actingAs($this->admin)
+        ->withoutMiddleware(\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class)
         ->put("/admin/banks/{$bank->id}", $updateData);
-    
+
     $response->assertRedirect('/admin/banks');
-    
+
     $this->assertDatabaseHas('banks', [
         'id' => $bank->id,
         'bank_name' => 'Updated Bank Name',
@@ -95,12 +97,13 @@ test('admin can update a bank', function () {
 
 test('admin can delete a bank', function () {
     $bank = Bank::factory()->create();
-    
+
     $response = $this->actingAs($this->admin)
+        ->withoutMiddleware(\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class)
         ->delete("/admin/banks/{$bank->id}");
-    
+
     $response->assertRedirect('/admin/banks');
-    
+
     $this->assertDatabaseMissing('banks', [
         'id' => $bank->id,
     ]);
@@ -108,7 +111,7 @@ test('admin can delete a bank', function () {
 
 test('bank code must be unique', function () {
     Bank::factory()->create(['bank_code' => 'DUPLICATE']);
-    
+
     $bankData = [
         'bank_name' => 'Another Bank',
         'bank_code' => 'DUPLICATE',
@@ -118,17 +121,19 @@ test('bank code must be unique', function () {
         'admin_fee' => 2500.00,
         'is_active' => true,
     ];
-    
+
     $response = $this->actingAs($this->admin)
+        ->withoutMiddleware(\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class)
         ->post('/admin/banks', $bankData);
-    
+
     $response->assertSessionHasErrors(['bank_code']);
 });
 
 test('bank creation requires all mandatory fields', function () {
     $response = $this->actingAs($this->admin)
+        ->withoutMiddleware(\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class)
         ->post('/admin/banks', []);
-    
+
     $response->assertSessionHasErrors([
         'bank_name',
         'bank_code',
@@ -140,25 +145,26 @@ test('bank creation requires all mandatory fields', function () {
 
 test('admin can toggle bank status', function () {
     $bank = Bank::factory()->create(['is_active' => true]);
-    
+
     $response = $this->actingAs($this->admin)
+        ->withoutMiddleware(\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class)
         ->patch("/admin/banks/{$bank->id}/toggle-status");
-    
+
     $response->assertRedirect();
-    
+
     $bank->refresh();
     expect($bank->is_active)->toBeFalse();
 });
 
 test('unauthenticated users cannot access bank management', function () {
     $response = $this->get('/admin/banks');
-    
+
     $response->assertRedirect('/login');
 });
 
 test('bank can have associated invoices', function () {
     $bank = Bank::factory()->create();
-    
+
     // This test assumes Invoice model exists and has bank_id relationship
     // You may need to adjust based on your actual Invoice model implementation
     expect($bank->invoices())->toBeInstanceOf(\Illuminate\Database\Eloquent\Relations\HasMany::class);

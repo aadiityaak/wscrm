@@ -17,6 +17,7 @@ test('profile information can be updated', function () {
 
     $response = $this
         ->actingAs($user)
+        ->withoutMiddleware(\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class)
         ->patch(route('profile.update'), [
             'name' => 'Test User',
             'email' => 'test@example.com',
@@ -38,6 +39,7 @@ test('email verification status is unchanged when the email address is unchanged
 
     $response = $this
         ->actingAs($user)
+        ->withoutMiddleware(\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class)
         ->patch(route('profile.update'), [
             'name' => 'Test User',
             'email' => $user->email,
@@ -55,6 +57,7 @@ test('user can delete their account', function () {
 
     $response = $this
         ->actingAs($user)
+        ->withoutMiddleware(\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class)
         ->delete(route('profile.destroy'), [
             'password' => 'password',
         ]);
@@ -72,6 +75,7 @@ test('correct password must be provided to delete account', function () {
 
     $response = $this
         ->actingAs($user)
+        ->withoutMiddleware(\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class)
         ->from(route('profile.edit'))
         ->delete(route('profile.destroy'), [
             'password' => 'wrong-password',
