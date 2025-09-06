@@ -49,6 +49,10 @@ class BuildProductionStructure extends Command
         $this->copyPublicFiles($publicHtmlPath);
         $this->info('Copied public files to public_html');
 
+        // Modify index.php for production structure
+        $this->modifyIndexPhpForProduction($publicHtmlPath);
+        $this->info('Modified index.php for production structure');
+
         // Create production.zip
         $this->createZip($distPath);
         $this->info('Created production.zip');
@@ -170,6 +174,39 @@ class BuildProductionStructure extends Command
                 File::copy($htaccess, $destination.'/.htaccess');
             }
         }
+    }
+
+    private function modifyIndexPhpForProduction(string $publicHtmlPath): void
+    {
+        $indexPhpPath = $publicHtmlPath.'/index.php';
+        
+        if (!File::exists($indexPhpPath)) {
+            $this->error('index.php not found in public_html directory');
+            return;
+        }
+        
+        $content = File::get($indexPhpPath);
+        
+        // Replace paths to point to ../laravel/ instead of ../
+        $content = str_replace(
+            "require __DIR__.'/../vendor/autoload.php';",
+            "require __DIR__.'/../laravel/vendor/autoload.php';",
+            $content
+        );
+        
+        $content = str_replace(
+            "require_once __DIR__.'/../bootstrap/app.php';",
+            "require_once __DIR__.'/../laravel/bootstrap/app.php';",
+            $content
+        );
+        
+        $content = str_replace(
+            "file_exists(\$maintenance = __DIR__.'/../storage/framework/maintenance.php')",
+            "file_exists(\$maintenance = __DIR__.'/../laravel/storage/framework/maintenance.php')",
+            $content
+        );
+        
+        File::put($indexPhpPath, $content);
     }
 
     private function createZip(string $distPath): void

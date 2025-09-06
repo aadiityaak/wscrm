@@ -193,11 +193,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 break;
 
             case 'migrate':
-                $output = executeCommand('php artisan migrate --force');
+                $output = executeCommand('cd "'.$laravelRoot.'" && php artisan migrate --force');
                 break;
 
             case 'migrate_fresh':
-                $output = executeCommand('php artisan migrate:fresh --force');
+                $output = executeCommand('cd "'.$laravelRoot.'" && php artisan migrate:fresh --force');
                 break;
 
             case 'config_cache':
@@ -1626,7 +1626,17 @@ function showLoginForm()
                 <strong>⚙️ Environment:</strong> 
                 <span class="info-value"><?php echo file_exists($laravelRoot.'/.env') ? '✅ Configured' : '❌ Missing'; ?></span>
             </div>
+            <div class="info-item">
+                <strong>📊 Last Action:</strong> 
+                <span class="info-value"><?php echo isset($_POST['action']) ? htmlspecialchars($_POST['action']) : 'None'; ?></span>
+            </div>
         </div>
+        
+        <?php if (!isset($_POST['action'])) { ?>
+            <div class="success">
+                <strong>ℹ️ Info:</strong> Hasil action akan muncul di bawah setelah Anda menekan salah satu tombol action di bawah ini.
+            </div>
+        <?php } ?>
 
         <?php if ($error) { ?>
             <div class="error"><?php echo htmlspecialchars($error); ?></div>
