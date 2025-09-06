@@ -49,6 +49,10 @@ class BuildProductionStructure extends Command
         $this->copyPublicFiles($publicHtmlPath);
         $this->info('Copied public files to public_html');
 
+        // Create public directory in Laravel folder and copy build assets
+        $this->createLaravelPublicBuild($laravelPath, $publicHtmlPath);
+        $this->info('Created Laravel public/build directory');
+
         // Modify index.php for production structure
         $this->modifyIndexPhpForProduction($publicHtmlPath);
         $this->info('Modified index.php for production structure');
@@ -174,6 +178,15 @@ class BuildProductionStructure extends Command
                 File::copy($htaccess, $destination.'/.htaccess');
             }
         }
+
+        // Remove development files from production build
+        $devFiles = ['hot', 'mix-manifest.json'];
+        foreach ($devFiles as $devFile) {
+            $devFilePath = $destination.'/'.$devFile;
+            if (File::exists($devFilePath)) {
+                File::delete($devFilePath);
+            }
+        }
     }
 
     private function modifyIndexPhpForProduction(string $publicHtmlPath): void
@@ -207,6 +220,46 @@ class BuildProductionStructure extends Command
         );
         
         File::put($indexPhpPath, $content);
+    }
+
+    private function createLaravelPublicBuild(string $laravelPath, string $publicHtmlPath): void
+    {
+        $laravelPublicPath = $laravelPath.'/public';
+        $laravelBuildPath = $laravelPublicPath.'/build';
+        $publicHtmlBuildPath = $publicHtmlPath.'/build';
+
+        // Create public directory in Laravel folder
+        File::makeDirectory($laravelPublicPath, 0755, true, true);
+        File::makeDirectory($laravelBuildPath, 0755, true, true);
+
+        // Copy build directory from public_html to laravel/public
+        if (File::exists($publicHtmlBuildPath)) {
+            // Copy manifest.json
+            if (File::exists($publicHtmlBuildPath.'/manifest.json')) {
+                File::copy($publicHtmlBuildPath.'/manifest.json', $laravelBuildPath.'/manifest.json');
+            }
+
+            // Copy assets directory
+            $assetsSource = $publicHtmlBuildPath.'/assets';
+            $assetsDestination = $laravelBuildPath.'/assets';
+            
+            if (File::exists($assetsSource)) {
+                File::makeDirectory($assetsDestination, 0755, true, true);
+                
+                // Copy all files in assets directory
+                foreach (File::allFiles($assetsSource) as $file) {
+                    $relativePath = str_replace($assetsSource.DIRECTORY_SEPARATOR, '', $file->getPathname());
+                    $destinationFile = $assetsDestination.DIRECTORY_SEPARATOR.$relativePath;
+                    $destinationDir = dirname($destinationFile);
+                    
+                    if (!File::exists($destinationDir)) {
+                        File::makeDirectory($destinationDir, 0755, true);
+                    }
+                    
+                    File::copy($file->getPathname(), $destinationFile);
+                }
+            }
+        }
     }
 
     private function createZip(string $distPath): void
