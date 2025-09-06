@@ -18,6 +18,7 @@ class Invoice extends Model
         'invoice_number',
         'invoice_type',
         'amount',
+        'discount',
         'status',
         'issue_date',
         'due_date',
@@ -32,6 +33,7 @@ class Invoice extends Model
     {
         return [
             'amount' => 'decimal:2',
+            'discount' => 'decimal:2',
             'issue_date' => 'date',
             'due_date' => 'date',
             'paid_at' => 'datetime',
@@ -99,5 +101,15 @@ class Invoice extends Model
             'paid_at' => Carbon::now(),
             'payment_method' => $paymentMethod,
         ]);
+    }
+
+    public function getFinalAmountAttribute(): float
+    {
+        return max(0, $this->amount - $this->discount);
+    }
+
+    public function getDiscountedAttribute(): bool
+    {
+        return $this->discount > 0;
     }
 }

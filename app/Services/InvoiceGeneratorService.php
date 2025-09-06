@@ -33,7 +33,7 @@ class InvoiceGeneratorService
     {
         $invoiceNumber = $this->generateInvoiceNumber();
         $amount = $this->calculateRenewalAmount($service);
-        
+
         return Invoice::create([
             'invoice_number' => $invoiceNumber,
             'invoice_type' => 'renewal',
@@ -51,7 +51,7 @@ class InvoiceGeneratorService
     public function createSetupInvoice(Service $service, float $amount): Invoice
     {
         $invoiceNumber = $this->generateInvoiceNumber();
-        
+
         return Invoice::create([
             'invoice_number' => $invoiceNumber,
             'invoice_type' => 'setup',
@@ -69,7 +69,7 @@ class InvoiceGeneratorService
     protected function shouldGenerateInvoice(Service $service): bool
     {
         // Check if renewal invoice already exists for this period
-        return !Invoice::query()
+        return ! Invoice::query()
             ->where('service_id', $service->id)
             ->where('invoice_type', 'renewal')
             ->where('due_date', '>=', $service->expires_at->subDays(7))
@@ -109,11 +109,11 @@ class InvoiceGeneratorService
         return 'annually';
     }
 
-    protected function generateInvoiceNumber(): string
+    public function generateInvoiceNumber(): string
     {
         $year = Carbon::now()->year;
         $month = Carbon::now()->format('m');
-        
+
         $lastInvoice = Invoice::query()
             ->where('invoice_number', 'like', "INV-{$year}-{$month}-%")
             ->latest('id')
