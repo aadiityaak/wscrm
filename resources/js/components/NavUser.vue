@@ -39,7 +39,7 @@ const user = page.props.auth.user;
             </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent
-            class="min-w-56 rounded-lg"
+            class="min-w-56 rounded-lg bg-popover border shadow-lg"
             :side="minimized ? 'right' : 'bottom'"
             :align="minimized ? 'start' : 'end'"
             :side-offset="4"

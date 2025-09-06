@@ -110,7 +110,18 @@
       "Read(/D:\\wscrm\\app\\Http\\Requests\\Auth/**)",
       "Read(/D:\\wscrm\\database\\factories/**)",
       "Bash(echo $APP_ENV)",
-      "Read(/D:\\wscrm/**)"
+      "Read(/D:\\wscrm/**)",
+      "Read(/D:\\wscrm\\bootstrap/**)",
+      "Bash(curl:*)",
+      "Read(/D:\\wscrm/**)",
+      "Read(/D:\\wscrm/**)",
+      "Read(/D:\\wscrm\\resources\\js\\layouts\\app/**)",
+      "Read(/D:\\wscrm\\resources\\js\\components/**)",
+      "Read(/D:\\wscrm\\resources\\js\\components/**)",
+      "Read(/D:\\wscrm\\resources\\js\\components\\ui\\dropdown-menu/**)",
+      "Read(/D:\\wscrm\\resources\\css/**)",
+      "Read(/D:\\wscrm\\resources\\js\\components/**)",
+      "Read(/D:\\wscrm\\resources\\js\\components\\ui\\dropdown-menu/**)"
     ],
     "deny": [],
     "ask": []
