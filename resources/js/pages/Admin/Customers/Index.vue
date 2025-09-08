@@ -170,7 +170,12 @@ const submitEdit = () => {
 
 const deleteCustomer = (customer: Customer) => {
   if (confirm(`Are you sure you want to delete ${customer.name}?`)) {
-    router.delete(`/admin/customers/${customer.id}`);
+    router.delete(`/admin/customers/${customer.id}`, {
+      preserveScroll: true,
+      onError: (errors) => {
+        console.error('Delete customer error:', errors);
+      },
+    });
   }
 };
 

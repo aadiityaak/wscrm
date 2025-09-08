@@ -130,7 +130,9 @@
       "Bash(npm run typecheck:*)",
       "Bash(npm run:*)",
       "Bash(unzip:*)",
-      "Bash(timeout 30 php artisan:*)"
+      "Bash(timeout 30 php artisan:*)",
+      "Bash(cat:*)",
+      "Bash(pkill:*)"
     ],
     "deny": [],
     "ask": []
