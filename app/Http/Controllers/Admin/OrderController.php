@@ -145,7 +145,7 @@ class OrderController extends Controller
             }
         });
 
-        return redirect()->back()->with('success', 'Order created successfully!');
+        return redirect()->back()->with('success', 'Pesanan berhasil dibuat!');
     }
 
     public function update(Request $request, Order $order)
@@ -158,13 +158,13 @@ class OrderController extends Controller
             'status' => $request->status,
         ]);
 
-        return redirect()->back()->with('success', 'Order status updated successfully!');
+        return redirect()->back()->with('success', 'Status pesanan berhasil diperbarui!');
     }
 
     public function destroy(Order $order)
     {
         if ($order->status === 'completed') {
-            return redirect()->back()->with('error', 'Cannot delete completed orders.');
+            return redirect()->back()->with('error', 'Tidak dapat menghapus pesanan yang sudah selesai.');
         }
 
         DB::transaction(function () use ($order) {
@@ -172,6 +172,6 @@ class OrderController extends Controller
             $order->delete();
         });
 
-        return redirect()->back()->with('success', 'Order deleted successfully!');
+        return redirect()->back()->with('success', 'Pesanan berhasil dihapus!');
     }
 }

@@ -78,7 +78,9 @@ const search = ref(props.filters?.search || '');
 const statusFilter = ref(props.filters?.status || '');
 const showCreateModal = ref(false);
 const showEditModal = ref(false);
+const showDeleteModal = ref(false);
 const selectedOrder = ref<Order | null>(null);
+const orderToDelete = ref<Order | null>(null);
 
 const createForm = useForm({
   customer_id: '',
@@ -98,7 +100,7 @@ const editForm = useForm({
 
 const breadcrumbs: BreadcrumbItem[] = [
   { title: 'Dashboard', href: '/dashboard' },
-  { title: 'Orders', href: '/admin/orders' },
+  { title: 'Pesanan', href: '/admin/orders' },
 ];
 
 const formatPrice = (price: number) => {
@@ -124,6 +126,16 @@ const getStatusColor = (status: string) => {
     case 'pending': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300';
     case 'cancelled': return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300';
     default: return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300';
+  }
+};
+
+const getStatusText = (status: string) => {
+  switch (status) {
+    case 'completed': return 'Selesai';
+    case 'processing': return 'Diproses';
+    case 'pending': return 'Menunggu';
+    case 'cancelled': return 'Dibatalkan';
+    default: return status;
   }
 };
 
@@ -217,26 +229,40 @@ const submitEdit = () => {
   });
 };
 
-const deleteOrder = (order: Order) => {
-  if (confirm(`Are you sure you want to delete Order #${order.id}?`)) {
-    router.delete(`/admin/orders/${order.id}`);
-  }
+const openDeleteModal = (order: Order) => {
+  orderToDelete.value = order;
+  showDeleteModal.value = true;
+};
+
+const confirmDelete = () => {
+  if (!orderToDelete.value) return;
+  
+  router.delete(`/admin/orders/${orderToDelete.value.id}`, {
+    preserveScroll: true,
+    onSuccess: () => {
+      showDeleteModal.value = false;
+      orderToDelete.value = null;
+    },
+    onError: (errors) => {
+      console.error('Delete order error:', errors);
+    },
+  });
 };
 </script>
 
 <template>
-  <Head title="Admin - Orders" />
+  <Head title="Admin - Kelola Pesanan" />
 
   <AppLayout :breadcrumbs="breadcrumbs">
     <div class="space-y-6 p-6">
       <div class="flex items-center justify-between">
         <div>
-          <h1 class="text-3xl font-bold tracking-tight">Order Management</h1>
-          <p class="text-muted-foreground">Track and manage customer orders</p>
+          <h1 class="text-3xl font-bold tracking-tight">Kelola Pesanan</h1>
+          <p class="text-muted-foreground">Lacak dan kelola pesanan pelanggan</p>
         </div>
         <Button @click="showCreateModal = true">
           <Plus class="h-4 w-4 mr-2" />
-          Add Order
+          Tambah Pesanan
         </Button>
       </div>
 
@@ -244,7 +270,7 @@ const deleteOrder = (order: Order) => {
       <div class="grid gap-4 md:grid-cols-5">
         <Card>
           <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle class="text-sm font-medium">Total Orders</CardTitle>
+            <CardTitle class="text-sm font-medium">Total Pesanan</CardTitle>
             <ShoppingCart class="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -254,7 +280,7 @@ const deleteOrder = (order: Order) => {
 
         <Card>
           <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle class="text-sm font-medium">Completed</CardTitle>
+            <CardTitle class="text-sm font-medium">Selesai</CardTitle>
             <CheckCircle class="h-4 w-4 text-green-600" />
           </CardHeader>
           <CardContent>
@@ -266,7 +292,7 @@ const deleteOrder = (order: Order) => {
 
         <Card>
           <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle class="text-sm font-medium">Processing</CardTitle>
+            <CardTitle class="text-sm font-medium">Diproses</CardTitle>
             <Package class="h-4 w-4 text-blue-600" />
           </CardHeader>
           <CardContent>
@@ -278,7 +304,7 @@ const deleteOrder = (order: Order) => {
 
         <Card>
           <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle class="text-sm font-medium">Pending</CardTitle>
+            <CardTitle class="text-sm font-medium">Menunggu</CardTitle>
             <Clock class="h-4 w-4 text-yellow-600" />
           </CardHeader>
           <CardContent>
@@ -290,7 +316,7 @@ const deleteOrder = (order: Order) => {
 
         <Card>
           <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle class="text-sm font-medium">Revenue</CardTitle>
+            <CardTitle class="text-sm font-medium">Pendapatan</CardTitle>
             <Package class="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -301,8 +327,8 @@ const deleteOrder = (order: Order) => {
 
       <Card>
         <CardHeader>
-          <CardTitle>All Orders</CardTitle>
-          <CardDescription>Complete list of customer orders</CardDescription>
+          <CardTitle>Semua Pesanan</CardTitle>
+          <CardDescription>Daftar lengkap pesanan pelanggan</CardDescription>
         </CardHeader>
         <CardContent>
           <!-- Search and Filter -->
@@ -311,7 +337,7 @@ const deleteOrder = (order: Order) => {
               <Search class="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
                 v-model="search"
-                placeholder="Search orders..."
+                placeholder="Cari pesanan..."
                 class="pl-8"
                 @keyup.enter="handleSearch"
               />
@@ -320,20 +346,20 @@ const deleteOrder = (order: Order) => {
               v-model="statusFilter" 
               class="flex h-9 w-[180px] rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
             >
-              <option value="">All Status</option>
-              <option value="pending">Pending</option>
-              <option value="processing">Processing</option>
-              <option value="completed">Completed</option>
-              <option value="cancelled">Cancelled</option>
+              <option value="">Semua Status</option>
+              <option value="pending">Menunggu</option>
+              <option value="processing">Diproses</option>
+              <option value="completed">Selesai</option>
+              <option value="cancelled">Dibatalkan</option>
             </select>
-            <Button @click="handleSearch">Search</Button>
+            <Button @click="handleSearch">Cari</Button>
           </div>
 
           <!-- Order Cards -->
           <div v-if="!orders?.data || orders.data.length === 0" class="text-center py-12 text-muted-foreground">
             <ShoppingCart class="mx-auto h-12 w-12 text-muted-foreground/40" />
-            <h3 class="mt-2 text-sm font-semibold text-gray-900 dark:text-gray-100">No orders found</h3>
-            <p class="mt-1 text-sm text-muted-foreground">Try adjusting your search criteria.</p>
+            <h3 class="mt-2 text-sm font-semibold text-gray-900 dark:text-gray-100">Pesanan tidak ditemukan</h3>
+            <p class="mt-1 text-sm text-muted-foreground">Coba sesuaikan kriteria pencarian Anda.</p>
           </div>
 
           <div v-else class="space-y-4">
@@ -344,9 +370,9 @@ const deleteOrder = (order: Order) => {
             >
               <div class="flex-1 min-w-0">
                 <div class="flex items-center gap-3 mb-2">
-                  <h3 class="text-sm font-semibold text-foreground truncate">Order #{{ order.id }}</h3>
+                  <h3 class="text-sm font-semibold text-foreground truncate">Pesanan #{{ order.id }}</h3>
                   <span :class="`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${getStatusColor(order.status)}`">
-                    {{ order.status }}
+                    {{ getStatusText(order.status) }}
                   </span>
                 </div>
                 <div class="space-y-1 text-xs text-muted-foreground">
@@ -355,9 +381,9 @@ const deleteOrder = (order: Order) => {
                     <span>{{ order.customer.email }}</span>
                   </div>
                   <div class="flex items-center gap-4">
-                    <span>Items: {{ order.order_items.length }}</span>
-                    <span>Billing: {{ order.billing_cycle.replace('_', ' ') }}</span>
-                    <span>Date: {{ formatDate(order.created_at) }}</span>
+                    <span>Item: {{ order.order_items.length }}</span>
+                    <span>Siklus: {{ order.billing_cycle.replace('_', ' ') }}</span>
+                    <span>Tanggal: {{ formatDate(order.created_at) }}</span>
                   </div>
                 </div>
               </div>
@@ -373,7 +399,7 @@ const deleteOrder = (order: Order) => {
                 <div class="flex items-center gap-2">
                   <Button size="sm" variant="outline" asChild>
                     <Link :href="`/admin/orders/${order.id}`">
-                      View Details
+                      Lihat Detail
                     </Link>
                   </Button>
                   <Button size="sm" variant="outline" @click="openEditModal(order)">
@@ -382,7 +408,7 @@ const deleteOrder = (order: Order) => {
                   <Button 
                     size="sm" 
                     variant="outline" 
-                    @click="deleteOrder(order)"
+                    @click="openDeleteModal(order)"
                     :disabled="order.status === 'completed'"
                   >
                     <Trash2 class="h-3 w-3" />
@@ -432,8 +458,8 @@ const deleteOrder = (order: Order) => {
         <!-- Header -->
         <div class="flex items-center justify-between mb-4">
           <div>
-            <h2 class="text-lg font-semibold">Create New Order</h2>
-            <p class="text-sm text-muted-foreground">Create a new order for a customer with multiple items and services.</p>
+            <h2 class="text-lg font-semibold">Buat Pesanan Baru</h2>
+            <p class="text-sm text-muted-foreground">Buat pesanan baru untuk pelanggan dengan berbagai item dan layanan.</p>
           </div>
           <button @click="showCreateModal = false" class="text-gray-500 hover:text-gray-700">
             <X class="h-4 w-4" />
@@ -442,14 +468,14 @@ const deleteOrder = (order: Order) => {
         <form @submit.prevent="submitCreate" class="space-y-4">
           <div class="grid grid-cols-2 gap-4">
             <div>
-              <Label for="create-customer">Customer *</Label>
+              <Label for="create-customer">Pelanggan *</Label>
               <select 
                 id="create-customer"
                 v-model="createForm.customer_id"
                 class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                 required
               >
-                <option value="">Select Customer</option>
+                <option value="">Pilih Pelanggan</option>
                 <option v-for="customer in customers" :key="customer.id" :value="customer.id">
                   {{ customer.name }} ({{ customer.email }})
                 </option>
@@ -457,7 +483,7 @@ const deleteOrder = (order: Order) => {
               <p v-if="createForm.errors.customer_id" class="text-xs text-red-500 mt-1">{{ createForm.errors.customer_id }}</p>
             </div>
             <div>
-              <Label for="create-order-type">Order Type *</Label>
+              <Label for="create-order-type">Tipe Pesanan *</Label>
               <select 
                 id="create-order-type"
                 v-model="createForm.order_type"
@@ -477,7 +503,7 @@ const deleteOrder = (order: Order) => {
           </div>
 
           <div>
-            <Label for="create-billing-cycle">Billing Cycle *</Label>
+            <Label for="create-billing-cycle">Siklus Pembayaran *</Label>
             <select 
               id="create-billing-cycle"
               v-model="createForm.billing_cycle"
@@ -495,10 +521,10 @@ const deleteOrder = (order: Order) => {
           <!-- Order Items -->
           <div>
             <div class="flex items-center justify-between mb-2">
-              <Label>Order Items *</Label>
+              <Label>Item Pesanan *</Label>
               <Button type="button" size="sm" @click="addItem">
                 <Plus class="h-3 w-3 mr-1" />
-                Add Item
+                Tambah Item
               </Button>
             </div>
             
@@ -518,7 +544,7 @@ const deleteOrder = (order: Order) => {
               
               <div class="grid grid-cols-2 gap-3">
                 <div>
-                  <Label>Item Type</Label>
+                  <Label>Tipe Item</Label>
                   <select 
                     v-model="item.item_type"
                     class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
@@ -537,7 +563,7 @@ const deleteOrder = (order: Order) => {
                     v-model="item.item_id"
                     class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                   >
-                    <option value="">Select Item</option>
+                    <option value="">Pilih Item</option>
                     <template v-if="item.item_type === 'hosting'">
                       <option v-for="plan in hostingPlans" :key="plan.id" :value="plan.id">
                         {{ plan.plan_name }} - {{ formatPrice(plan.selling_price) }}
@@ -574,14 +600,14 @@ const deleteOrder = (order: Order) => {
               
               <div class="grid grid-cols-2 gap-3">
                 <div v-if="item.item_type === 'domain'">
-                  <Label>Domain Name</Label>
+                  <Label>Nama Domain</Label>
                   <Input
                     v-model="item.domain_name"
                     placeholder="example.com"
                   />
                 </div>
                 <div>
-                  <Label>Quantity</Label>
+                  <Label>Jumlah</Label>
                   <Input
                     v-model="item.quantity"
                     type="number"
@@ -596,10 +622,10 @@ const deleteOrder = (order: Order) => {
           <!-- Footer -->
           <div class="flex justify-end gap-2 mt-6">
             <Button type="button" variant="outline" @click="showCreateModal = false">
-              Cancel
+              Batal
             </Button>
             <Button type="submit" :disabled="createForm.processing">
-              {{ createForm.processing ? 'Creating...' : 'Create Order' }}
+              {{ createForm.processing ? 'Membuat...' : 'Buat Pesanan' }}
             </Button>
           </div>
         </form>
@@ -616,8 +642,8 @@ const deleteOrder = (order: Order) => {
         <!-- Header -->
         <div class="flex items-center justify-between mb-4">
           <div>
-            <h2 class="text-lg font-semibold">Edit Order Status</h2>
-            <p class="text-sm text-muted-foreground">Update the status of this order to track its progress.</p>
+            <h2 class="text-lg font-semibold">Edit Status Pesanan</h2>
+            <p class="text-sm text-muted-foreground">Perbarui status pesanan ini untuk melacak progresnya.</p>
           </div>
           <button @click="showEditModal = false" class="text-gray-500 hover:text-gray-700">
             <X class="h-4 w-4" />
@@ -632,10 +658,10 @@ const deleteOrder = (order: Order) => {
               class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
               required
             >
-              <option value="pending">Pending</option>
-              <option value="processing">Processing</option>
-              <option value="completed">Completed</option>
-              <option value="cancelled">Cancelled</option>
+              <option value="pending">Menunggu</option>
+              <option value="processing">Diproses</option>
+              <option value="completed">Selesai</option>
+              <option value="cancelled">Dibatalkan</option>
             </select>
             <p v-if="editForm.errors.status" class="text-xs text-red-500 mt-1">{{ editForm.errors.status }}</p>
           </div>
@@ -643,13 +669,80 @@ const deleteOrder = (order: Order) => {
           <!-- Footer -->
           <div class="flex justify-end gap-2 mt-6">
             <Button type="button" variant="outline" @click="showEditModal = false">
-              Cancel
+              Batal
             </Button>
             <Button type="submit" :disabled="editForm.processing">
-              {{ editForm.processing ? 'Updating...' : 'Update Status' }}
+              {{ editForm.processing ? 'Memperbarui...' : 'Perbarui Status' }}
             </Button>
           </div>
         </form>
+      </div>
+    </div>
+
+    <!-- Delete Order Modal -->
+    <div v-if="showDeleteModal" class="fixed inset-0 z-50 flex items-center justify-center">
+      <!-- Overlay -->
+      <div class="fixed inset-0 bg-black/50" @click="showDeleteModal = false"></div>
+      
+      <!-- Modal Content -->
+      <div class="relative bg-white dark:bg-gray-900 rounded-lg shadow-xl w-full max-w-md mx-4 p-6">
+        <!-- Header -->
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-lg font-semibold text-red-600">Konfirmasi Penghapusan</h2>
+          <button @click="showDeleteModal = false" class="text-gray-500 hover:text-gray-700">
+            <X class="h-4 w-4" />
+          </button>
+        </div>
+        
+        <div class="space-y-4">
+          <div class="p-4 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
+            <div class="flex items-start space-x-3">
+              <div class="flex-shrink-0">
+                <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                  <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                </svg>
+              </div>
+              <div class="min-w-0 flex-1">
+                <h3 class="text-sm font-medium text-red-800 dark:text-red-200">
+                  Peringatan: Tindakan ini tidak dapat dibatalkan
+                </h3>
+                <div class="mt-2 text-sm text-red-700 dark:text-red-300">
+                  <p>Anda akan menghapus secara permanen <strong>Pesanan #{{ orderToDelete?.id }}</strong>.</p>
+                  <div class="mt-3 space-y-1">
+                    <p><strong>Ini juga akan menghapus:</strong></p>
+                    <ul class="list-disc list-inside space-y-1 ml-2">
+                      <li>{{ orderToDelete?.order_items?.length || 0 }} item pesanan</li>
+                      <li>Semua data terkait secara permanen</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-gray-50 dark:bg-gray-800 p-3 rounded-lg">
+            <p class="text-sm text-gray-600 dark:text-gray-400">
+              <strong>Pesanan:</strong> #{{ orderToDelete?.id }}<br>
+              <strong>Pelanggan:</strong> {{ orderToDelete?.customer?.name }}<br>
+              <strong>Total:</strong> {{ formatPrice(orderToDelete?.total_amount || 0) }}<br>
+              <strong>Status:</strong> {{ orderToDelete?.status }}
+            </p>
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="flex justify-end gap-2 mt-6">
+          <Button type="button" variant="outline" @click="showDeleteModal = false">
+            Batal
+          </Button>
+          <Button 
+            type="button" 
+            class="bg-red-600 hover:bg-red-700 text-white" 
+            @click="confirmDelete"
+          >
+            Ya, Hapus Pesanan
+          </Button>
+        </div>
       </div>
     </div>
   </AppLayout>
