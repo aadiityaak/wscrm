@@ -146,7 +146,7 @@ const confirmDelete = () => {
           <h1 class="text-3xl font-bold tracking-tight">Harga Domain</h1>
           <p class="text-muted-foreground">Kelola harga ekstensi domain</p>
         </div>
-        <Button @click="showCreateModal = true">
+        <Button @click="showCreateModal = true" class="cursor-pointer">
           <Plus class="h-4 w-4 mr-2" />
           Tambah Harga Domain
         </Button>
@@ -170,7 +170,7 @@ const confirmDelete = () => {
                 @keyup.enter="handleSearch"
               />
             </div>
-            <Button @click="handleSearch">Cari</Button>
+            <Button @click="handleSearch" class="cursor-pointer">Cari</Button>
           </div>
 
           <div class="rounded-md border">
@@ -200,13 +200,14 @@ const confirmDelete = () => {
                   </TableCell>
                   <TableCell>
                     <div class="flex items-center space-x-2">
-                      <Button size="sm" variant="outline" @click="openEditModal(domain)">
+                      <Button size="sm" variant="outline" @click="openEditModal(domain)" class="cursor-pointer">
                         <Edit class="h-3 w-3" />
                       </Button>
                       <Button 
                         size="sm" 
                         variant="outline"
                         @click="openDeleteModal(domain)"
+                        class="cursor-pointer"
                       >
                         <Trash2 class="h-3 w-3" />
                       </Button>
@@ -254,7 +255,7 @@ const confirmDelete = () => {
             <h2 class="text-lg font-semibold">Tambah Harga Domain Baru</h2>
             <p class="text-sm text-muted-foreground">Buat konfigurasi harga domain baru</p>
           </div>
-          <button @click="showCreateModal = false" class="text-gray-500 hover:text-gray-700">
+          <button @click="showCreateModal = false" class="text-gray-500 hover:text-gray-700 cursor-pointer">
             <X class="h-4 w-4" />
           </button>
         </div>
@@ -341,7 +342,7 @@ const confirmDelete = () => {
           </div>
 
           <div class="flex justify-end space-x-2 pt-4">
-            <Button type="button" variant="outline" @click="showCreateModal = false">
+            <Button type="button" variant="outline" @click="showCreateModal = false" class="cursor-pointer">
               Batal
             </Button>
             <Button type="submit" :disabled="createForm.processing">
@@ -365,7 +366,7 @@ const confirmDelete = () => {
             <h2 class="text-lg font-semibold">Edit Harga Domain</h2>
             <p class="text-sm text-muted-foreground">Perbarui pengaturan harga domain</p>
           </div>
-          <button @click="showEditModal = false" class="text-gray-500 hover:text-gray-700">
+          <button @click="showEditModal = false" class="text-gray-500 hover:text-gray-700 cursor-pointer">
             <X class="h-4 w-4" />
           </button>
         </div>
@@ -452,7 +453,7 @@ const confirmDelete = () => {
           </div>
 
           <div class="flex justify-end space-x-2 pt-4">
-            <Button type="button" variant="outline" @click="showEditModal = false">
+            <Button type="button" variant="outline" @click="showEditModal = false" class="cursor-pointer">
               Batal
             </Button>
             <Button type="submit" :disabled="editForm.processing">
@@ -473,7 +474,7 @@ const confirmDelete = () => {
         <!-- Header -->
         <div class="flex items-center justify-between mb-4">
           <h2 class="text-lg font-semibold text-red-600">Konfirmasi Penghapusan</h2>
-          <button @click="showDeleteModal = false" class="text-gray-500 hover:text-gray-700">
+          <button @click="showDeleteModal = false" class="text-gray-500 hover:text-gray-700 cursor-pointer">
             <X class="h-4 w-4" />
           </button>
         </div>
@@ -517,12 +518,12 @@ const confirmDelete = () => {
 
         <!-- Footer -->
         <div class="flex justify-end gap-2 mt-6">
-          <Button type="button" variant="outline" @click="showDeleteModal = false">
+          <Button type="button" variant="outline" @click="showDeleteModal = false" class="cursor-pointer">
             Batal
           </Button>
           <Button 
             type="button" 
-            class="bg-red-600 hover:bg-red-700 text-white" 
+            class="bg-red-600 hover:bg-red-700 text-white cursor-pointer" 
             @click="confirmDelete"
           >
             Ya, Hapus Harga Domain

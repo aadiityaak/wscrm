@@ -187,7 +187,7 @@ const submitEdit = () => {
             Kelola bank pembayaran untuk sistem invoice
           </p>
         </div>
-        <Button @click="showCreateModal = true">
+        <Button @click="showCreateModal = true" class="cursor-pointer">
           <Plus class="h-4 w-4 mr-2" />
           Tambah Bank
         </Button>
@@ -250,10 +250,10 @@ const submitEdit = () => {
                   </TableCell>
                   <TableCell class="text-right">
                     <div class="flex items-center justify-end gap-2">
-                      <Button variant="ghost" size="sm" @click="router.visit(`/admin/banks/${bank.id}`)">
+                      <Button variant="ghost" size="sm" @click="router.visit(`/admin/banks/${bank.id}`)" class="cursor-pointer">
                         <Eye class="h-4 w-4" />
                       </Button>
-                      <Button variant="ghost" size="sm" @click="openEditModal(bank)">
+                      <Button variant="ghost" size="sm" @click="openEditModal(bank)" class="cursor-pointer">
                         <Edit class="h-4 w-4" />
                       </Button>
                       <Button 
@@ -261,6 +261,7 @@ const submitEdit = () => {
                         size="sm" 
                         @click="toggleBankStatus(bank)"
                         :title="bank.is_active ? 'Nonaktifkan' : 'Aktifkan'"
+                        class="cursor-pointer"
                       >
                         <ToggleRight v-if="bank.is_active" class="h-4 w-4 text-green-600" />
                         <ToggleLeft v-else class="h-4 w-4 text-red-600" />
@@ -269,7 +270,7 @@ const submitEdit = () => {
                         variant="ghost" 
                         size="sm" 
                         @click="openDeleteModal(bank)"
-                        class="text-red-600 hover:text-red-700"
+                        class="text-red-600 hover:text-red-700 cursor-pointer"
                       >
                         <Trash2 class="h-4 w-4" />
                       </Button>
@@ -288,7 +289,8 @@ const submitEdit = () => {
                 size="sm"
                 :class="{
                   'bg-primary text-primary-foreground': link.active,
-                  'pointer-events-none opacity-50': !link.url
+                  'pointer-events-none opacity-50': !link.url,
+                  'cursor-pointer': link.url
                 }"
                 @click="link.url && router.get(link.url)"
                 v-html="link.label"
@@ -304,7 +306,7 @@ const submitEdit = () => {
               Mulai dengan menambahkan bank pembayaran pertama.
             </p>
             <div class="mt-6">
-              <Button @click="showCreateModal = true">
+              <Button @click="showCreateModal = true" class="cursor-pointer">
                 <Plus class="h-4 w-4 mr-2" />
                 Tambah Bank
               </Button>
@@ -327,7 +329,7 @@ const submitEdit = () => {
             <h2 class="text-lg font-semibold">Tambah Bank</h2>
             <p class="text-sm text-muted-foreground">Tambahkan bank pembayaran baru ke sistem</p>
           </div>
-          <button @click="showCreateModal = false" class="text-gray-500 hover:text-gray-700">
+          <button @click="showCreateModal = false" class="text-gray-500 hover:text-gray-700 cursor-pointer">
             <X class="h-4 w-4" />
           </button>
         </div>
@@ -465,10 +467,10 @@ const submitEdit = () => {
           </div>
 
           <div class="flex justify-end space-x-2 pt-4">
-            <Button type="button" variant="outline" @click="showCreateModal = false">
+            <Button type="button" variant="outline" @click="showCreateModal = false" class="cursor-pointer">
               Batal
             </Button>
-            <Button type="submit" :disabled="createForm.processing">
+            <Button type="submit" :disabled="createForm.processing" class="cursor-pointer disabled:cursor-not-allowed">
               {{ createForm.processing ? 'Menyimpan...' : 'Simpan Bank' }}
             </Button>
           </div>
@@ -489,7 +491,7 @@ const submitEdit = () => {
             <h2 class="text-lg font-semibold">Edit Bank</h2>
             <p class="text-sm text-muted-foreground">Update informasi bank pembayaran</p>
           </div>
-          <button @click="showEditModal = false" class="text-gray-500 hover:text-gray-700">
+          <button @click="showEditModal = false" class="text-gray-500 hover:text-gray-700 cursor-pointer">
             <X class="h-4 w-4" />
           </button>
         </div>
@@ -627,10 +629,10 @@ const submitEdit = () => {
           </div>
 
           <div class="flex justify-end space-x-2 pt-4">
-            <Button type="button" variant="outline" @click="showEditModal = false">
+            <Button type="button" variant="outline" @click="showEditModal = false" class="cursor-pointer">
               Batal
             </Button>
-            <Button type="submit" :disabled="editForm.processing">
+            <Button type="submit" :disabled="editForm.processing" class="cursor-pointer disabled:cursor-not-allowed">
               {{ editForm.processing ? 'Memperbarui...' : 'Update Bank' }}
             </Button>
           </div>
@@ -656,7 +658,7 @@ const submitEdit = () => {
               <p class="text-sm text-gray-500 dark:text-gray-400">Tindakan ini tidak dapat dibatalkan</p>
             </div>
           </div>
-          <button @click="showDeleteModal = false" class="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">
+          <button @click="showDeleteModal = false" class="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 cursor-pointer">
             <X class="h-4 w-4" />
           </button>
         </div>
@@ -674,12 +676,12 @@ const submitEdit = () => {
         
         <!-- Actions -->
         <div class="flex justify-end space-x-2">
-          <Button type="button" variant="outline" @click="showDeleteModal = false">
+          <Button type="button" variant="outline" @click="showDeleteModal = false" class="cursor-pointer">
             Batal
           </Button>
           <Button 
             type="button" 
-            class="bg-red-600 hover:bg-red-700 text-white"
+            class="bg-red-600 hover:bg-red-700 text-white cursor-pointer"
             @click="confirmDelete"
           >
             Hapus Bank

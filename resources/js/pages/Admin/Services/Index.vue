@@ -205,7 +205,7 @@ const confirmDelete = () => {
           <h1 class="text-3xl font-bold tracking-tight">Kelola Layanan</h1>
           <p class="text-muted-foreground">Kelola layanan hosting dan domain pelanggan</p>
         </div>
-        <Button @click="showCreateModal = true">
+        <Button @click="showCreateModal = true" class="cursor-pointer">
           <Plus class="h-4 w-4 mr-2" />
           Tambah Layanan
         </Button>
@@ -300,7 +300,7 @@ const confirmDelete = () => {
               <option value="hosting">Hosting</option>
               <option value="domain">Domain</option>
             </select>
-            <Button @click="handleSearch">Cari</Button>
+            <Button @click="handleSearch" class="cursor-pointer">Cari</Button>
           </div>
 
           <div class="space-y-4">
@@ -350,7 +350,7 @@ const confirmDelete = () => {
                       Lihat Detail
                     </Link>
                   </Button>
-                  <Button size="sm" variant="outline" @click="openEditModal(service)">
+                  <Button size="sm" variant="outline" @click="openEditModal(service)" class="cursor-pointer">
                     <Edit class="h-3 w-3" />
                   </Button>
                   <Button 
@@ -409,7 +409,7 @@ const confirmDelete = () => {
             <h2 class="text-lg font-semibold">Tambah Layanan Baru</h2>
             <p class="text-sm text-muted-foreground">Buat layanan hosting atau domain baru untuk pelanggan</p>
           </div>
-          <button @click="showCreateModal = false" class="text-gray-500 hover:text-gray-700">
+          <button @click="showCreateModal = false" class="text-gray-500 hover:text-gray-700 cursor-pointer">
             <X class="h-4 w-4" />
           </button>
         </div>
@@ -497,7 +497,7 @@ const confirmDelete = () => {
 
           <!-- Footer -->
           <div class="flex justify-end gap-2 mt-6">
-            <Button type="button" variant="outline" @click="showCreateModal = false">
+            <Button type="button" variant="outline" @click="showCreateModal = false" class="cursor-pointer">
               Batal
             </Button>
             <Button type="submit" :disabled="createForm.processing">
@@ -521,7 +521,7 @@ const confirmDelete = () => {
             <h2 class="text-lg font-semibold">Edit Layanan</h2>
             <p class="text-sm text-muted-foreground">Perbarui konfigurasi dan pengaturan layanan</p>
           </div>
-          <button @click="showEditModal = false" class="text-gray-500 hover:text-gray-700">
+          <button @click="showEditModal = false" class="text-gray-500 hover:text-gray-700 cursor-pointer">
             <X class="h-4 w-4" />
           </button>
         </div>
@@ -578,7 +578,7 @@ const confirmDelete = () => {
 
           <!-- Footer -->
           <div class="flex justify-end gap-2 mt-6">
-            <Button type="button" variant="outline" @click="showEditModal = false">
+            <Button type="button" variant="outline" @click="showEditModal = false" class="cursor-pointer">
               Batal
             </Button>
             <Button type="submit" :disabled="editForm.processing">
@@ -599,7 +599,7 @@ const confirmDelete = () => {
         <!-- Header -->
         <div class="flex items-center justify-between mb-4">
           <h2 class="text-lg font-semibold text-red-600">Konfirmasi Penghapusan</h2>
-          <button @click="showDeleteModal = false" class="text-gray-500 hover:text-gray-700">
+          <button @click="showDeleteModal = false" class="text-gray-500 hover:text-gray-700 cursor-pointer">
             <X class="h-4 w-4" />
           </button>
         </div>
@@ -642,12 +642,12 @@ const confirmDelete = () => {
 
         <!-- Footer -->
         <div class="flex justify-end gap-2 mt-6">
-          <Button type="button" variant="outline" @click="showDeleteModal = false">
+          <Button type="button" variant="outline" @click="showDeleteModal = false" class="cursor-pointer">
             Batal
           </Button>
           <Button 
             type="button" 
-            class="bg-red-600 hover:bg-red-700 text-white" 
+            class="bg-red-600 hover:bg-red-700 text-white cursor-pointer" 
             @click="confirmDelete"
           >
             Ya, Hapus Layanan

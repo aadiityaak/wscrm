@@ -260,7 +260,7 @@ const confirmDelete = () => {
           <h1 class="text-3xl font-bold tracking-tight">Kelola Pesanan</h1>
           <p class="text-muted-foreground">Lacak dan kelola pesanan pelanggan</p>
         </div>
-        <Button @click="showCreateModal = true">
+        <Button @click="showCreateModal = true" class="cursor-pointer">
           <Plus class="h-4 w-4 mr-2" />
           Tambah Pesanan
         </Button>
@@ -344,7 +344,7 @@ const confirmDelete = () => {
             </div>
             <select 
               v-model="statusFilter" 
-              class="flex h-9 w-[180px] rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              class="flex h-9 w-[180px] rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring cursor-pointer"
             >
               <option value="">Semua Status</option>
               <option value="pending">Menunggu</option>
@@ -352,7 +352,7 @@ const confirmDelete = () => {
               <option value="completed">Selesai</option>
               <option value="cancelled">Dibatalkan</option>
             </select>
-            <Button @click="handleSearch">Cari</Button>
+            <Button @click="handleSearch" class="cursor-pointer">Cari</Button>
           </div>
 
           <!-- Order Cards -->
@@ -402,7 +402,7 @@ const confirmDelete = () => {
                       Lihat Detail
                     </Link>
                   </Button>
-                  <Button size="sm" variant="outline" @click="openEditModal(order)">
+                  <Button size="sm" variant="outline" @click="openEditModal(order)" class="cursor-pointer">
                     <Edit class="h-3 w-3" />
                   </Button>
                   <Button 
@@ -461,7 +461,7 @@ const confirmDelete = () => {
             <h2 class="text-lg font-semibold">Buat Pesanan Baru</h2>
             <p class="text-sm text-muted-foreground">Buat pesanan baru untuk pelanggan dengan berbagai item dan layanan.</p>
           </div>
-          <button @click="showCreateModal = false" class="text-gray-500 hover:text-gray-700">
+          <button @click="showCreateModal = false" class="text-gray-500 hover:text-gray-700 cursor-pointer">
             <X class="h-4 w-4" />
           </button>
         </div>
@@ -472,7 +472,7 @@ const confirmDelete = () => {
               <select 
                 id="create-customer"
                 v-model="createForm.customer_id"
-                class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring cursor-pointer"
                 required
               >
                 <option value="">Pilih Pelanggan</option>
@@ -487,7 +487,7 @@ const confirmDelete = () => {
               <select 
                 id="create-order-type"
                 v-model="createForm.order_type"
-                class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring cursor-pointer"
                 required
               >
                 <option value="domain">Domain</option>
@@ -507,7 +507,7 @@ const confirmDelete = () => {
             <select 
               id="create-billing-cycle"
               v-model="createForm.billing_cycle"
-              class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring cursor-pointer"
               required
             >
               <option value="monthly">Monthly</option>
@@ -522,7 +522,7 @@ const confirmDelete = () => {
           <div>
             <div class="flex items-center justify-between mb-2">
               <Label>Item Pesanan *</Label>
-              <Button type="button" size="sm" @click="addItem">
+              <Button type="button" size="sm" @click="addItem" class="cursor-pointer">
                 <Plus class="h-3 w-3 mr-1" />
                 Tambah Item
               </Button>
@@ -547,7 +547,7 @@ const confirmDelete = () => {
                   <Label>Tipe Item</Label>
                   <select 
                     v-model="item.item_type"
-                    class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                    class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring cursor-pointer"
                   >
                     <option value="hosting">Hosting</option>
                     <option value="domain">Domain</option>
@@ -561,7 +561,7 @@ const confirmDelete = () => {
                   <Label>Item</Label>
                   <select 
                     v-model="item.item_id"
-                    class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                    class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring cursor-pointer"
                   >
                     <option value="">Pilih Item</option>
                     <template v-if="item.item_type === 'hosting'">
@@ -621,7 +621,7 @@ const confirmDelete = () => {
 
           <!-- Footer -->
           <div class="flex justify-end gap-2 mt-6">
-            <Button type="button" variant="outline" @click="showCreateModal = false">
+            <Button type="button" variant="outline" @click="showCreateModal = false" class="cursor-pointer">
               Batal
             </Button>
             <Button type="submit" :disabled="createForm.processing">
@@ -645,7 +645,7 @@ const confirmDelete = () => {
             <h2 class="text-lg font-semibold">Edit Status Pesanan</h2>
             <p class="text-sm text-muted-foreground">Perbarui status pesanan ini untuk melacak progresnya.</p>
           </div>
-          <button @click="showEditModal = false" class="text-gray-500 hover:text-gray-700">
+          <button @click="showEditModal = false" class="text-gray-500 hover:text-gray-700 cursor-pointer">
             <X class="h-4 w-4" />
           </button>
         </div>
@@ -655,7 +655,7 @@ const confirmDelete = () => {
             <select 
               id="edit-status"
               v-model="editForm.status"
-              class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring cursor-pointer"
               required
             >
               <option value="pending">Menunggu</option>
@@ -668,7 +668,7 @@ const confirmDelete = () => {
 
           <!-- Footer -->
           <div class="flex justify-end gap-2 mt-6">
-            <Button type="button" variant="outline" @click="showEditModal = false">
+            <Button type="button" variant="outline" @click="showEditModal = false" class="cursor-pointer">
               Batal
             </Button>
             <Button type="submit" :disabled="editForm.processing">
@@ -689,7 +689,7 @@ const confirmDelete = () => {
         <!-- Header -->
         <div class="flex items-center justify-between mb-4">
           <h2 class="text-lg font-semibold text-red-600">Konfirmasi Penghapusan</h2>
-          <button @click="showDeleteModal = false" class="text-gray-500 hover:text-gray-700">
+          <button @click="showDeleteModal = false" class="text-gray-500 hover:text-gray-700 cursor-pointer">
             <X class="h-4 w-4" />
           </button>
         </div>
@@ -732,12 +732,12 @@ const confirmDelete = () => {
 
         <!-- Footer -->
         <div class="flex justify-end gap-2 mt-6">
-          <Button type="button" variant="outline" @click="showDeleteModal = false">
+          <Button type="button" variant="outline" @click="showDeleteModal = false" class="cursor-pointer">
             Batal
           </Button>
           <Button 
             type="button" 
-            class="bg-red-600 hover:bg-red-700 text-white" 
+            class="bg-red-600 hover:bg-red-700 text-white cursor-pointer" 
             @click="confirmDelete"
           >
             Ya, Hapus Pesanan

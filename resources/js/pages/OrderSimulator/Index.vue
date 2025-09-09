@@ -254,7 +254,7 @@ const getCategoryName = (category: string) => {
                   <select 
                     id="domain-extension"
                     v-model="form.domain_id"
-                    class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                    class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring cursor-pointer"
                   >
                     <option :value="null">Pilih Domain</option>
                     <option v-for="domain in domainPrices" :key="domain.id" :value="domain.id">
@@ -287,7 +287,7 @@ const getCategoryName = (category: string) => {
             <CardContent class="space-y-4">
               <select 
                 v-model="form.hosting_id"
-                class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring cursor-pointer"
               >
                 <option :value="null">Pilih Hosting</option>
                 <option v-for="hosting in hostingPlans" :key="hosting.id" :value="hosting.id">
@@ -342,7 +342,7 @@ const getCategoryName = (category: string) => {
                       <input 
                         type="checkbox" 
                         :checked="form.service_ids.includes(service.id)"
-                        class="mt-1"
+                        class="mt-1 cursor-pointer"
                         @click.stop
                       />
                     </div>
@@ -376,21 +376,21 @@ const getCategoryName = (category: string) => {
               <div class="flex items-center gap-4">
                 <Label class="text-sm font-medium">Tipe Diskon:</Label>
                 <div class="flex items-center gap-4">
-                  <label class="flex items-center gap-2">
+                  <label class="flex items-center gap-2 cursor-pointer">
                     <input
                       type="radio"
                       v-model="form.discount_type"
                       value="percent"
-                      class="text-primary"
+                      class="text-primary cursor-pointer"
                     />
                     <span class="text-sm">Persentase (%)</span>
                   </label>
-                  <label class="flex items-center gap-2">
+                  <label class="flex items-center gap-2 cursor-pointer">
                     <input
                       type="radio"
                       v-model="form.discount_type"
                       value="nominal"
-                      class="text-primary"
+                      class="text-primary cursor-pointer"
                     />
                     <span class="text-sm">Nominal (Rp)</span>
                   </label>
@@ -450,12 +450,12 @@ const getCategoryName = (category: string) => {
               @click="calculateOrder" 
               :disabled="!hasSelections || isCalculating"
               size="lg"
-              class="flex-1"
+              class="flex-1 cursor-pointer disabled:cursor-not-allowed"
             >
               <Calculator class="h-4 w-4 mr-2" />
               {{ isCalculating ? 'Menghitung...' : 'Hitung Total' }}
             </Button>
-            <Button variant="outline" size="lg" @click="resetForm">
+            <Button variant="outline" size="lg" @click="resetForm" class="cursor-pointer">
               Reset
             </Button>
           </div>
@@ -534,11 +534,11 @@ const getCategoryName = (category: string) => {
 
                 <!-- Action Buttons -->
                 <div class="space-y-2 mt-4">
-                  <Button class="w-full" size="lg">
+                  <Button class="w-full cursor-pointer" size="lg">
                     <ShoppingCart class="h-4 w-4 mr-2" />
                     Buat Pesanan
                   </Button>
-                  <Button variant="outline" class="w-full" @click="downloadPDF">
+                  <Button variant="outline" class="w-full cursor-pointer" @click="downloadPDF">
                     <Download class="h-4 w-4 mr-2" />
                     Download PDF
                   </Button>
