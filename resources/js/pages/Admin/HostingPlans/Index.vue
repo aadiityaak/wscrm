@@ -45,7 +45,9 @@ const props = defineProps<Props>();
 const search = ref(props.filters.search || '');
 const showCreateModal = ref(false);
 const showEditModal = ref(false);
+const showDeleteModal = ref(false);
 const selectedPlan = ref<HostingPlan | null>(null);
+const planToDelete = ref<HostingPlan | null>(null);
 
 const createForm = useForm({
   plan_name: '',
@@ -77,7 +79,7 @@ const editForm = useForm({
 
 const breadcrumbs: BreadcrumbItem[] = [
   { title: 'Dashboard', href: '/dashboard' },
-  { title: 'Hosting Plans', href: '/admin/hosting-plans' },
+  { title: 'Paket Hosting', href: '/admin/hosting-plans' },
 ];
 
 const formatPrice = (price: number) => {
@@ -142,34 +144,48 @@ const submitEdit = () => {
   });
 };
 
-const deleteHostingPlan = (id: number) => {
-  if (confirm('Are you sure you want to delete this hosting plan?')) {
-    router.delete(`/admin/hosting-plans/${id}`);
-  }
+const openDeleteModal = (plan: HostingPlan) => {
+  planToDelete.value = plan;
+  showDeleteModal.value = true;
+};
+
+const confirmDelete = () => {
+  if (!planToDelete.value) return;
+  
+  router.delete(`/admin/hosting-plans/${planToDelete.value.id}`, {
+    preserveScroll: true,
+    onSuccess: () => {
+      showDeleteModal.value = false;
+      planToDelete.value = null;
+    },
+    onError: (errors) => {
+      console.error('Delete hosting plan error:', errors);
+    },
+  });
 };
 </script>
 
 <template>
-  <Head title="Hosting Plans Management" />
+  <Head title="Kelola Paket Hosting" />
 
   <AppLayout :breadcrumbs="breadcrumbs">
     <div class="space-y-6 p-6">
       <div class="flex items-center justify-between">
         <div>
-          <h1 class="text-3xl font-bold tracking-tight">Hosting Plans</h1>
-          <p class="text-muted-foreground">Manage hosting plan configurations</p>
+          <h1 class="text-3xl font-bold tracking-tight">Paket Hosting</h1>
+          <p class="text-muted-foreground">Kelola konfigurasi paket hosting</p>
         </div>
         <Button @click="showCreateModal = true">
           <Plus class="h-4 w-4 mr-2" />
-          Add Hosting Plan
+          Tambah Paket Hosting
         </Button>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Hosting Plans</CardTitle>
+          <CardTitle>Paket Hosting</CardTitle>
           <CardDescription>
-            Manage hosting plans and their specifications
+            Kelola paket hosting dan spesifikasinya
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -178,24 +194,24 @@ const deleteHostingPlan = (id: number) => {
               <Search class="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
                 v-model="search"
-                placeholder="Search hosting plans..."
+                placeholder="Cari paket hosting..."
                 class="pl-8"
                 @keyup.enter="handleSearch"
               />
             </div>
-            <Button @click="handleSearch">Search</Button>
+            <Button @click="handleSearch">Cari</Button>
           </div>
 
           <div class="rounded-md border">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Plan Name</TableHead>
-                  <TableHead>Specifications</TableHead>
-                  <TableHead>Selling Price</TableHead>
-                  <TableHead>Costs</TableHead>
+                  <TableHead>Nama Paket</TableHead>
+                  <TableHead>Spesifikasi</TableHead>
+                  <TableHead>Harga Jual</TableHead>
+                  <TableHead>Biaya</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead class="w-[100px]">Actions</TableHead>
+                  <TableHead class="w-[100px]">Aksi</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -205,7 +221,7 @@ const deleteHostingPlan = (id: number) => {
                     <div class="flex flex-wrap gap-2 text-xs">
                       <div class="flex items-center space-x-1 bg-muted px-2 py-1 rounded">
                         <HardDrive class="h-3 w-3" />
-                        <span>{{ plan.storage_gb }}GB Storage</span>
+                        <span>{{ plan.storage_gb }}GB Penyimpanan</span>
                       </div>
                       <div class="flex items-center space-x-1 bg-muted px-2 py-1 rounded">
                         <Cpu class="h-3 w-3" />
@@ -222,12 +238,12 @@ const deleteHostingPlan = (id: number) => {
                     <div class="text-xs space-y-1">
                       <div>Modal: {{ formatPrice(plan.modal_cost) }}</div>
                       <div>Maintenance: {{ formatPrice(plan.maintenance_cost) }}</div>
-                      <div v-if="plan.discount_percent > 0" class="text-green-600">{{ plan.discount_percent }}% discount</div>
+                      <div v-if="plan.discount_percent > 0" class="text-green-600">{{ plan.discount_percent }}% diskon</div>
                     </div>
                   </TableCell>
                   <TableCell>
                     <Badge :variant="plan.is_active ? 'default' : 'secondary'">
-                      {{ plan.is_active ? 'Active' : 'Inactive' }}
+                      {{ plan.is_active ? 'Aktif' : 'Nonaktif' }}
                     </Badge>
                   </TableCell>
                   <TableCell>
@@ -238,7 +254,7 @@ const deleteHostingPlan = (id: number) => {
                       <Button 
                         size="sm" 
                         variant="outline"
-                        @click="deleteHostingPlan(plan.id)"
+                        @click="openDeleteModal(plan)"
                       >
                         <Trash2 class="h-3 w-3" />
                       </Button>
@@ -283,8 +299,8 @@ const deleteHostingPlan = (id: number) => {
         <!-- Header -->
         <div class="flex items-center justify-between mb-4">
           <div>
-            <h2 class="text-lg font-semibold">Add New Hosting Plan</h2>
-            <p class="text-sm text-muted-foreground">Create a new hosting plan with specifications and pricing</p>
+            <h2 class="text-lg font-semibold">Tambah Paket Hosting Baru</h2>
+            <p class="text-sm text-muted-foreground">Buat paket hosting baru dengan spesifikasi dan harga</p>
           </div>
           <button @click="showCreateModal = false" class="text-gray-500 hover:text-gray-700">
             <X class="h-4 w-4" />
@@ -293,11 +309,11 @@ const deleteHostingPlan = (id: number) => {
         
         <form @submit.prevent="submitCreate" class="space-y-4">
           <div>
-            <Label for="create-plan-name">Plan Name *</Label>
+            <Label for="create-plan-name">Nama Paket *</Label>
             <Input
               id="create-plan-name"
               v-model="createForm.plan_name"
-              placeholder="Basic Plan"
+              placeholder="Paket Basic"
               :class="{ 'border-red-500': createForm.errors.plan_name }"
               required
             />
@@ -306,7 +322,7 @@ const deleteHostingPlan = (id: number) => {
 
           <div class="grid grid-cols-2 gap-4">
             <div>
-              <Label for="create-storage">Storage (GB) *</Label>
+              <Label for="create-storage">Penyimpanan (GB) *</Label>
               <Input
                 id="create-storage"
                 v-model="createForm.storage_gb"
@@ -323,7 +339,7 @@ const deleteHostingPlan = (id: number) => {
               <Input
                 id="create-bandwidth"
                 v-model="createForm.bandwidth"
-                placeholder="Unlimited"
+                placeholder="Tidak Terbatas"
                 :class="{ 'border-red-500': createForm.errors.bandwidth }"
                 required
               />
@@ -333,7 +349,7 @@ const deleteHostingPlan = (id: number) => {
 
           <div class="grid grid-cols-2 gap-4">
             <div>
-              <Label for="create-cpu">CPU Cores *</Label>
+              <Label for="create-cpu">CPU Core *</Label>
               <Input
                 id="create-cpu"
                 v-model="createForm.cpu_cores"
@@ -362,7 +378,7 @@ const deleteHostingPlan = (id: number) => {
 
           <div class="grid grid-cols-2 gap-4">
             <div>
-              <Label for="create-modal-cost">Modal Cost (IDR) *</Label>
+              <Label for="create-modal-cost">Biaya Modal (IDR) *</Label>
               <Input
                 id="create-modal-cost"
                 v-model="createForm.modal_cost"
@@ -375,7 +391,7 @@ const deleteHostingPlan = (id: number) => {
               <p v-if="createForm.errors.modal_cost" class="text-xs text-red-500 mt-1">{{ createForm.errors.modal_cost }}</p>
             </div>
             <div>
-              <Label for="create-maintenance-cost">Maintenance Cost (IDR) *</Label>
+              <Label for="create-maintenance-cost">Biaya Perawatan (IDR) *</Label>
               <Input
                 id="create-maintenance-cost"
                 v-model="createForm.maintenance_cost"
@@ -391,7 +407,7 @@ const deleteHostingPlan = (id: number) => {
 
           <div class="grid grid-cols-2 gap-4">
             <div>
-              <Label for="create-discount">Discount Percent *</Label>
+              <Label for="create-discount">Persentase Diskon *</Label>
               <Input
                 id="create-discount"
                 v-model="createForm.discount_percent"
@@ -405,7 +421,7 @@ const deleteHostingPlan = (id: number) => {
               <p v-if="createForm.errors.discount_percent" class="text-xs text-red-500 mt-1">{{ createForm.errors.discount_percent }}</p>
             </div>
             <div>
-              <Label for="create-selling-price">Selling Price (IDR) *</Label>
+              <Label for="create-selling-price">Harga Jual (IDR) *</Label>
               <Input
                 id="create-selling-price"
                 v-model="createForm.selling_price"
@@ -421,16 +437,16 @@ const deleteHostingPlan = (id: number) => {
 
           <div>
             <div class="flex items-center justify-between mb-2">
-              <Label>Features</Label>
+              <Label>Fitur</Label>
               <Button type="button" size="sm" @click="addFeature(createForm)">
                 <Plus class="h-3 w-3 mr-1" />
-                Add Feature
+                Tambah Fitur
               </Button>
             </div>
             <div v-for="(feature, index) in createForm.features" :key="index" class="flex items-center gap-2 mb-2">
               <Input
                 v-model="createForm.features[index]"
-                placeholder="Feature description"
+                placeholder="Deskripsi fitur"
                 class="flex-1"
               />
               <Button 
@@ -452,15 +468,15 @@ const deleteHostingPlan = (id: number) => {
               v-model="createForm.is_active"
               class="rounded border border-input"
             />
-            <Label for="create-is-active">Active</Label>
+            <Label for="create-is-active">Aktif</Label>
           </div>
 
           <div class="flex justify-end space-x-2 pt-4">
             <Button type="button" variant="outline" @click="showCreateModal = false">
-              Cancel
+              Batal
             </Button>
             <Button type="submit" :disabled="createForm.processing">
-              {{ createForm.processing ? 'Creating...' : 'Create Plan' }}
+              {{ createForm.processing ? 'Membuat...' : 'Buat Paket' }}
             </Button>
           </div>
         </form>
@@ -477,8 +493,8 @@ const deleteHostingPlan = (id: number) => {
         <!-- Header -->
         <div class="flex items-center justify-between mb-4">
           <div>
-            <h2 class="text-lg font-semibold">Edit Hosting Plan</h2>
-            <p class="text-sm text-muted-foreground">Update hosting plan specifications and settings</p>
+            <h2 class="text-lg font-semibold">Edit Paket Hosting</h2>
+            <p class="text-sm text-muted-foreground">Perbarui spesifikasi dan pengaturan paket hosting</p>
           </div>
           <button @click="showEditModal = false" class="text-gray-500 hover:text-gray-700">
             <X class="h-4 w-4" />
@@ -486,11 +502,11 @@ const deleteHostingPlan = (id: number) => {
         </div>
         <form @submit.prevent="submitEdit" class="space-y-4">
           <div>
-            <Label for="edit-plan-name">Plan Name *</Label>
+            <Label for="edit-plan-name">Nama Paket *</Label>
             <Input
               id="edit-plan-name"
               v-model="editForm.plan_name"
-              placeholder="Basic Plan"
+              placeholder="Paket Basic"
               :class="{ 'border-red-500': editForm.errors.plan_name }"
               required
             />
@@ -499,7 +515,7 @@ const deleteHostingPlan = (id: number) => {
 
           <div class="grid grid-cols-2 gap-4">
             <div>
-              <Label for="edit-storage">Storage (GB) *</Label>
+              <Label for="edit-storage">Penyimpanan (GB) *</Label>
               <Input
                 id="edit-storage"
                 v-model="editForm.storage_gb"
@@ -516,7 +532,7 @@ const deleteHostingPlan = (id: number) => {
               <Input
                 id="edit-bandwidth"
                 v-model="editForm.bandwidth"
-                placeholder="Unlimited"
+                placeholder="Tidak Terbatas"
                 :class="{ 'border-red-500': editForm.errors.bandwidth }"
                 required
               />
@@ -526,7 +542,7 @@ const deleteHostingPlan = (id: number) => {
 
           <div class="grid grid-cols-2 gap-4">
             <div>
-              <Label for="edit-cpu">CPU Cores *</Label>
+              <Label for="edit-cpu">CPU Core *</Label>
               <Input
                 id="edit-cpu"
                 v-model="editForm.cpu_cores"
@@ -555,7 +571,7 @@ const deleteHostingPlan = (id: number) => {
 
           <div class="grid grid-cols-2 gap-4">
             <div>
-              <Label for="edit-modal-cost">Modal Cost (IDR) *</Label>
+              <Label for="edit-modal-cost">Biaya Modal (IDR) *</Label>
               <Input
                 id="edit-modal-cost"
                 v-model="editForm.modal_cost"
@@ -568,7 +584,7 @@ const deleteHostingPlan = (id: number) => {
               <p v-if="editForm.errors.modal_cost" class="text-xs text-red-500 mt-1">{{ editForm.errors.modal_cost }}</p>
             </div>
             <div>
-              <Label for="edit-maintenance-cost">Maintenance Cost (IDR) *</Label>
+              <Label for="edit-maintenance-cost">Biaya Perawatan (IDR) *</Label>
               <Input
                 id="edit-maintenance-cost"
                 v-model="editForm.maintenance_cost"
@@ -584,7 +600,7 @@ const deleteHostingPlan = (id: number) => {
 
           <div class="grid grid-cols-2 gap-4">
             <div>
-              <Label for="edit-discount">Discount Percent *</Label>
+              <Label for="edit-discount">Persentase Diskon *</Label>
               <Input
                 id="edit-discount"
                 v-model="editForm.discount_percent"
@@ -598,7 +614,7 @@ const deleteHostingPlan = (id: number) => {
               <p v-if="editForm.errors.discount_percent" class="text-xs text-red-500 mt-1">{{ editForm.errors.discount_percent }}</p>
             </div>
             <div>
-              <Label for="edit-selling-price">Selling Price (IDR) *</Label>
+              <Label for="edit-selling-price">Harga Jual (IDR) *</Label>
               <Input
                 id="edit-selling-price"
                 v-model="editForm.selling_price"
@@ -614,16 +630,16 @@ const deleteHostingPlan = (id: number) => {
 
           <div>
             <div class="flex items-center justify-between mb-2">
-              <Label>Features</Label>
+              <Label>Fitur</Label>
               <Button type="button" size="sm" @click="addFeature(editForm)">
                 <Plus class="h-3 w-3 mr-1" />
-                Add Feature
+                Tambah Fitur
               </Button>
             </div>
             <div v-for="(feature, index) in editForm.features" :key="index" class="flex items-center gap-2 mb-2">
               <Input
                 v-model="editForm.features[index]"
-                placeholder="Feature description"
+                placeholder="Deskripsi fitur"
                 class="flex-1"
               />
               <Button 
@@ -645,18 +661,86 @@ const deleteHostingPlan = (id: number) => {
               v-model="editForm.is_active"
               class="rounded border border-input"
             />
-            <Label for="edit-is-active">Active</Label>
+            <Label for="edit-is-active">Aktif</Label>
           </div>
 
           <div class="flex justify-end space-x-2 pt-4">
             <Button type="button" variant="outline" @click="showEditModal = false">
-              Cancel
+              Batal
             </Button>
             <Button type="submit" :disabled="editForm.processing">
-              {{ editForm.processing ? 'Updating...' : 'Update Plan' }}
+              {{ editForm.processing ? 'Memperbarui...' : 'Perbarui Paket' }}
             </Button>
           </div>
         </form>
+      </div>
+    </div>
+
+    <!-- Delete Hosting Plan Modal -->
+    <div v-if="showDeleteModal" class="fixed inset-0 z-50 flex items-center justify-center">
+      <!-- Overlay -->
+      <div class="fixed inset-0 bg-black/50" @click="showDeleteModal = false"></div>
+      
+      <!-- Modal Content -->
+      <div class="relative bg-white dark:bg-gray-900 rounded-lg shadow-xl w-full max-w-md mx-4 p-6">
+        <!-- Header -->
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-lg font-semibold text-red-600">Konfirmasi Penghapusan</h2>
+          <button @click="showDeleteModal = false" class="text-gray-500 hover:text-gray-700">
+            <X class="h-4 w-4" />
+          </button>
+        </div>
+        
+        <div class="space-y-4">
+          <div class="p-4 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
+            <div class="flex items-start space-x-3">
+              <div class="flex-shrink-0">
+                <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                  <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                </svg>
+              </div>
+              <div class="min-w-0 flex-1">
+                <h3 class="text-sm font-medium text-red-800 dark:text-red-200">
+                  Peringatan: Tindakan ini tidak dapat dibatalkan
+                </h3>
+                <div class="mt-2 text-sm text-red-700 dark:text-red-300">
+                  <p>Anda akan menghapus secara permanen paket hosting <strong>{{ planToDelete?.plan_name }}</strong>.</p>
+                  <div class="mt-3 space-y-1">
+                    <p><strong>Ini juga akan menghapus:</strong></p>
+                    <ul class="list-disc list-inside space-y-1 ml-2">
+                      <li>Semua konfigurasi paket</li>
+                      <li>Semua layanan yang menggunakan paket ini</li>
+                      <li>Semua data terkait secara permanen</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-gray-50 dark:bg-gray-800 p-3 rounded-lg">
+            <p class="text-sm text-gray-600 dark:text-gray-400">
+              <strong>Paket:</strong> {{ planToDelete?.plan_name }}<br>
+              <strong>Spesifikasi:</strong> {{ planToDelete?.storage_gb }}GB, {{ planToDelete?.cpu_cores }} CPU, {{ planToDelete?.ram_gb }}GB RAM<br>
+              <strong>Harga Jual:</strong> {{ planToDelete ? formatPrice(planToDelete.selling_price) : '' }}<br>
+              <strong>Status:</strong> {{ planToDelete?.is_active ? 'Aktif' : 'Nonaktif' }}
+            </p>
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="flex justify-end gap-2 mt-6">
+          <Button type="button" variant="outline" @click="showDeleteModal = false">
+            Batal
+          </Button>
+          <Button 
+            type="button" 
+            class="bg-red-600 hover:bg-red-700 text-white" 
+            @click="confirmDelete"
+          >
+            Ya, Hapus Paket Hosting
+          </Button>
+        </div>
       </div>
     </div>
   </AppLayout>

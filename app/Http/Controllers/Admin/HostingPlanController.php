@@ -51,7 +51,7 @@ class HostingPlanController extends Controller
         HostingPlan::create($validated);
 
         return redirect()->route('admin.hosting-plans.index')
-            ->with('success', 'Hosting plan created successfully.');
+            ->with('success', 'Paket hosting berhasil dibuat.');
     }
 
     public function show(HostingPlan $hostingPlan): Response
@@ -87,7 +87,7 @@ class HostingPlanController extends Controller
         $hostingPlan->update($validated);
 
         return redirect()->route('admin.hosting-plans.index')
-            ->with('success', 'Hosting plan updated successfully.');
+            ->with('success', 'Paket hosting berhasil diperbarui.');
     }
 
     public function destroy(HostingPlan $hostingPlan): RedirectResponse
@@ -95,6 +95,6 @@ class HostingPlanController extends Controller
         $hostingPlan->delete();
 
         return redirect()->route('admin.hosting-plans.index')
-            ->with('success', 'Hosting plan deleted successfully.');
+            ->with('success', 'Paket hosting berhasil dihapus.');
     }
 }

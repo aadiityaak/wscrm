@@ -40,7 +40,9 @@ const props = defineProps<Props>();
 const search = ref(props.filters.search || '');
 const showCreateModal = ref(false);
 const showEditModal = ref(false);
+const showDeleteModal = ref(false);
 const selectedDomain = ref<DomainPrice | null>(null);
+const domainToDelete = ref<DomainPrice | null>(null);
 
 const createForm = useForm({
   extension: '',
@@ -62,7 +64,7 @@ const editForm = useForm({
 
 const breadcrumbs: BreadcrumbItem[] = [
   { title: 'Dashboard', href: '/dashboard' },
-  { title: 'Domain Prices', href: '/admin/domain-prices' },
+  { title: 'Harga Domain', href: '/admin/domain-prices' },
 ];
 
 const formatPrice = (price: number) => {
@@ -113,34 +115,48 @@ const submitEdit = () => {
   });
 };
 
-const deleteDomainPrice = (id: number) => {
-  if (confirm('Are you sure you want to delete this domain price?')) {
-    router.delete(`/admin/domain-prices/${id}`);
-  }
+const openDeleteModal = (domain: DomainPrice) => {
+  domainToDelete.value = domain;
+  showDeleteModal.value = true;
+};
+
+const confirmDelete = () => {
+  if (!domainToDelete.value) return;
+  
+  router.delete(`/admin/domain-prices/${domainToDelete.value.id}`, {
+    preserveScroll: true,
+    onSuccess: () => {
+      showDeleteModal.value = false;
+      domainToDelete.value = null;
+    },
+    onError: (errors) => {
+      console.error('Delete domain price error:', errors);
+    },
+  });
 };
 </script>
 
 <template>
-  <Head title="Domain Prices Management" />
+  <Head title="Kelola Harga Domain" />
 
   <AppLayout :breadcrumbs="breadcrumbs">
     <div class="space-y-6 p-6">
       <div class="flex items-center justify-between">
         <div>
-          <h1 class="text-3xl font-bold tracking-tight">Domain Prices</h1>
-          <p class="text-muted-foreground">Manage domain extension pricing</p>
+          <h1 class="text-3xl font-bold tracking-tight">Harga Domain</h1>
+          <p class="text-muted-foreground">Kelola harga ekstensi domain</p>
         </div>
         <Button @click="showCreateModal = true">
           <Plus class="h-4 w-4 mr-2" />
-          Add Domain Price
+          Tambah Harga Domain
         </Button>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Domain Prices</CardTitle>
+          <CardTitle>Harga Domain</CardTitle>
           <CardDescription>
-            Manage pricing for different domain extensions
+            Kelola harga untuk berbagai ekstensi domain
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -149,25 +165,25 @@ const deleteDomainPrice = (id: number) => {
               <Search class="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
                 v-model="search"
-                placeholder="Search domain extensions..."
+                placeholder="Cari ekstensi domain..."
                 class="pl-8"
                 @keyup.enter="handleSearch"
               />
             </div>
-            <Button @click="handleSearch">Search</Button>
+            <Button @click="handleSearch">Cari</Button>
           </div>
 
           <div class="rounded-md border">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Extension</TableHead>
-                  <TableHead>Base Cost</TableHead>
-                  <TableHead>Renewal Cost</TableHead>
-                  <TableHead>Selling Price</TableHead>
-                  <TableHead>Renewal w/ Tax</TableHead>
+                  <TableHead>Ekstensi</TableHead>
+                  <TableHead>Biaya Dasar</TableHead>
+                  <TableHead>Biaya Perpanjangan</TableHead>
+                  <TableHead>Harga Jual</TableHead>
+                  <TableHead>Perpanjangan + Pajak</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead class="w-[100px]">Actions</TableHead>
+                  <TableHead class="w-[100px]">Aksi</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -179,7 +195,7 @@ const deleteDomainPrice = (id: number) => {
                   <TableCell>{{ formatPrice(domain.renewal_price_with_tax) }}</TableCell>
                   <TableCell>
                     <Badge :variant="domain.is_active ? 'default' : 'secondary'">
-                      {{ domain.is_active ? 'Active' : 'Inactive' }}
+                      {{ domain.is_active ? 'Aktif' : 'Nonaktif' }}
                     </Badge>
                   </TableCell>
                   <TableCell>
@@ -190,7 +206,7 @@ const deleteDomainPrice = (id: number) => {
                       <Button 
                         size="sm" 
                         variant="outline"
-                        @click="deleteDomainPrice(domain.id)"
+                        @click="openDeleteModal(domain)"
                       >
                         <Trash2 class="h-3 w-3" />
                       </Button>
@@ -235,8 +251,8 @@ const deleteDomainPrice = (id: number) => {
         <!-- Header -->
         <div class="flex items-center justify-between mb-4">
           <div>
-            <h2 class="text-lg font-semibold">Add New Domain Price</h2>
-            <p class="text-sm text-muted-foreground">Create a new domain price configuration</p>
+            <h2 class="text-lg font-semibold">Tambah Harga Domain Baru</h2>
+            <p class="text-sm text-muted-foreground">Buat konfigurasi harga domain baru</p>
           </div>
           <button @click="showCreateModal = false" class="text-gray-500 hover:text-gray-700">
             <X class="h-4 w-4" />
@@ -244,7 +260,7 @@ const deleteDomainPrice = (id: number) => {
         </div>
         <form @submit.prevent="submitCreate" class="space-y-4">
           <div>
-            <Label for="create-extension">Domain Extension *</Label>
+            <Label for="create-extension">Ekstensi Domain *</Label>
             <Input
               id="create-extension"
               v-model="createForm.extension"
@@ -252,13 +268,13 @@ const deleteDomainPrice = (id: number) => {
               :class="{ 'border-red-500': createForm.errors.extension }"
               required
             />
-            <p class="text-sm text-muted-foreground mt-1">Enter without the dot (e.g., "com" not ".com")</p>
+            <p class="text-sm text-muted-foreground mt-1">Masukkan tanpa titik (contoh: "com" bukan ".com")</p>
             <p v-if="createForm.errors.extension" class="text-xs text-red-500 mt-1">{{ createForm.errors.extension }}</p>
           </div>
 
           <div class="grid grid-cols-2 gap-4">
             <div>
-              <Label for="create-base-cost">Base Cost (IDR) *</Label>
+              <Label for="create-base-cost">Biaya Dasar (IDR) *</Label>
               <Input
                 id="create-base-cost"
                 v-model="createForm.base_cost"
@@ -271,7 +287,7 @@ const deleteDomainPrice = (id: number) => {
               <p v-if="createForm.errors.base_cost" class="text-xs text-red-500 mt-1">{{ createForm.errors.base_cost }}</p>
             </div>
             <div>
-              <Label for="create-renewal-cost">Renewal Cost (IDR) *</Label>
+              <Label for="create-renewal-cost">Biaya Perpanjangan (IDR) *</Label>
               <Input
                 id="create-renewal-cost"
                 v-model="createForm.renewal_cost"
@@ -287,7 +303,7 @@ const deleteDomainPrice = (id: number) => {
 
           <div class="grid grid-cols-2 gap-4">
             <div>
-              <Label for="create-selling-price">Selling Price (IDR) *</Label>
+              <Label for="create-selling-price">Harga Jual (IDR) *</Label>
               <Input
                 id="create-selling-price"
                 v-model="createForm.selling_price"
@@ -300,7 +316,7 @@ const deleteDomainPrice = (id: number) => {
               <p v-if="createForm.errors.selling_price" class="text-xs text-red-500 mt-1">{{ createForm.errors.selling_price }}</p>
             </div>
             <div>
-              <Label for="create-renewal-price-tax">Renewal Price w/ Tax (IDR) *</Label>
+              <Label for="create-renewal-price-tax">Harga Perpanjangan + Pajak (IDR) *</Label>
               <Input
                 id="create-renewal-price-tax"
                 v-model="createForm.renewal_price_with_tax"
@@ -321,15 +337,15 @@ const deleteDomainPrice = (id: number) => {
               v-model="createForm.is_active"
               class="rounded border border-input"
             />
-            <Label for="create-is-active">Active</Label>
+            <Label for="create-is-active">Aktif</Label>
           </div>
 
           <div class="flex justify-end space-x-2 pt-4">
             <Button type="button" variant="outline" @click="showCreateModal = false">
-              Cancel
+              Batal
             </Button>
             <Button type="submit" :disabled="createForm.processing">
-              {{ createForm.processing ? 'Creating...' : 'Create Domain Price' }}
+              {{ createForm.processing ? 'Membuat...' : 'Buat Harga Domain' }}
             </Button>
           </div>
         </form>
@@ -346,8 +362,8 @@ const deleteDomainPrice = (id: number) => {
         <!-- Header -->
         <div class="flex items-center justify-between mb-4">
           <div>
-            <h2 class="text-lg font-semibold">Edit Domain Price</h2>
-            <p class="text-sm text-muted-foreground">Update domain price settings</p>
+            <h2 class="text-lg font-semibold">Edit Harga Domain</h2>
+            <p class="text-sm text-muted-foreground">Perbarui pengaturan harga domain</p>
           </div>
           <button @click="showEditModal = false" class="text-gray-500 hover:text-gray-700">
             <X class="h-4 w-4" />
@@ -355,7 +371,7 @@ const deleteDomainPrice = (id: number) => {
         </div>
         <form @submit.prevent="submitEdit" class="space-y-4">
           <div>
-            <Label for="edit-extension">Domain Extension *</Label>
+            <Label for="edit-extension">Ekstensi Domain *</Label>
             <Input
               id="edit-extension"
               v-model="editForm.extension"
@@ -363,13 +379,13 @@ const deleteDomainPrice = (id: number) => {
               :class="{ 'border-red-500': editForm.errors.extension }"
               required
             />
-            <p class="text-sm text-muted-foreground mt-1">Enter without the dot (e.g., "com" not ".com")</p>
+            <p class="text-sm text-muted-foreground mt-1">Masukkan tanpa titik (contoh: "com" bukan ".com")</p>
             <p v-if="editForm.errors.extension" class="text-xs text-red-500 mt-1">{{ editForm.errors.extension }}</p>
           </div>
 
           <div class="grid grid-cols-2 gap-4">
             <div>
-              <Label for="edit-base-cost">Base Cost (IDR) *</Label>
+              <Label for="edit-base-cost">Biaya Dasar (IDR) *</Label>
               <Input
                 id="edit-base-cost"
                 v-model="editForm.base_cost"
@@ -382,7 +398,7 @@ const deleteDomainPrice = (id: number) => {
               <p v-if="editForm.errors.base_cost" class="text-xs text-red-500 mt-1">{{ editForm.errors.base_cost }}</p>
             </div>
             <div>
-              <Label for="edit-renewal-cost">Renewal Cost (IDR) *</Label>
+              <Label for="edit-renewal-cost">Biaya Perpanjangan (IDR) *</Label>
               <Input
                 id="edit-renewal-cost"
                 v-model="editForm.renewal_cost"
@@ -398,7 +414,7 @@ const deleteDomainPrice = (id: number) => {
 
           <div class="grid grid-cols-2 gap-4">
             <div>
-              <Label for="edit-selling-price">Selling Price (IDR) *</Label>
+              <Label for="edit-selling-price">Harga Jual (IDR) *</Label>
               <Input
                 id="edit-selling-price"
                 v-model="editForm.selling_price"
@@ -411,7 +427,7 @@ const deleteDomainPrice = (id: number) => {
               <p v-if="editForm.errors.selling_price" class="text-xs text-red-500 mt-1">{{ editForm.errors.selling_price }}</p>
             </div>
             <div>
-              <Label for="edit-renewal-price-tax">Renewal Price w/ Tax (IDR) *</Label>
+              <Label for="edit-renewal-price-tax">Harga Perpanjangan + Pajak (IDR) *</Label>
               <Input
                 id="edit-renewal-price-tax"
                 v-model="editForm.renewal_price_with_tax"
@@ -432,18 +448,86 @@ const deleteDomainPrice = (id: number) => {
               v-model="editForm.is_active"
               class="rounded border border-input"
             />
-            <Label for="edit-is-active">Active</Label>
+            <Label for="edit-is-active">Aktif</Label>
           </div>
 
           <div class="flex justify-end space-x-2 pt-4">
             <Button type="button" variant="outline" @click="showEditModal = false">
-              Cancel
+              Batal
             </Button>
             <Button type="submit" :disabled="editForm.processing">
-              {{ editForm.processing ? 'Updating...' : 'Update Domain Price' }}
+              {{ editForm.processing ? 'Memperbarui...' : 'Perbarui Harga Domain' }}
             </Button>
           </div>
         </form>
+      </div>
+    </div>
+
+    <!-- Delete Domain Price Modal -->
+    <div v-if="showDeleteModal" class="fixed inset-0 z-50 flex items-center justify-center">
+      <!-- Overlay -->
+      <div class="fixed inset-0 bg-black/50" @click="showDeleteModal = false"></div>
+      
+      <!-- Modal Content -->
+      <div class="relative bg-white dark:bg-gray-900 rounded-lg shadow-xl w-full max-w-md mx-4 p-6">
+        <!-- Header -->
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-lg font-semibold text-red-600">Konfirmasi Penghapusan</h2>
+          <button @click="showDeleteModal = false" class="text-gray-500 hover:text-gray-700">
+            <X class="h-4 w-4" />
+          </button>
+        </div>
+        
+        <div class="space-y-4">
+          <div class="p-4 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
+            <div class="flex items-start space-x-3">
+              <div class="flex-shrink-0">
+                <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                  <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                </svg>
+              </div>
+              <div class="min-w-0 flex-1">
+                <h3 class="text-sm font-medium text-red-800 dark:text-red-200">
+                  Peringatan: Tindakan ini tidak dapat dibatalkan
+                </h3>
+                <div class="mt-2 text-sm text-red-700 dark:text-red-300">
+                  <p>Anda akan menghapus secara permanen harga domain <strong>.{{ domainToDelete?.extension }}</strong>.</p>
+                  <div class="mt-3 space-y-1">
+                    <p><strong>Ini juga akan menghapus:</strong></p>
+                    <ul class="list-disc list-inside space-y-1 ml-2">
+                      <li>Semua konfigurasi harga</li>
+                      <li>Semua riwayat transaksi terkait</li>
+                      <li>Semua data terkait secara permanen</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-gray-50 dark:bg-gray-800 p-3 rounded-lg">
+            <p class="text-sm text-gray-600 dark:text-gray-400">
+              <strong>Ekstensi:</strong> .{{ domainToDelete?.extension }}<br>
+              <strong>Biaya Dasar:</strong> {{ domainToDelete ? formatPrice(domainToDelete.base_cost) : '' }}<br>
+              <strong>Harga Jual:</strong> {{ domainToDelete ? formatPrice(domainToDelete.selling_price) : '' }}<br>
+              <strong>Status:</strong> {{ domainToDelete?.is_active ? 'Aktif' : 'Nonaktif' }}
+            </p>
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="flex justify-end gap-2 mt-6">
+          <Button type="button" variant="outline" @click="showDeleteModal = false">
+            Batal
+          </Button>
+          <Button 
+            type="button" 
+            class="bg-red-600 hover:bg-red-700 text-white" 
+            @click="confirmDelete"
+          >
+            Ya, Hapus Harga Domain
+          </Button>
+        </div>
       </div>
     </div>
   </AppLayout>

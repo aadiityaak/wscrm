@@ -50,7 +50,9 @@ const props = defineProps<Props>();
 
 const showCreateModal = ref(false);
 const showEditModal = ref(false);
+const showDeleteModal = ref(false);
 const selectedBank = ref<Bank | null>(null);
+const bankToDelete = ref<Bank | null>(null);
 
 interface BankForm {
   bank_name: string;
@@ -93,7 +95,7 @@ const editForm = useForm<BankForm>({
 
 const breadcrumbs: BreadcrumbItem[] = [
   { title: 'Dashboard', href: '/dashboard' },
-  { title: 'Bank Management', href: '/admin/banks' },
+  { title: 'Manajemen Bank', href: '/admin/banks' },
 ];
 
 const getStatusClass = (isActive: boolean) => {
@@ -117,10 +119,19 @@ const toggleBankStatus = (bank: Bank) => {
   });
 };
 
-const deleteBank = (bank: Bank) => {
-  if (confirm(`Apakah Anda yakin ingin menghapus bank ${bank.bank_name}?`)) {
-    router.delete(`/admin/banks/${bank.id}`, {
+const openDeleteModal = (bank: Bank) => {
+  bankToDelete.value = bank;
+  showDeleteModal.value = true;
+};
+
+const confirmDelete = () => {
+  if (bankToDelete.value) {
+    router.delete(`/admin/banks/${bankToDelete.value.id}`, {
       preserveScroll: true,
+      onFinish: () => {
+        showDeleteModal.value = false;
+        bankToDelete.value = null;
+      },
     });
   }
 };
@@ -164,14 +175,14 @@ const submitEdit = () => {
 </script>
 
 <template>
-  <Head title="Bank Management" />
+  <Head title="Manajemen Bank" />
   
   <AppLayout :breadcrumbs="breadcrumbs">
     <div class="space-y-6">
       <!-- Header -->
       <div class="flex items-center justify-between">
         <div>
-          <h1 class="text-2xl font-bold tracking-tight">Bank Management</h1>
+          <h1 class="text-2xl font-bold tracking-tight">Manajemen Bank</h1>
           <p class="text-muted-foreground">
             Kelola bank pembayaran untuk sistem invoice
           </p>
@@ -257,7 +268,7 @@ const submitEdit = () => {
                       <Button 
                         variant="ghost" 
                         size="sm" 
-                        @click="deleteBank(bank)"
+                        @click="openDeleteModal(bank)"
                         class="text-red-600 hover:text-red-700"
                       >
                         <Trash2 class="h-4 w-4" />
@@ -624,6 +635,56 @@ const submitEdit = () => {
             </Button>
           </div>
         </form>
+      </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div v-if="showDeleteModal" class="fixed inset-0 z-50 flex items-center justify-center">
+      <!-- Overlay -->
+      <div class="fixed inset-0 bg-black/50" @click="showDeleteModal = false"></div>
+      
+      <!-- Modal Content -->
+      <div class="relative bg-white dark:bg-gray-900 rounded-lg shadow-xl w-full max-w-md mx-4 p-6">
+        <!-- Header -->
+        <div class="flex items-center justify-between mb-4">
+          <div class="flex items-center gap-3">
+            <div class="flex-shrink-0 w-10 h-10 mx-auto bg-red-100 dark:bg-red-900/20 rounded-full flex items-center justify-center">
+              <Trash2 class="w-5 h-5 text-red-600 dark:text-red-400" />
+            </div>
+            <div>
+              <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Hapus Bank</h3>
+              <p class="text-sm text-gray-500 dark:text-gray-400">Tindakan ini tidak dapat dibatalkan</p>
+            </div>
+          </div>
+          <button @click="showDeleteModal = false" class="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">
+            <X class="h-4 w-4" />
+          </button>
+        </div>
+        
+        <!-- Content -->
+        <div class="mb-6">
+          <p class="text-sm text-gray-600 dark:text-gray-400">
+            Apakah Anda yakin ingin menghapus bank 
+            <span class="font-semibold text-gray-900 dark:text-gray-100">{{ bankToDelete?.bank_name }}</span>?
+          </p>
+          <p class="text-sm text-gray-500 dark:text-gray-400 mt-2">
+            Data bank ini akan dihapus secara permanen dan tidak dapat dikembalikan.
+          </p>
+        </div>
+        
+        <!-- Actions -->
+        <div class="flex justify-end space-x-2">
+          <Button type="button" variant="outline" @click="showDeleteModal = false">
+            Batal
+          </Button>
+          <Button 
+            type="button" 
+            class="bg-red-600 hover:bg-red-700 text-white"
+            @click="confirmDelete"
+          >
+            Hapus Bank
+          </Button>
+        </div>
       </div>
     </div>
   </AppLayout>

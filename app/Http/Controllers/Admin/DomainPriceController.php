@@ -46,7 +46,7 @@ class DomainPriceController extends Controller
         DomainPrice::create($validated);
 
         return redirect()->route('admin.domain-prices.index')
-            ->with('success', 'Domain price created successfully.');
+            ->with('success', 'Harga domain berhasil dibuat.');
     }
 
     public function show(DomainPrice $domainPrice): Response
@@ -77,7 +77,7 @@ class DomainPriceController extends Controller
         $domainPrice->update($validated);
 
         return redirect()->route('admin.domain-prices.index')
-            ->with('success', 'Domain price updated successfully.');
+            ->with('success', 'Harga domain berhasil diperbarui.');
     }
 
     public function destroy(DomainPrice $domainPrice): RedirectResponse
@@ -85,6 +85,6 @@ class DomainPriceController extends Controller
         $domainPrice->delete();
 
         return redirect()->route('admin.domain-prices.index')
-            ->with('success', 'Domain price deleted successfully.');
+            ->with('success', 'Harga domain berhasil dihapus.');
     }
 }
