@@ -80,6 +80,21 @@ This is a **Laravel 12 + Vue 3 + Inertia.js** application with the following set
 - Database refresh between feature tests
 - Authentication flow tests included
 
+## Internationalization
+
+### Language Requirements
+- **Primary Language**: Indonesian (Bahasa Indonesia)
+- All user-facing text, messages, labels, and content MUST be in Indonesian
+- This includes: UI components, form labels, buttons, error messages, success messages, validation messages, page titles, navigation, modals, and any user-visible text
+- Backend validation messages should also be in Indonesian
+- Comments in code can remain in English for developer clarity
+- Only technical logs and developer-facing content may remain in English
+
+### Implementation Guidelines
+- Use clear, formal Indonesian language appropriate for business applications
+- Maintain consistency in terminology across the application
+- For technical terms without direct Indonesian equivalents, use the commonly accepted Indonesian business terminology
+
 ## Key Development Patterns
 
 ### Creating New Pages

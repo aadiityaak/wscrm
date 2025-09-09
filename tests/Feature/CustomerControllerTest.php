@@ -102,10 +102,10 @@ it('can delete a customer without orders or services', function () {
     $this->assertDatabaseMissing('customers', ['id' => $customer->id]);
 });
 
-it('cannot delete a customer with orders', function () {
+it('can delete a customer with orders and related data', function () {
     $user = User::factory()->create();
     $customer = Customer::factory()->create();
-    $customer->orders()->create([
+    $order = $customer->orders()->create([
         'user_id' => $customer->id,
         'order_type' => 'hosting',
         'total_amount' => 100.00,
@@ -118,7 +118,9 @@ it('cannot delete a customer with orders', function () {
         ->delete("/admin/customers/{$customer->id}", ['_token' => 'test-token']);
 
     $response->assertRedirect();
-    $this->assertDatabaseHas('customers', ['id' => $customer->id]);
+    // Customer should be deleted along with all related data
+    $this->assertDatabaseMissing('customers', ['id' => $customer->id]);
+    $this->assertDatabaseMissing('orders', ['id' => $order->id]);
 });
 
 it('validates required fields when creating customer', function () {

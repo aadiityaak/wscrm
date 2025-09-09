@@ -71,7 +71,7 @@ class CustomerController extends Controller
             'status' => 'active',
         ]);
 
-        return redirect()->back()->with('success', 'Customer created successfully!');
+        return redirect()->back()->with('success', 'Pelanggan berhasil dibuat!');
     }
 
     public function update(Request $request, Customer $customer)
@@ -100,17 +100,31 @@ class CustomerController extends Controller
 
         $customer->update($updateData);
 
-        return redirect()->back()->with('success', 'Customer updated successfully!');
+        return redirect()->back()->with('success', 'Pelanggan berhasil diperbarui!');
     }
 
     public function destroy(Customer $customer)
     {
-        if ($customer->orders()->exists() || $customer->services()->exists()) {
-            return redirect()->back()->with('error', 'Cannot delete customer with existing orders or services.');
+        try {
+            // Delete all related data in the correct order
+            // First delete invoices
+            $customer->invoices()->delete();
+
+            // Then delete order items and orders
+            foreach ($customer->orders as $order) {
+                $order->orderItems()->delete();
+            }
+            $customer->orders()->delete();
+
+            // Delete services
+            $customer->services()->delete();
+
+            // Finally delete the customer
+            $customer->delete();
+
+            return redirect()->back()->with('success', 'Pelanggan dan semua data terkait berhasil dihapus!');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Gagal menghapus pelanggan: '.$e->getMessage());
         }
-
-        $customer->delete();
-
-        return redirect()->back()->with('success', 'Customer deleted successfully!');
     }
 }

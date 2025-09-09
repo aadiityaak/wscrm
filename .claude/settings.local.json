@@ -132,7 +132,8 @@
       "Bash(unzip:*)",
       "Bash(timeout 30 php artisan:*)",
       "Bash(cat:*)",
-      "Bash(pkill:*)"
+      "Bash(pkill:*)",
+      "WebFetch(domain:localhost)"
     ],
     "deny": [],
     "ask": []

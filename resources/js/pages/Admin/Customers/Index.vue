@@ -45,7 +45,9 @@ const search = ref(props.filters?.search || '');
 const status = ref(props.filters?.status || '');
 const showCreateModal = ref(false);
 const showEditModal = ref(false);
+const showDeleteModal = ref(false);
 const selectedCustomer = ref<Customer | null>(null);
+const customerToDelete = ref<Customer | null>(null);
 
 const createForm = useForm({
   name: '',
@@ -74,7 +76,7 @@ const editForm = useForm({
 
 const breadcrumbs: BreadcrumbItem[] = [
   { title: 'Dashboard', href: '/dashboard' },
-  { title: 'Customers', href: '/admin/customers' },
+  { title: 'Pelanggan', href: '/admin/customers' },
 ];
 
 const formatDate = (dateString: string) => {
@@ -168,32 +170,41 @@ const submitEdit = () => {
   });
 };
 
-const deleteCustomer = (customer: Customer) => {
-  if (confirm(`Are you sure you want to delete ${customer.name}?`)) {
-    router.delete(`/admin/customers/${customer.id}`, {
-      preserveScroll: true,
-      onError: (errors) => {
-        console.error('Delete customer error:', errors);
-      },
-    });
-  }
+const openDeleteModal = (customer: Customer) => {
+  customerToDelete.value = customer;
+  showDeleteModal.value = true;
+};
+
+const confirmDelete = () => {
+  if (!customerToDelete.value) return;
+  
+  router.delete(`/admin/customers/${customerToDelete.value.id}`, {
+    preserveScroll: true,
+    onSuccess: () => {
+      showDeleteModal.value = false;
+      customerToDelete.value = null;
+    },
+    onError: (errors) => {
+      console.error('Delete customer error:', errors);
+    },
+  });
 };
 
 </script>
 
 <template>
-  <Head title="Admin - Customers" />
+  <Head title="Admin - Kelola Pelanggan" />
 
   <AppLayout :breadcrumbs="breadcrumbs">
     <div class="space-y-6 p-6">
       <div class="flex items-center justify-between">
         <div>
-          <h1 class="text-3xl font-bold tracking-tight">Customer Management</h1>
-          <p class="text-muted-foreground">Manage customer accounts and information</p>
+          <h1 class="text-3xl font-bold tracking-tight">Kelola Pelanggan</h1>
+          <p class="text-muted-foreground">Kelola akun dan informasi pelanggan</p>
         </div>
         <Button @click="showCreateModal = true">
           <Plus class="h-4 w-4 mr-2" />
-          Add Customer
+          Tambah Pelanggan
         </Button>
       </div>
 
@@ -201,7 +212,7 @@ const deleteCustomer = (customer: Customer) => {
       <div class="grid gap-4 md:grid-cols-4">
         <Card>
           <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle class="text-sm font-medium">Total Customers</CardTitle>
+            <CardTitle class="text-sm font-medium">Total Pelanggan</CardTitle>
             <Users class="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -211,7 +222,7 @@ const deleteCustomer = (customer: Customer) => {
 
         <Card>
           <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle class="text-sm font-medium">Active</CardTitle>
+            <CardTitle class="text-sm font-medium">Aktif</CardTitle>
             <UserCheck class="h-4 w-4 text-green-600" />
           </CardHeader>
           <CardContent>
@@ -223,7 +234,7 @@ const deleteCustomer = (customer: Customer) => {
 
         <Card>
           <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle class="text-sm font-medium">Suspended</CardTitle>
+            <CardTitle class="text-sm font-medium">Ditangguhkan</CardTitle>
             <UserX class="h-4 w-4 text-red-600" />
           </CardHeader>
           <CardContent>
@@ -235,7 +246,7 @@ const deleteCustomer = (customer: Customer) => {
 
         <Card>
           <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle class="text-sm font-medium">Inactive</CardTitle>
+            <CardTitle class="text-sm font-medium">Tidak Aktif</CardTitle>
             <Clock class="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -249,8 +260,8 @@ const deleteCustomer = (customer: Customer) => {
       <!-- Customer List -->
       <Card>
         <CardHeader>
-          <CardTitle>Customers</CardTitle>
-          <CardDescription>Manage customer accounts and information</CardDescription>
+          <CardTitle>Pelanggan</CardTitle>
+          <CardDescription>Kelola akun dan informasi pelanggan</CardDescription>
         </CardHeader>
         <CardContent>
           <!-- Search and Filter -->
@@ -259,7 +270,7 @@ const deleteCustomer = (customer: Customer) => {
               <Search class="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
                 v-model="search"
-                placeholder="Search customers..."
+                placeholder="Cari pelanggan..."
                 class="pl-8"
                 @keyup.enter="handleSearch"
               />
@@ -268,19 +279,19 @@ const deleteCustomer = (customer: Customer) => {
               v-model="status" 
               class="flex h-9 w-[180px] rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
             >
-              <option value="">All Status</option>
-              <option value="active">Active</option>
-              <option value="inactive">Inactive</option>
-              <option value="suspended">Suspended</option>
+              <option value="">Semua Status</option>
+              <option value="active">Aktif</option>
+              <option value="inactive">Tidak Aktif</option>
+              <option value="suspended">Ditangguhkan</option>
             </select>
-            <Button @click="handleSearch">Search</Button>
+            <Button @click="handleSearch">Cari</Button>
           </div>
 
           <!-- Customer Cards -->
           <div v-if="!customers?.data || customers.data.length === 0" class="text-center py-12 text-muted-foreground">
             <Users class="mx-auto h-12 w-12 text-muted-foreground/40" />
-            <h3 class="mt-2 text-sm font-semibold text-gray-900 dark:text-gray-100">No customers found</h3>
-            <p class="mt-1 text-sm text-muted-foreground">Try adjusting your search criteria.</p>
+            <h3 class="mt-2 text-sm font-semibold text-gray-900 dark:text-gray-100">Pelanggan tidak ditemukan</h3>
+            <p class="mt-1 text-sm text-muted-foreground">Coba sesuaikan kriteria pencarian Anda.</p>
           </div>
 
           <div v-else class="space-y-4">
@@ -314,11 +325,11 @@ const deleteCustomer = (customer: Customer) => {
                 <div class="hidden md:flex items-center gap-4 text-xs text-muted-foreground">
                   <div class="text-center">
                     <div class="text-sm font-medium text-foreground">{{ customer.orders_count }}</div>
-                    <div>Orders</div>
+                    <div>Pesanan</div>
                   </div>
                   <div class="text-center">
                     <div class="text-sm font-medium text-foreground">{{ customer.services_count }}</div>
-                    <div>Services</div>
+                    <div>Layanan</div>
                   </div>
                 </div>
 
@@ -326,13 +337,13 @@ const deleteCustomer = (customer: Customer) => {
                 <div class="flex items-center gap-2">
                   <Button size="sm" variant="outline" asChild>
                     <Link :href="`/admin/customers/${customer.id}`">
-                      View Details
+                      Lihat Detail
                     </Link>
                   </Button>
                   <Button size="sm" variant="outline" @click="openEditModal(customer)">
                     <Edit class="h-3 w-3" />
                   </Button>
-                  <Button size="sm" variant="outline" @click="deleteCustomer(customer)">
+                  <Button size="sm" variant="outline" @click="openDeleteModal(customer)">
                     <Trash2 class="h-3 w-3" />
                   </Button>
                 </div>
@@ -379,7 +390,7 @@ const deleteCustomer = (customer: Customer) => {
       <div class="relative bg-white dark:bg-gray-900 rounded-lg shadow-xl w-full max-w-md mx-4 p-6">
         <!-- Header -->
         <div class="flex items-center justify-between mb-4">
-          <h2 class="text-lg font-semibold">Add New Customer</h2>
+          <h2 class="text-lg font-semibold">Tambah Pelanggan Baru</h2>
           <button @click="showCreateModal = false" class="text-gray-500 hover:text-gray-700">
             <X class="h-4 w-4" />
           </button>
@@ -387,7 +398,7 @@ const deleteCustomer = (customer: Customer) => {
         <form @submit.prevent="submitCreate" class="space-y-4">
           <div class="grid grid-cols-2 gap-4">
             <div>
-              <Label for="create-name">Name *</Label>
+              <Label for="create-name">Nama *</Label>
               <Input
                 id="create-name"
                 autocomplete="name"
@@ -413,7 +424,7 @@ const deleteCustomer = (customer: Customer) => {
           
           <div class="grid grid-cols-2 gap-4">
             <div>
-              <Label for="create-password">Password *</Label>
+              <Label for="create-password">Kata Sandi *</Label>
               <Input
                 id="create-password"
                 type="password"
@@ -425,7 +436,7 @@ const deleteCustomer = (customer: Customer) => {
               <p v-if="createForm.errors.password" class="text-xs text-red-500 mt-1">{{ createForm.errors.password }}</p>
             </div>
             <div>
-              <Label for="create-password-confirmation">Confirm Password *</Label>
+              <Label for="create-password-confirmation">Konfirmasi Kata Sandi *</Label>
               <Input
                 id="create-password-confirmation"
                 type="password"
@@ -438,7 +449,7 @@ const deleteCustomer = (customer: Customer) => {
 
           <div class="grid grid-cols-2 gap-4">
             <div>
-              <Label for="create-phone">Phone</Label>
+              <Label for="create-phone">Telepon</Label>
               <Input
                 id="create-phone"
                 v-model="createForm.phone"
@@ -447,7 +458,7 @@ const deleteCustomer = (customer: Customer) => {
               <p v-if="createForm.errors.phone" class="text-xs text-red-500 mt-1">{{ createForm.errors.phone }}</p>
             </div>
             <div>
-              <Label for="create-city">City</Label>
+              <Label for="create-city">Kota</Label>
               <Input
                 id="create-city"
                 v-model="createForm.city"
@@ -458,7 +469,7 @@ const deleteCustomer = (customer: Customer) => {
           </div>
 
           <div>
-            <Label for="create-address">Address</Label>
+            <Label for="create-address">Alamat</Label>
             <Input
               id="create-address"
               v-model="createForm.address"
@@ -469,7 +480,7 @@ const deleteCustomer = (customer: Customer) => {
 
           <div class="grid grid-cols-2 gap-4">
             <div>
-              <Label for="create-country">Country</Label>
+              <Label for="create-country">Negara</Label>
               <Input
                 id="create-country"
                 v-model="createForm.country"
@@ -478,7 +489,7 @@ const deleteCustomer = (customer: Customer) => {
               <p v-if="createForm.errors.country" class="text-xs text-red-500 mt-1">{{ createForm.errors.country }}</p>
             </div>
             <div>
-              <Label for="create-postal-code">Postal Code</Label>
+              <Label for="create-postal-code">Kode Pos</Label>
               <Input
                 id="create-postal-code"
                 v-model="createForm.postal_code"
@@ -491,10 +502,10 @@ const deleteCustomer = (customer: Customer) => {
           <!-- Footer -->
           <div class="flex justify-end gap-2 mt-6">
             <Button type="button" variant="outline" @click="showCreateModal = false">
-              Cancel
+              Batal
             </Button>
             <Button type="submit" :disabled="createForm.processing">
-              {{ createForm.processing ? 'Creating...' : 'Create Customer' }}
+              {{ createForm.processing ? 'Membuat...' : 'Buat Pelanggan' }}
             </Button>
           </div>
         </form>
@@ -510,7 +521,7 @@ const deleteCustomer = (customer: Customer) => {
       <div class="relative bg-white dark:bg-gray-900 rounded-lg shadow-xl w-full max-w-md mx-4 p-6">
         <!-- Header -->
         <div class="flex items-center justify-between mb-4">
-          <h2 class="text-lg font-semibold">Edit Customer</h2>
+          <h2 class="text-lg font-semibold">Edit Pelanggan</h2>
           <button @click="showEditModal = false" class="text-gray-500 hover:text-gray-700">
             <X class="h-4 w-4" />
           </button>
@@ -518,7 +529,7 @@ const deleteCustomer = (customer: Customer) => {
         <form @submit.prevent="submitEdit" class="space-y-4">
           <div class="grid grid-cols-2 gap-4">
             <div>
-              <Label for="edit-name">Name *</Label>
+              <Label for="edit-name">Nama *</Label>
               <Input
                 id="edit-name"
                 autocomplete="name"
@@ -544,7 +555,7 @@ const deleteCustomer = (customer: Customer) => {
 
           <div class="grid grid-cols-2 gap-4">
             <div>
-              <Label for="edit-password">New Password (optional)</Label>
+              <Label for="edit-password">Kata Sandi Baru (opsional)</Label>
               <Input
                 id="edit-password"
                 type="password"
@@ -555,7 +566,7 @@ const deleteCustomer = (customer: Customer) => {
               <p v-if="editForm.errors.password" class="text-xs text-red-500 mt-1">{{ editForm.errors.password }}</p>
             </div>
             <div>
-              <Label for="edit-password-confirmation">Confirm Password</Label>
+              <Label for="edit-password-confirmation">Konfirmasi Kata Sandi</Label>
               <Input
                 id="edit-password-confirmation"
                 type="password"
@@ -567,7 +578,7 @@ const deleteCustomer = (customer: Customer) => {
 
           <div class="grid grid-cols-2 gap-4">
             <div>
-              <Label for="edit-phone">Phone</Label>
+              <Label for="edit-phone">Telepon</Label>
               <Input
                 id="edit-phone"
                 v-model="editForm.phone"
@@ -576,7 +587,7 @@ const deleteCustomer = (customer: Customer) => {
               <p v-if="editForm.errors.phone" class="text-xs text-red-500 mt-1">{{ editForm.errors.phone }}</p>
             </div>
             <div>
-              <Label for="edit-city">City</Label>
+              <Label for="edit-city">Kota</Label>
               <Input
                 id="edit-city"
                 v-model="editForm.city"
@@ -587,7 +598,7 @@ const deleteCustomer = (customer: Customer) => {
           </div>
 
           <div>
-            <Label for="edit-address">Address</Label>
+            <Label for="edit-address">Alamat</Label>
             <Input
               id="edit-address"
               v-model="editForm.address"
@@ -598,7 +609,7 @@ const deleteCustomer = (customer: Customer) => {
 
           <div class="grid grid-cols-3 gap-4">
             <div>
-              <Label for="edit-country">Country</Label>
+              <Label for="edit-country">Negara</Label>
               <Input
                 id="edit-country"
                 v-model="editForm.country"
@@ -607,7 +618,7 @@ const deleteCustomer = (customer: Customer) => {
               <p v-if="editForm.errors.country" class="text-xs text-red-500 mt-1">{{ editForm.errors.country }}</p>
             </div>
             <div>
-              <Label for="edit-postal-code">Postal Code</Label>
+              <Label for="edit-postal-code">Kode Pos</Label>
               <Input
                 id="edit-postal-code"
                 v-model="editForm.postal_code"
@@ -623,9 +634,9 @@ const deleteCustomer = (customer: Customer) => {
                 class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                 required
               >
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
-                <option value="suspended">Suspended</option>
+                <option value="active">Aktif</option>
+                <option value="inactive">Tidak Aktif</option>
+                <option value="suspended">Ditangguhkan</option>
               </select>
               <p v-if="editForm.errors.status" class="text-xs text-red-500 mt-1">{{ editForm.errors.status }}</p>
             </div>
@@ -634,13 +645,81 @@ const deleteCustomer = (customer: Customer) => {
           <!-- Footer -->
           <div class="flex justify-end gap-2 mt-6">
             <Button type="button" variant="outline" @click="showEditModal = false">
-              Cancel
+              Batal
             </Button>
             <Button type="submit" :disabled="editForm.processing">
-              {{ editForm.processing ? 'Updating...' : 'Update Customer' }}
+              {{ editForm.processing ? 'Memperbarui...' : 'Perbarui Pelanggan' }}
             </Button>
           </div>
         </form>
+      </div>
+    </div>
+
+    <!-- Delete Customer Modal -->
+    <div v-if="showDeleteModal" class="fixed inset-0 z-50 flex items-center justify-center">
+      <!-- Overlay -->
+      <div class="fixed inset-0 bg-black/50" @click="showDeleteModal = false"></div>
+      
+      <!-- Modal Content -->
+      <div class="relative bg-white dark:bg-gray-900 rounded-lg shadow-xl w-full max-w-md mx-4 p-6">
+        <!-- Header -->
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-lg font-semibold text-red-600">Konfirmasi Penghapusan</h2>
+          <button @click="showDeleteModal = false" class="text-gray-500 hover:text-gray-700">
+            <X class="h-4 w-4" />
+          </button>
+        </div>
+        
+        <div class="space-y-4">
+          <div class="p-4 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
+            <div class="flex items-start space-x-3">
+              <div class="flex-shrink-0">
+                <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                  <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                </svg>
+              </div>
+              <div class="min-w-0 flex-1">
+                <h3 class="text-sm font-medium text-red-800 dark:text-red-200">
+                  Peringatan: Tindakan ini tidak dapat dibatalkan
+                </h3>
+                <div class="mt-2 text-sm text-red-700 dark:text-red-300">
+                  <p>Anda akan menghapus secara permanen <strong>{{ customerToDelete?.name }}</strong>.</p>
+                  <div class="mt-3 space-y-1">
+                    <p><strong>Ini juga akan menghapus:</strong></p>
+                    <ul class="list-disc list-inside space-y-1 ml-2">
+                      <li>{{ customerToDelete?.orders_count || 0 }} pesanan</li>
+                      <li>{{ customerToDelete?.services_count || 0 }} layanan</li>
+                      <li>Semua faktur terkait</li>
+                      <li>Semua data terkait secara permanen</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-gray-50 dark:bg-gray-800 p-3 rounded-lg">
+            <p class="text-sm text-gray-600 dark:text-gray-400">
+              <strong>Pelanggan:</strong> {{ customerToDelete?.name }}<br>
+              <strong>Email:</strong> {{ customerToDelete?.email }}<br>
+              <strong>ID:</strong> #{{ customerToDelete?.id }}
+            </p>
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="flex justify-end gap-2 mt-6">
+          <Button type="button" variant="outline" @click="showDeleteModal = false">
+            Batal
+          </Button>
+          <Button 
+            type="button" 
+            class="bg-red-600 hover:bg-red-700 text-white" 
+            @click="confirmDelete"
+          >
+            Ya, Hapus Pelanggan
+          </Button>
+        </div>
       </div>
     </div>
   </AppLayout>
