@@ -35,3 +35,5 @@ export function formatDate(date: string | Date, format: string = 'short'): strin
 
     return new Intl.DateTimeFormat('id-ID', options).format(dateObj);
 }
+
+// Remove unused function - not needed with Reka UI approach

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -15,15 +16,26 @@ class Order extends Model
     protected $fillable = [
         'customer_id',
         'order_type',
+        'service_type',
+        'plan_id',
+        'domain_name',
         'total_amount',
         'status',
         'billing_cycle',
+        'expires_at',
+        'auto_renew',
+        'next_billing_date',
+        'metadata',
     ];
 
     protected function casts(): array
     {
         return [
             'total_amount' => 'decimal:2',
+            'expires_at' => 'date',
+            'next_billing_date' => 'date',
+            'auto_renew' => 'boolean',
+            'metadata' => 'array',
         ];
     }
 
@@ -32,14 +44,41 @@ class Order extends Model
         return $this->belongsTo(Customer::class);
     }
 
+    public function hostingPlan(): BelongsTo
+    {
+        return $this->belongsTo(HostingPlan::class, 'plan_id');
+    }
+
     public function orderItems(): HasMany
     {
         return $this->hasMany(OrderItem::class);
     }
 
-    public function invoice(): HasOne
+    public function invoices(): HasMany
     {
-        return $this->hasOne(Invoice::class);
+        return $this->hasMany(Invoice::class);
+    }
+
+    // Scopes for different use cases
+    public function scopeOrders($query)
+    {
+        return $query->whereIn('status', ['pending', 'processing', 'cancelled']);
+    }
+
+    public function scopeServices($query)
+    {
+        return $query->whereIn('status', ['active', 'suspended', 'expired', 'terminated']);
+    }
+
+    public function scopeActive($query)
+    {
+        return $query->where('status', 'active');
+    }
+
+    public function scopeExpiringSoon($query, int $days = 30)
+    {
+        return $query->where('expires_at', '<=', Carbon::now()->addDays($days))
+            ->where('status', 'active');
     }
 
     public function scopeByStatus($query, string $status)
@@ -50,5 +89,36 @@ class Order extends Model
     public function scopeByCustomer($query, int $customerId)
     {
         return $query->where('customer_id', $customerId);
+    }
+
+    public function scopeByType($query, string $type)
+    {
+        return $query->where('service_type', $type);
+    }
+
+    // Helper methods
+    public function isOrder(): bool
+    {
+        return in_array($this->status, ['pending', 'processing', 'cancelled']);
+    }
+
+    public function isService(): bool
+    {
+        return in_array($this->status, ['active', 'suspended', 'expired', 'terminated']);
+    }
+
+    public function isExpired(): bool
+    {
+        return $this->expires_at && $this->expires_at->isPast();
+    }
+
+    public function daysUntilExpiry(): int
+    {
+        return $this->expires_at ? $this->expires_at->diffInDays(Carbon::now()) : 0;
+    }
+
+    public function isRecurring(): bool
+    {
+        return $this->billing_cycle !== 'onetime';
     }
 }
