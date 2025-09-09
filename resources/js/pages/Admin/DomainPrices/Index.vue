@@ -234,6 +234,7 @@ const confirmDelete = () => {
                   :disabled="!link.url"
                   @click="router.visit(link.url)"
                   v-html="link.label"
+                  class="cursor-pointer"
                 />
               </template>
             </div>

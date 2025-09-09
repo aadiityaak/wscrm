@@ -322,7 +322,7 @@ const removeFeature = (form: any, featureName: string) => {
                     variant="outline" 
                     size="sm"
                     :disabled="!link.url"
-                    :class="link.active ? 'bg-primary text-primary-foreground' : ''"
+                    :class="link.active ? 'bg-primary text-primary-foreground cursor-pointer' : 'cursor-pointer'"
                     @click="router.visit(link.url)"
                     v-html="link.label"
                   />
