@@ -41,8 +41,8 @@ const mainNavItems: NavItem[] = [
         badge: customerBadges.unpaid_invoices || 0,
     },
     {
-        title: 'My Services',
-        href: customer.services.index().url,
+        title: 'Settings',
+        href: customer.settings.index().url,
         icon: Settings,
     },
 ];

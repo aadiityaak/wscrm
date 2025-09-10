@@ -5,6 +5,7 @@ use App\Http\Controllers\Customer\Auth\RegisterController;
 use App\Http\Controllers\Customer\DashboardController;
 use App\Http\Controllers\Customer\DomainController;
 use App\Http\Controllers\Customer\HostingController;
+use App\Http\Controllers\Customer\SettingsController;
 use App\Http\Controllers\OrderController;
 use Illuminate\Support\Facades\Route;
 
@@ -48,6 +49,12 @@ Route::prefix('customer')->name('customer.')->group(function () {
             Route::get('/{invoice}/payment', [\App\Http\Controllers\Customer\InvoiceController::class, 'payment'])->name('payment');
             Route::post('/{invoice}/process-payment', [\App\Http\Controllers\Customer\InvoiceController::class, 'processPayment'])->name('process-payment');
             Route::post('/{invoice}/confirm-payment', [\App\Http\Controllers\Customer\InvoiceController::class, 'confirmPayment'])->name('confirm-payment');
+        });
+
+        Route::prefix('settings')->name('settings.')->group(function () {
+            Route::get('/', [SettingsController::class, 'index'])->name('index');
+            Route::patch('/profile', [SettingsController::class, 'updateProfile'])->name('update-profile');
+            Route::patch('/password', [SettingsController::class, 'updatePassword'])->name('update-password');
         });
     });
 });
