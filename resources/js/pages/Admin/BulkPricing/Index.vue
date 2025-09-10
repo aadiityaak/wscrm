@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -9,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import AppLayout from '@/layouts/AppLayout.vue';
 import { formatPrice } from '@/lib/utils';
 import { Head, router } from '@inertiajs/vue3';
-import { Calculator, ChevronDown, DollarSign, Download, Save, Settings, Trash2, TrendingUp, Upload } from 'lucide-vue-next';
+import { Calculator, ChevronDown, DollarSign, Download, Save, Settings, Trash2, TrendingUp, Upload, X } from 'lucide-vue-next';
 import { computed, reactive, ref, watch } from 'vue';
 
 interface PricingTier {
@@ -82,6 +81,8 @@ const form = reactive({
 const simulation = ref<Record<string, SimulationData[]>>(props.simulationResults?.simulation || {});
 const isSimulating = ref(false);
 const isApplying = ref(false);
+const viewMode = ref<'basic' | 'lite'>('basic');
+const showSaveModal = ref(false);
 
 // Watch for props changes
 watch(() => props.simulationResults, (newResults) => {
@@ -211,6 +212,7 @@ const saveConfig = () => {
             saveForm.name = '';
             saveForm.description = '';
             saveForm.is_default = false;
+            showSaveModal.value = false;
         },
         onError: () => {
             alert('Gagal menyimpan konfigurasi!');
@@ -377,64 +379,10 @@ const deleteConfig = (configId: number, configName: string) => {
                                     {{ isSimulating ? 'Simulating...' : 'Run Simulation' }}
                                 </Button>
                                 
-                                <Dialog>
-                                    <DialogTrigger as-child>
-                                        <Button variant="outline" class="w-full">
-                                            <Save class="h-4 w-4 mr-2" />
-                                            Save Config
-                                        </Button>
-                                    </DialogTrigger>
-                                    <DialogContent>
-                                        <DialogHeader>
-                                            <DialogTitle>Simpan Konfigurasi</DialogTitle>
-                                            <DialogDescription>
-                                                Simpan konfigurasi saat ini untuk digunakan kembali di kemudian hari
-                                            </DialogDescription>
-                                        </DialogHeader>
-                                        <div class="space-y-4">
-                                            <div>
-                                                <Label for="config-name">Nama Konfigurasi</Label>
-                                                <Input
-                                                    id="config-name"
-                                                    v-model="saveForm.name"
-                                                    placeholder="Masukkan nama konfigurasi"
-                                                />
-                                            </div>
-                                            <div>
-                                                <Label for="config-description">Deskripsi (Opsional)</Label>
-                                                <textarea
-                                                    id="config-description"
-                                                    v-model="saveForm.description"
-                                                    placeholder="Deskripsi konfigurasi"
-                                                    rows="3"
-                                                    class="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                                                ></textarea>
-                                            </div>
-                                            <div class="flex items-center space-x-2">
-                                                <input
-                                                    id="is-default"
-                                                    v-model="saveForm.is_default"
-                                                    type="checkbox"
-                                                    class="rounded border-gray-300"
-                                                />
-                                                <Label for="is-default">Set sebagai konfigurasi default</Label>
-                                            </div>
-                                        </div>
-                                        <DialogFooter class="gap-2">
-                                            <DialogClose as-child>
-                                                <Button variant="outline">
-                                                    Batal
-                                                </Button>
-                                            </DialogClose>
-                                            <DialogClose as-child>
-                                                <Button @click="saveConfig">
-                                                    <Save class="h-4 w-4 mr-2" />
-                                                    Simpan
-                                                </Button>
-                                            </DialogClose>
-                                        </DialogFooter>
-                                    </DialogContent>
-                                </Dialog>
+                                <Button variant="outline" class="w-full" @click="showSaveModal = true">
+                                    <Save class="h-4 w-4 mr-2" />
+                                    Save Config
+                                </Button>
                                 
                                 <Button @click="applyPricing" :disabled="isApplying || !Object.keys(simulation).length" class="w-full" variant="destructive">
                                     <DollarSign class="h-4 w-4 mr-2" />
@@ -449,11 +397,39 @@ const deleteConfig = (configId: number, configName: string) => {
                 <div class="lg:col-span-8">
                     <Card>
                         <CardHeader>
-                            <CardTitle class="flex items-center gap-2">
-                                <TrendingUp class="h-5 w-5" />
-                                Simulasi Harga & Keuntungan
-                            </CardTitle>
-                            <CardDescription>Analisis pricing dengan margin keuntungan</CardDescription>
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <CardTitle class="flex items-center gap-2">
+                                        <TrendingUp class="h-5 w-5" />
+                                        Simulasi Harga & Keuntungan
+                                    </CardTitle>
+                                    <CardDescription>Analisis pricing dengan margin keuntungan</CardDescription>
+                                </div>
+                                <div class="flex items-center gap-1 bg-muted rounded-lg p-1">
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        :class="[
+                                            'transition-all duration-200',
+                                            viewMode === 'basic' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'
+                                        ]"
+                                        @click="viewMode = 'basic'"
+                                    >
+                                        Basic
+                                    </Button>
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        :class="[
+                                            'transition-all duration-200',
+                                            viewMode === 'lite' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'
+                                        ]"
+                                        @click="viewMode = 'lite'"
+                                    >
+                                        Lite
+                                    </Button>
+                                </div>
+                            </div>
                         </CardHeader>
                         <CardContent>
                             <div v-if="Object.keys(simulation).length === 0" class="py-8 text-center text-muted-foreground">
@@ -467,15 +443,15 @@ const deleteConfig = (configId: number, configName: string) => {
                                             <TableHeader>
                                                 <TableRow>
                                                     <TableHead>Plan</TableHead>
-                                                    <TableHead>Specs</TableHead>
+                                                    <TableHead v-if="viewMode === 'basic'">Specs</TableHead>
                                                     <TableHead>Harga Saat Ini</TableHead>
                                                     <TableHead>Harga Baru</TableHead>
-                                                    <TableHead>Selisih</TableHead>
-                                                    <TableHead>Discount</TableHead>
-                                                    <TableHead>Modal</TableHead>
+                                                    <TableHead v-if="viewMode === 'basic'">Selisih</TableHead>
+                                                    <TableHead v-if="viewMode === 'lite'">Discount</TableHead>
+                                                    <TableHead v-if="viewMode === 'lite'">Modal</TableHead>
                                                     <TableHead>Profit</TableHead>
-                                                    <TableHead>Margin</TableHead>
-                                                    <TableHead>Status</TableHead>
+                                                    <TableHead v-if="viewMode === 'lite'">Margin</TableHead>
+                                                    <TableHead v-if="viewMode === 'basic'">Status</TableHead>
                                                 </TableRow>
                                             </TableHeader>
                                             <TableBody>
@@ -483,7 +459,7 @@ const deleteConfig = (configId: number, configName: string) => {
                                                     <TableCell class="font-medium">
                                                         <div class="font-semibold">{{ data.plan_name }}</div>
                                                     </TableCell>
-                                                    <TableCell class="text-sm text-muted-foreground">
+                                                    <TableCell v-if="viewMode === 'basic'" class="text-sm text-muted-foreground">
                                                         <div>{{ data.storage_gb }}GB Storage</div>
                                                         <div>{{ data.cpu_cores }} Core CPU</div>
                                                         <div>{{ data.ram_gb }}GB RAM</div>
@@ -494,18 +470,18 @@ const deleteConfig = (configId: number, configName: string) => {
                                                     <TableCell class="font-medium">
                                                         {{ formatPrice(data.new_total_price) }}
                                                     </TableCell>
-                                                    <TableCell :class="data.price_difference >= 0 ? 'text-green-600 font-medium' : 'text-red-600 font-medium'">
+                                                    <TableCell v-if="viewMode === 'basic'" :class="data.price_difference >= 0 ? 'text-green-600 font-medium' : 'text-red-600 font-medium'">
                                                         {{ data.price_difference >= 0 ? '+' : '' }}{{ formatPrice(data.price_difference) }}
                                                     </TableCell>
-                                                    <TableCell>{{ data.discount_percentage }}%</TableCell>
-                                                    <TableCell>{{ formatPrice(data.total_cost) }}</TableCell>
+                                                    <TableCell v-if="viewMode === 'lite'">{{ data.discount_percentage }}%</TableCell>
+                                                    <TableCell v-if="viewMode === 'lite'">{{ formatPrice(data.total_cost) }}</TableCell>
                                                     <TableCell :class="data.profit >= 0 ? 'text-green-600 font-medium' : 'text-red-600 font-medium'">
                                                         {{ formatPrice(data.profit) }}
                                                     </TableCell>
-                                                    <TableCell :class="data.profit_margin >= 0 ? 'text-green-600 font-medium' : 'text-red-600 font-medium'">
+                                                    <TableCell v-if="viewMode === 'lite'" :class="data.profit_margin >= 0 ? 'text-green-600 font-medium' : 'text-red-600 font-medium'">
                                                         {{ data.profit_margin.toFixed(1) }}%
                                                     </TableCell>
-                                                    <TableCell>
+                                                    <TableCell v-if="viewMode === 'basic'">
                                                         <span :class="`px-2 py-1 rounded text-xs font-medium ${getStatusClass(data.profit_margin)}`">
                                                             {{ getProfitStatus(data.profit_margin) }}
                                                         </span>
@@ -519,6 +495,66 @@ const deleteConfig = (configId: number, configName: string) => {
                         </CardContent>
                     </Card>
                 </div>
+            </div>
+        </div>
+
+        <!-- Save Config Modal -->
+        <div v-if="showSaveModal" class="fixed inset-0 z-50 flex items-center justify-center">
+            <!-- Overlay -->
+            <div class="fixed inset-0 bg-black/50" @click="showSaveModal = false"></div>
+
+            <!-- Modal Content -->
+            <div class="relative mx-4 w-full max-w-md rounded-lg bg-white p-6 shadow-xl dark:bg-gray-900">
+                <!-- Header -->
+                <div class="mb-4 flex items-center justify-between">
+                    <h2 class="text-lg font-semibold">Simpan Konfigurasi</h2>
+                    <button @click="showSaveModal = false" class="cursor-pointer text-gray-500 hover:text-gray-700">
+                        <X class="h-4 w-4" />
+                    </button>
+                </div>
+                <form @submit.prevent="saveConfig" action="#" class="space-y-4">
+                    <div>
+                        <Label for="config-name">Nama Konfigurasi</Label>
+                        <Input
+                            id="config-name"
+                            v-model="saveForm.name"
+                            placeholder="Masukkan nama konfigurasi"
+                            required
+                        />
+                    </div>
+                    <div>
+                        <Label for="config-description">Deskripsi (Opsional)</Label>
+                        <textarea
+                            id="config-description"
+                            v-model="saveForm.description"
+                            placeholder="Deskripsi konfigurasi"
+                            rows="3"
+                            class="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                        ></textarea>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <input
+                            id="is-default"
+                            v-model="saveForm.is_default"
+                            type="checkbox"
+                            class="rounded border-gray-300"
+                            @click.stop
+                            @change.stop
+                        />
+                        <Label for="is-default">Set sebagai konfigurasi default</Label>
+                    </div>
+
+                    <!-- Footer -->
+                    <div class="mt-6 flex justify-end gap-2">
+                        <Button type="button" variant="outline" @click="showSaveModal = false" class="cursor-pointer">
+                            Batal
+                        </Button>
+                        <Button type="submit">
+                            <Save class="h-4 w-4 mr-2" />
+                            Simpan
+                        </Button>
+                    </div>
+                </form>
             </div>
         </div>
     </AppLayout>
