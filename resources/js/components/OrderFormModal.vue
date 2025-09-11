@@ -2,6 +2,7 @@
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { DatePicker } from '@/components/ui/date-picker';
 import { Plus, Trash2, X } from 'lucide-vue-next';
 import { computed, ref, watch } from 'vue';
 
@@ -312,11 +313,10 @@ const close = () => {
                 <div v-if="isEditMode" class="grid grid-cols-2 gap-4">
                     <div>
                         <Label :for="`${mode}-expires-at`">Tanggal Kedaluwarsa</Label>
-                        <input
-                            :id="`${mode}-expires-at`"
+                        <DatePicker
                             v-model="formData.expires_at"
-                            type="date"
-                            class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm text-foreground shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none dark:bg-gray-800 dark:text-white"
+                            placeholder="Pilih tanggal kedaluwarsa"
+                            :min-date="new Date().toISOString().split('T')[0]"
                         />
                         <p v-if="errors.expires_at" class="mt-1 text-xs text-red-500">{{ errors.expires_at }}</p>
                     </div>

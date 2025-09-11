@@ -43,6 +43,9 @@ class OrderController extends Controller
             ->when(request('service_type'), function ($query, $type) {
                 $query->where('service_type', $type);
             })
+            ->when(request('customer_id'), function ($query, $customerId) {
+                $query->where('customer_id', $customerId);
+            })
             ->orderBy('created_at', 'desc')
             ->paginate(20)
             ->withQueryString();
@@ -55,7 +58,7 @@ class OrderController extends Controller
         return Inertia::render('Admin/Orders/Index', [
             'orders' => $orders,
             'view' => $view,
-            'filters' => request()->only(['search', 'status', 'service_type', 'view']),
+            'filters' => request()->only(['search', 'status', 'service_type', 'customer_id', 'view']),
             'customers' => $customers,
             'hostingPlans' => $hostingPlans,
             'domainPrices' => $domainPrices,

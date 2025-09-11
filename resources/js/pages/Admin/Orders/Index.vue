@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { DatePicker } from '@/components/ui/date-picker';
 import OrderFormModal from '@/components/OrderFormModal.vue';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
@@ -74,6 +75,7 @@ interface Props {
         search?: string;
         status?: string;
         service_type?: string;
+        customer_id?: string;
     };
     customers: Customer[];
     hostingPlans: HostingPlan[];
@@ -86,6 +88,7 @@ const props = defineProps<Props>();
 const search = ref(props.filters?.search || '');
 const statusFilter = ref(props.filters?.status || '');
 const serviceTypeFilter = ref(props.filters?.service_type || '');
+const customerFilter = ref(props.filters?.customer_id || '');
 const currentView = ref(props.view || 'orders');
 const showCreateModal = ref(false);
 const showCreateServiceModal = ref(false);
@@ -189,12 +192,54 @@ const getBillingCycleText = (cycle: string) => {
     }
 };
 
+const getDaysUntilExpiry = (expiryDate: string): number => {
+    if (!expiryDate) return -1; // -1 for no expiry date
+    
+    const today = new Date();
+    const expiry = new Date(expiryDate);
+    const diffTime = expiry.getTime() - today.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    return diffDays;
+};
+
+const getExpiryBadge = (expiryDate: string) => {
+    const daysLeft = getDaysUntilExpiry(expiryDate);
+    
+    if (daysLeft === -1) return null; // No expiry date
+    
+    const threeMonthsInDays = 90;
+    
+    if (daysLeft < 0) {
+        // Expired
+        return {
+            text: 'Kedaluwarsa',
+            class: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300'
+        };
+    } else if (daysLeft <= 15) {
+        // Critical - less than 15 days
+        return {
+            text: `${daysLeft} hari lagi`,
+            class: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300'
+        };
+    } else if (daysLeft <= threeMonthsInDays) {
+        // Warning - less than 3 months
+        return {
+            text: `${daysLeft} hari lagi`,
+            class: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300'
+        };
+    }
+    
+    return null; // More than 3 months, no badge
+};
+
 const applyFilters = () => {
     const params = new URLSearchParams();
     
     if (search.value) params.set('search', search.value);
     if (statusFilter.value) params.set('status', statusFilter.value);
     if (serviceTypeFilter.value) params.set('service_type', serviceTypeFilter.value);
+    if (customerFilter.value) params.set('customer_id', customerFilter.value);
     if (currentView.value) params.set('view', currentView.value);
     
     const url = `/admin/orders${params.toString() ? '?' + params.toString() : ''}`;
@@ -205,6 +250,7 @@ const resetFilters = () => {
     search.value = '';
     statusFilter.value = '';
     serviceTypeFilter.value = '';
+    customerFilter.value = '';
     applyFilters();
 };
 
@@ -357,7 +403,7 @@ const deleteOrder = () => {
                     </CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <div class="grid grid-cols-1 gap-4 md:grid-cols-4">
+                    <div class="grid grid-cols-1 gap-4 md:grid-cols-5">
                         <div>
                             <Label for="search">Pencarian</Label>
                             <Input
@@ -398,6 +444,20 @@ const deleteOrder = () => {
                                 <option value="domain">Domain</option>
                             </select>
                         </div>
+                        <div>
+                            <Label for="customer">Pelanggan</Label>
+                            <select
+                                id="customer"
+                                v-model="customerFilter"
+                                @change="applyFilters"
+                                class="flex h-9 w-full cursor-pointer rounded-md border border-input bg-background px-3 py-1 text-sm text-foreground shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none dark:bg-gray-800 dark:text-white"
+                            >
+                                <option value="">Semua Pelanggan</option>
+                                <option v-for="customer in customers" :key="customer.id" :value="customer.id">
+                                    {{ customer.name }} ({{ customer.email }})
+                                </option>
+                            </select>
+                        </div>
                         <div class="flex items-end">
                             <Button @click="resetFilters" variant="outline" class="w-full">
                                 Reset Filter
@@ -430,7 +490,8 @@ const deleteOrder = () => {
                                     <th class="pb-3 text-left font-medium">Total</th>
                                     <th class="pb-3 text-left font-medium">Status</th>
                                     <th class="pb-3 text-left font-medium">Siklus</th>
-                                    <th class="pb-3 text-left font-medium">Tanggal</th>
+                                    <th v-if="currentView === 'services'" class="pb-3 text-left font-medium">Kadaluwarsa</th>
+                                    <th class="pb-3 text-left font-medium">{{ currentView === 'services' ? 'Dibuat' : 'Tanggal' }}</th>
                                     <th class="pb-3 text-center font-medium">Aksi</th>
                                 </tr>
                             </thead>
@@ -466,6 +527,20 @@ const deleteOrder = () => {
                                         </span>
                                     </td>
                                     <td class="py-3 text-sm">{{ getBillingCycleText(order.billing_cycle) }}</td>
+                                    <td v-if="currentView === 'services'" class="py-3 text-sm">
+                                        <div v-if="order.expires_at" class="space-y-1">
+                                            <div class="text-muted-foreground">
+                                                {{ formatDate(order.expires_at) }}
+                                            </div>
+                                            <div v-if="getExpiryBadge(order.expires_at)" class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium"
+                                                :class="getExpiryBadge(order.expires_at)?.class">
+                                                {{ getExpiryBadge(order.expires_at)?.text }}
+                                            </div>
+                                        </div>
+                                        <div v-else class="text-muted-foreground italic">
+                                            Tidak terbatas
+                                        </div>
+                                    </td>
                                     <td class="py-3 text-sm text-muted-foreground">{{ formatDate(order.created_at) }}</td>
                                     <td class="py-3">
                                         <div class="flex items-center justify-center space-x-2">
@@ -611,12 +686,10 @@ const deleteOrder = () => {
                     </div>
                     <div>
                         <Label for="service-expires">Tanggal Kedaluwarsa *</Label>
-                        <input
-                            id="service-expires"
+                        <DatePicker
                             v-model="createServiceForm.expires_at"
-                            type="date"
-                            class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm text-foreground shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none dark:bg-gray-800 dark:text-white"
-                            required
+                            placeholder="Pilih tanggal kedaluwarsa"
+                            :min-date="new Date().toISOString().split('T')[0]"
                         />
                         <p v-if="createServiceForm.errors.expires_at" class="mt-1 text-xs text-red-500">{{ createServiceForm.errors.expires_at }}</p>
                     </div>
