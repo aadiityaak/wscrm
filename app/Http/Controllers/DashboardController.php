@@ -48,6 +48,15 @@ class DashboardController extends Controller
             ->limit(5)
             ->get();
 
+        // Expiring Services (within 1 month)
+        $expiringServices = Order::services()
+            ->with(['customer'])
+            ->where('expires_at', '<=', Carbon::now()->addMonth())
+            ->where('expires_at', '>', Carbon::now())
+            ->orderBy('expires_at', 'asc')
+            ->limit(10)
+            ->get();
+
         // Calculate growth percentages
         $customerGrowth = $newCustomersLastMonth > 0
             ? (($newCustomersThisMonth - $newCustomersLastMonth) / $newCustomersLastMonth) * 100
@@ -121,6 +130,7 @@ class DashboardController extends Controller
                 'orders' => $recentOrders,
                 'customers' => $recentCustomers,
             ],
+            'expiringServices' => $expiringServices,
             'chartData' => [
                 'dailyOrders' => $dailyOrders,
                 'monthlyStats' => $monthlyStats,

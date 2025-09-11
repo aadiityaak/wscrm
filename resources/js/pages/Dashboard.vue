@@ -7,7 +7,7 @@ import AppLayout from '@/layouts/AppLayout.vue';
 import { dashboard } from '@/routes';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link } from '@inertiajs/vue3';
-import { BarChart3, Calendar, DollarSign, ShoppingCart, TrendingDown, TrendingUp, Users } from 'lucide-vue-next';
+import { AlertTriangle, BarChart3, Calendar, DollarSign, ShoppingCart, TrendingDown, TrendingUp, Users } from 'lucide-vue-next';
 
 interface Stats {
     customers: {
@@ -46,6 +46,9 @@ interface Order {
     total_amount: number;
     status: string;
     created_at: string;
+    expires_at?: string;
+    domain_name?: string;
+    billing_cycle?: string;
     customer: Customer;
     order_items: OrderItem[];
 }
@@ -71,6 +74,7 @@ interface Props {
         orders: Order[];
         customers: Customer[];
     };
+    expiringServices: Order[];
     chartData: {
         dailyOrders: ChartDataPoint[];
         monthlyStats: MonthlyStats[];
@@ -110,6 +114,24 @@ const formatGrowth = (growth: number) => {
         color: isPositive ? 'text-green-600' : 'text-red-600',
         icon: isPositive ? TrendingUp : TrendingDown,
     };
+};
+
+const getDaysUntilExpiry = (expiresAt: string) => {
+    const now = new Date();
+    const expiry = new Date(expiresAt);
+    const diffTime = expiry.getTime() - now.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays;
+};
+
+const getExpiryBadgeClass = (daysLeft: number) => {
+    if (daysLeft <= 15) {
+        return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300';
+    } else if (daysLeft <= 30) {
+        return 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300';
+    } else {
+        return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300';
+    }
 };
 </script>
 
@@ -225,6 +247,48 @@ const formatGrowth = (growth: number) => {
                     </CardContent>
                 </Card>
             </div>
+
+            <!-- Expiring Services Alert -->
+            <Card v-if="expiringServices.length > 0" class="border-orange-200 bg-orange-50 dark:border-orange-800 dark:bg-orange-950">
+                <CardHeader>
+                    <CardTitle class="flex items-center gap-2 text-lg text-orange-800 dark:text-orange-200">
+                        <AlertTriangle class="h-5 w-5" />
+                        Layanan Akan Berakhir
+                    </CardTitle>
+                    <CardDescription class="text-orange-700 dark:text-orange-300">
+                        {{ expiringServices.length }} layanan akan berakhir dalam 1 bulan ke depan
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <div class="space-y-3">
+                        <div
+                            v-for="service in expiringServices"
+                            :key="service.id"
+                            class="flex items-center justify-between rounded-md bg-white/50 p-3 dark:bg-gray-900/50"
+                        >
+                            <div class="flex-1">
+                                <div class="text-sm font-medium">{{ service.domain_name || `Service #${service.id}` }}</div>
+                                <div class="text-xs text-muted-foreground">{{ service.customer.name }}</div>
+                            </div>
+                            <div class="text-right">
+                                <span
+                                    v-if="service.expires_at"
+                                    class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium"
+                                    :class="getExpiryBadgeClass(getDaysUntilExpiry(service.expires_at))"
+                                >
+                                    {{ getDaysUntilExpiry(service.expires_at) }} hari lagi
+                                </span>
+                                <div class="text-xs text-muted-foreground mt-1">{{ formatDate(service.expires_at!) }}</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-4">
+                        <Button variant="outline" size="sm" asChild class="w-full">
+                            <Link href="/admin/orders?view=services&status=active">Lihat Semua Layanan</Link>
+                        </Button>
+                    </div>
+                </CardContent>
+            </Card>
 
             <!-- Recent Activities Grid -->
             <div class="grid gap-6 md:grid-cols-2">

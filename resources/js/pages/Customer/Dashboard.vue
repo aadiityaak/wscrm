@@ -228,7 +228,20 @@ const logout = () => {
                                     </div>
                                 </div>
                                 <div class="text-right">
-                                    <div class="font-medium">{{ formatPrice(order.total_amount) }}</div>
+                                    <template v-if="order.discount_amount && order.discount_amount > 0">
+                                        <div class="text-xs text-muted-foreground line-through">
+                                            {{ formatPrice(Number(order.total_amount) + Number(order.discount_amount)) }}
+                                        </div>
+                                        <div class="font-medium text-green-600 dark:text-green-400">
+                                            {{ formatPrice(order.total_amount) }}
+                                        </div>
+                                        <div class="text-xs text-green-600 dark:text-green-400 mb-1">
+                                            Hemat: {{ formatPrice(order.discount_amount) }}
+                                        </div>
+                                    </template>
+                                    <template v-else>
+                                        <div class="font-medium">{{ formatPrice(order.total_amount) }}</div>
+                                    </template>
                                     <span
                                         :class="`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${getStatusColor(order.status)}`"
                                     >

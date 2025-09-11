@@ -193,6 +193,23 @@ const getBillingCycleText = (cycle: string) => {
     }
 };
 
+const getBillingCycleColor = (cycle: string) => {
+    switch (cycle) {
+        case 'onetime':
+            return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300';
+        case 'monthly':
+            return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300';
+        case 'quarterly':
+            return 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300';
+        case 'semi_annually':
+            return 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-300';
+        case 'annually':
+            return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300';
+        default:
+            return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300';
+    }
+};
+
 const getDaysUntilExpiry = (expiryDate: string): number => {
     if (!expiryDate) return -1; // -1 for no expiry date
     
@@ -520,10 +537,20 @@ const deleteOrder = () => {
                                         </div>
                                     </td>
                                     <td class="py-3">
-                                        <div class="font-medium">{{ formatPrice(order.total_amount) }}</div>
-                                        <div v-if="order.discount_amount && order.discount_amount > 0" class="text-xs text-green-600 dark:text-green-400">
-                                            Potongan: {{ formatPrice(order.discount_amount) }}
-                                        </div>
+                                        <template v-if="order.discount_amount && order.discount_amount > 0">
+                                            <div class="text-xs text-muted-foreground line-through">
+                                                {{ formatPrice(Number(order.total_amount) + Number(order.discount_amount)) }}
+                                            </div>
+                                            <div class="font-medium text-green-600 dark:text-green-400">
+                                                {{ formatPrice(order.total_amount) }}
+                                            </div>
+                                            <div class="text-xs text-green-600 dark:text-green-400">
+                                                Hemat: {{ formatPrice(order.discount_amount) }}
+                                            </div>
+                                        </template>
+                                        <template v-else>
+                                            <div class="font-medium">{{ formatPrice(order.total_amount) }}</div>
+                                        </template>
                                     </td>
                                     <td class="py-3">
                                         <span
@@ -532,7 +559,14 @@ const deleteOrder = () => {
                                             {{ getStatusText(order.status) }}
                                         </span>
                                     </td>
-                                    <td class="py-3 text-sm">{{ getBillingCycleText(order.billing_cycle) }}</td>
+                                    <td class="py-3 text-sm">
+                                        <span
+                                            class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium"
+                                            :class="getBillingCycleColor(order.billing_cycle)"
+                                        >
+                                            {{ getBillingCycleText(order.billing_cycle) }}
+                                        </span>
+                                    </td>
                                     <td v-if="currentView === 'services'" class="py-3 text-sm">
                                         <div v-if="order.expires_at" class="space-y-1">
                                             <div class="text-muted-foreground">
