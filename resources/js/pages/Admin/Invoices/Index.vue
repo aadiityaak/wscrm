@@ -68,6 +68,7 @@ interface Props {
     };
     customers: Customer[];
     services: Service[];
+    generationMessage?: string;
 }
 
 const props = defineProps<Props>();
@@ -218,6 +219,14 @@ const getDefaultDueDate = () => {
 
     <AppLayout :breadcrumbs="breadcrumbs">
         <div class="space-y-6 p-6">
+            <!-- Auto-generation Message -->
+            <div v-if="generationMessage" class="rounded-lg bg-blue-50 border border-blue-200 p-4 dark:bg-blue-950 dark:border-blue-800">
+                <div class="flex items-center gap-2">
+                    <FileText class="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                    <span class="font-medium text-blue-800 dark:text-blue-200">{{ generationMessage }}</span>
+                </div>
+            </div>
+
             <div class="flex items-center justify-between">
                 <div>
                     <h1 class="text-3xl font-bold tracking-tight">Invoice Management</h1>

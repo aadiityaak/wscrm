@@ -3,14 +3,70 @@
 namespace App\Services;
 
 use App\Models\Invoice;
+use App\Models\Order;
 use Carbon\Carbon;
 
 class InvoiceGeneratorService
 {
     public function generateRenewalInvoices(int $daysBefore = 30): int
     {
-        // TODO: Implement renewal invoice generation based on orders
-        return 0;
+        $expiryDate = Carbon::now()->addDays($daysBefore);
+        
+        // Find active services (orders) that will expire within the specified days
+        $expiringOrders = Order::where('status', 'active')
+            ->where('auto_renew', true) // Only generate for auto-renewing services
+            ->where('expires_at', '<=', $expiryDate)
+            ->whereDoesntHave('invoices', function($query) use ($expiryDate) {
+                // Don't generate if there's already a renewal invoice for this period
+                $query->where('invoice_type', 'renewal')
+                      ->where('due_date', '>=', Carbon::now())
+                      ->where('due_date', '<=', $expiryDate->addDays(30));
+            })
+            ->with(['customer'])
+            ->get();
+        
+        $generatedCount = 0;
+        
+        foreach ($expiringOrders as $order) {
+            // Calculate renewal amount (same as current order amount minus discount for renewal)
+            $renewalAmount = $order->total_amount;
+            
+            // Apply renewal discount if service has been active for more than 1 year
+            $serviceAge = Carbon::parse($order->created_at)->diffInMonths(Carbon::now());
+            $discount = 0;
+            if ($serviceAge >= 12) {
+                $discount = $renewalAmount * 0.05; // 5% discount for loyal customers
+            }
+            
+            // Generate due date (7 days before expiry)
+            $dueDate = Carbon::parse($order->expires_at)->subDays(7);
+            if ($dueDate->lt(Carbon::now())) {
+                $dueDate = Carbon::now()->addDays(3); // If already past, give 3 days
+            }
+            
+            // Create renewal invoice
+            $invoice = Invoice::create([
+                'customer_id' => $order->customer_id,
+                'order_id' => $order->id,
+                'invoice_number' => $this->generateInvoiceNumber(),
+                'invoice_type' => 'renewal',
+                'amount' => $renewalAmount - $discount,
+                'discount' => $discount,
+                'issue_date' => Carbon::now()->toDateString(),
+                'due_date' => $dueDate->toDateString(),
+                'status' => 'pending',
+                'billing_cycle' => $order->billing_cycle,
+                'notes' => "Renewal invoice for {$order->domain_name} - {$order->service_type} service expiring on " . Carbon::parse($order->expires_at)->format('d M Y'),
+            ]);
+            
+            \Log::info("Generated renewal invoice #{$invoice->invoice_number} for order #{$order->id} - {$order->domain_name}");
+            
+            // TODO: Send email notification to customer about renewal invoice
+            // TODO: Send notification to admin about generated renewal invoices
+            $generatedCount++;
+        }
+        
+        return $generatedCount;
     }
 
     public function generateInvoiceNumber(): string
