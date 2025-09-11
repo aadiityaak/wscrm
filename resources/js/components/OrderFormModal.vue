@@ -76,7 +76,7 @@ const formData = ref({
     billing_cycle: 'onetime' as 'onetime' | 'monthly' | 'quarterly' | 'semi_annually' | 'annually',
     status: 'pending' as 'pending' | 'processing' | 'active' | 'suspended' | 'expired' | 'terminated' | 'cancelled',
     expires_at: '',
-    auto_renew: true,
+    auto_renew: false,
     items: [
         {
             item_type: 'hosting' as 'hosting' | 'domain' | 'service' | 'app' | 'web' | 'maintenance',
@@ -102,6 +102,22 @@ const modalDescription = computed(() => {
 
 const isEditMode = computed(() => props.mode === 'edit');
 
+// Function to format date for input[type="date"]
+const formatDateForInput = (dateString: string | null): string => {
+    if (!dateString) return '';
+    
+    try {
+        // Handle various date formats and convert to YYYY-MM-DD
+        const date = new Date(dateString);
+        if (isNaN(date.getTime())) return '';
+        
+        return date.toISOString().split('T')[0]; // Format: YYYY-MM-DD
+    } catch (error) {
+        console.warn('Invalid date format:', dateString);
+        return '';
+    }
+};
+
 // Watch for order changes to populate form
 watch(() => props.order, (order) => {
     if (order && props.mode === 'edit') {
@@ -111,8 +127,8 @@ watch(() => props.order, (order) => {
             domain_name: order.domain_name || '',
             billing_cycle: order.billing_cycle as typeof formData.value.billing_cycle,
             status: order.status as typeof formData.value.status,
-            expires_at: order.expires_at || '',
-            auto_renew: order.auto_renew || true,
+            expires_at: formatDateForInput(order.expires_at || ''),
+            auto_renew: order.auto_renew || false,
             items: order.order_items.map(item => ({
                 id: item.id,
                 item_type: item.item_type,
@@ -133,7 +149,7 @@ watch(() => props.mode, (mode) => {
             billing_cycle: 'onetime',
             status: 'pending',
             expires_at: '',
-            auto_renew: true,
+            auto_renew: false,
             items: [{
                 item_type: 'hosting',
                 item_id: '',
@@ -241,13 +257,14 @@ const close = () => {
                     </div>
                     
                     <div>
-                        <Label :for="`${mode}-domain`">Nama Domain (Opsional)</Label>
+                        <Label :for="`${mode}-domain`">Nama Domain</Label>
                         <Input 
                             :id="`${mode}-domain`"
                             v-model="formData.domain_name" 
-                            placeholder="example.com (kosongkan jika tidak ada)" 
+                            placeholder="Masukkan nama domain (contoh: example.com)" 
                         />
                         <p v-if="errors.domain_name" class="mt-1 text-xs text-red-500">{{ errors.domain_name }}</p>
+                        <p class="mt-1 text-xs text-muted-foreground">Field ini opsional - kosongkan jika tidak ada domain</p>
                     </div>
                 </div>
 

@@ -101,7 +101,7 @@ const createServiceForm = useForm('/admin/orders/create-service', {
     plan_id: '',
     domain_name: '',
     expires_at: '',
-    auto_renew: true,
+    auto_renew: false,
 });
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -498,19 +498,26 @@ const deleteOrder = () => {
                     <!-- Pagination -->
                     <div v-if="orders.links && orders.links.length > 3" class="mt-6 flex justify-center">
                         <nav class="flex space-x-1">
-                            <Link
-                                v-for="link in orders.links"
-                                :key="link.label"
-                                :href="link.url"
-                                :class="[
-                                    'rounded px-3 py-2 text-sm',
-                                    link.active
-                                        ? 'bg-primary text-primary-foreground'
-                                        : 'hover:bg-muted',
-                                    !link.url && 'cursor-not-allowed opacity-50'
-                                ]"
-                                v-html="link.label"
-                            />
+                            <template v-for="link in orders.links" :key="link.label">
+                                <Link
+                                    v-if="link.url"
+                                    :href="link.url"
+                                    :class="[
+                                        'rounded px-3 py-2 text-sm',
+                                        link.active
+                                            ? 'bg-primary text-primary-foreground'
+                                            : 'hover:bg-muted'
+                                    ]"
+                                    v-html="link.label"
+                                />
+                                <span
+                                    v-else
+                                    :class="[
+                                        'rounded px-3 py-2 text-sm cursor-not-allowed opacity-50'
+                                    ]"
+                                    v-html="link.label"
+                                />
+                            </template>
                         </nav>
                     </div>
                 </CardContent>
