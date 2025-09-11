@@ -92,21 +92,12 @@ const serviceTypeFilter = ref(props.filters?.service_type || '');
 const customerFilter = ref(props.filters?.customer_id || '');
 const currentView = ref(props.view || 'orders');
 const showCreateModal = ref(false);
-const showCreateServiceModal = ref(false);
 const showOrderFormModal = ref(false);
 const orderFormMode = ref<'create' | 'edit'>('create');
 const showDeleteModal = ref(false);
 const selectedOrder = ref<Order | null>(null);
 const orderToDelete = ref<Order | null>(null);
 
-const createServiceForm = useForm('/admin/orders/create-service', {
-    customer_id: '',
-    service_type: 'hosting' as 'hosting' | 'domain',
-    plan_id: '',
-    domain_name: '',
-    expires_at: '',
-    auto_renew: false,
-});
 
 const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Dashboard', href: '/dashboard' },
@@ -329,14 +320,6 @@ const handleOrderFormSubmit = (data: any) => {
     }
 };
 
-const submitCreateService = () => {
-    createServiceForm.post('/admin/orders/create-service', {
-        onSuccess: () => {
-            showCreateServiceModal.value = false;
-            createServiceForm.reset();
-        },
-    });
-};
 
 const confirmDelete = (order: Order) => {
     orderToDelete.value = order;
@@ -376,10 +359,6 @@ const deleteOrder = () => {
                     <Button @click="openCreateModal" class="flex items-center space-x-2">
                         <Plus class="h-4 w-4" />
                         <span>Buat Pesanan</span>
-                    </Button>
-                    <Button @click="showCreateServiceModal = true" variant="outline" class="flex items-center space-x-2">
-                        <Package class="h-4 w-4" />
-                        <span>Buat Layanan</span>
                     </Button>
                 </div>
             </div>
@@ -652,107 +631,6 @@ const deleteOrder = () => {
             @submit="handleOrderFormSubmit"
         />
 
-        <!-- Create Service Modal -->
-        <div v-if="showCreateServiceModal" class="fixed inset-0 z-50 flex items-center justify-center">
-            <!-- Overlay -->
-            <div class="fixed inset-0 bg-black/50" @click="showCreateServiceModal = false"></div>
-            <!-- Modal Content -->
-            <div class="relative mx-4 max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-lg bg-white p-6 shadow-xl dark:bg-gray-900">
-                <!-- Header -->
-                <div class="mb-4 flex items-center justify-between">
-                    <div>
-                        <h2 class="text-lg font-semibold">Buat Layanan Baru</h2>
-                        <p class="text-sm text-muted-foreground">Buat layanan aktif untuk pelanggan yang sudah ada.</p>
-                    </div>
-                    <button @click="showCreateServiceModal = false" class="cursor-pointer text-gray-500 hover:text-gray-700">
-                        <X class="h-4 w-4" />
-                    </button>
-                </div>
-                <form @submit.prevent="submitCreateService" class="space-y-4">
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <Label for="service-customer">Pelanggan *</Label>
-                            <select
-                                id="service-customer"
-                                v-model="createServiceForm.customer_id"
-                                class="flex h-9 w-full cursor-pointer rounded-md border border-input bg-background px-3 py-1 text-sm text-foreground shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none dark:bg-gray-800 dark:text-white"
-                                required
-                            >
-                                <option value="">Pilih Pelanggan</option>
-                                <option v-for="customer in customers" :key="customer.id" :value="customer.id">
-                                    {{ customer.name }} ({{ customer.email }})
-                                </option>
-                            </select>
-                            <p v-if="createServiceForm.errors.customer_id" class="mt-1 text-xs text-red-500">{{ createServiceForm.errors.customer_id }}</p>
-                        </div>
-                        <div>
-                            <Label for="service-type">Tipe Layanan *</Label>
-                            <select
-                                id="service-type"
-                                v-model="createServiceForm.service_type"
-                                class="flex h-9 w-full cursor-pointer rounded-md border border-input bg-background px-3 py-1 text-sm text-foreground shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none dark:bg-gray-800 dark:text-white"
-                                required
-                            >
-                                <option value="hosting">Hosting</option>
-                                <option value="domain">Domain</option>
-                            </select>
-                            <p v-if="createServiceForm.errors.service_type" class="mt-1 text-xs text-red-500">{{ createServiceForm.errors.service_type }}</p>
-                        </div>
-                    </div>
-                    <div v-if="createServiceForm.service_type === 'hosting'">
-                        <Label for="hosting-plan">Paket Hosting *</Label>
-                        <select
-                            id="hosting-plan"
-                            v-model="createServiceForm.plan_id"
-                            class="flex h-9 w-full cursor-pointer rounded-md border border-input bg-background px-3 py-1 text-sm text-foreground shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none dark:bg-gray-800 dark:text-white"
-                            required
-                        >
-                            <option value="">Pilih Paket Hosting</option>
-                            <option v-for="plan in hostingPlans" :key="plan.id" :value="plan.id">
-                                {{ plan.plan_name }} ({{ plan.storage_gb }}GB, {{ plan.cpu_cores }} CPU, {{ plan.ram_gb }}GB RAM)
-                            </option>
-                        </select>
-                        <p v-if="createServiceForm.errors.plan_id" class="mt-1 text-xs text-red-500">{{ createServiceForm.errors.plan_id }}</p>
-                    </div>
-                    <div>
-                        <Label for="service-domain">Nama Domain *</Label>
-                        <Input 
-                            id="service-domain"
-                            v-model="createServiceForm.domain_name" 
-                            placeholder="example.com" 
-                            required
-                        />
-                        <p v-if="createServiceForm.errors.domain_name" class="mt-1 text-xs text-red-500">{{ createServiceForm.errors.domain_name }}</p>
-                    </div>
-                    <div>
-                        <Label for="service-expires">Tanggal Kedaluwarsa *</Label>
-                        <DatePicker
-                            v-model="createServiceForm.expires_at"
-                            placeholder="Pilih tanggal kedaluwarsa"
-                            :min-date="new Date().toISOString().split('T')[0]"
-                        />
-                        <p v-if="createServiceForm.errors.expires_at" class="mt-1 text-xs text-red-500">{{ createServiceForm.errors.expires_at }}</p>
-                    </div>
-                    <div class="flex items-center space-x-2">
-                        <input
-                            id="service-auto-renew"
-                            v-model="createServiceForm.auto_renew"
-                            type="checkbox"
-                            class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                        />
-                        <Label for="service-auto-renew">Perpanjang Otomatis</Label>
-                    </div>
-                    <div class="flex justify-end space-x-3 pt-4">
-                        <Button type="button" variant="outline" @click="showCreateServiceModal = false">
-                            Batal
-                        </Button>
-                        <Button type="submit" :disabled="createServiceForm.processing">
-                            {{ createServiceForm.processing ? 'Membuat...' : 'Buat Layanan' }}
-                        </Button>
-                    </div>
-                </form>
-            </div>
-        </div>
 
         <!-- Delete Confirmation Modal -->
         <div v-if="showDeleteModal" class="fixed inset-0 z-50 flex items-center justify-center">

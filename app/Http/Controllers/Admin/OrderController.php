@@ -249,31 +249,6 @@ class OrderController extends Controller
         }
     }
 
-    public function createService(Request $request)
-    {
-        $request->validate([
-            'customer_id' => 'required|exists:customers,id',
-            'service_type' => 'required|in:hosting,domain',
-            'plan_id' => 'required_if:service_type,hosting|exists:hosting_plans,id',
-            'domain_name' => 'required|string|max:255',
-            'expires_at' => 'required|date|after:today',
-            'auto_renew' => 'boolean',
-        ]);
-
-        Order::create([
-            'customer_id' => $request->customer_id,
-            'service_type' => $request->service_type,
-            'plan_id' => $request->plan_id,
-            'domain_name' => $request->domain_name,
-            'status' => 'active',
-            'expires_at' => $request->expires_at,
-            'auto_renew' => $request->auto_renew ?? false,
-            'billing_cycle' => 'annually',
-            'total_amount' => 0, // Will be updated with proper pricing
-        ]);
-
-        return redirect()->back()->with('success', 'Layanan berhasil dibuat!');
-    }
 
     public function destroy(Order $order)
     {

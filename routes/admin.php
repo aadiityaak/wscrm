@@ -14,7 +14,6 @@ use Illuminate\Support\Facades\Route;
 Route::prefix('admin')->name('admin.')->middleware(['auth', 'verified'])->group(function () {
     Route::resource('customers', CustomerController::class)->only(['index', 'show', 'store', 'update', 'destroy']);
     Route::resource('orders', OrderController::class)->only(['index', 'show', 'store', 'update', 'destroy']);
-    Route::post('orders/create-service', [OrderController::class, 'createService'])->name('orders.create-service');
 
     // Legacy service routes redirect to orders with services view
     Route::get('services', function () {
