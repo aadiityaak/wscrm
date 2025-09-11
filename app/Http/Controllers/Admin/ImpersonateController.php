@@ -30,7 +30,7 @@ class ImpersonateController extends Controller
     public function stopImpersonation()
     {
         if (!session('is_impersonating')) {
-            return redirect('/admin/dashboard');
+            return redirect('/admin/customers');
         }
         
         // Logout from customer account
@@ -45,6 +45,6 @@ class ImpersonateController extends Controller
         // Clear impersonation session data
         session()->forget(['is_impersonating', 'admin_user_id']);
         
-        return redirect('/admin/dashboard')->with('success', 'Berhasil kembali ke akun admin');
+        return redirect('/admin/customers')->with('success', 'Berhasil kembali ke akun admin');
     }
 }
