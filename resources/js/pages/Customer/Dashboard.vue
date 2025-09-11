@@ -230,10 +230,10 @@ const logout = () => {
                                 <div class="text-right">
                                     <template v-if="order.discount_amount && order.discount_amount > 0">
                                         <div class="text-xs text-muted-foreground line-through">
-                                            {{ formatPrice(Number(order.total_amount) + Number(order.discount_amount)) }}
+                                            {{ formatPrice(order.total_amount) }}
                                         </div>
                                         <div class="font-medium text-green-600 dark:text-green-400">
-                                            {{ formatPrice(order.total_amount) }}
+                                            {{ formatPrice(Number(order.total_amount) - Number(order.discount_amount)) }}
                                         </div>
                                         <div class="text-xs text-green-600 dark:text-green-400 mb-1">
                                             Hemat: {{ formatPrice(order.discount_amount) }}
