@@ -198,40 +198,45 @@ const handleSubmit = async () => {
             <div class="p-6">
                 <div class="space-y-6">
                 <!-- Selected Hosting Plan -->
-                <Card class="border-blue-200 bg-blue-50/50">
-                    <CardHeader class="pb-3">
-                        <CardTitle class="text-lg flex items-center justify-between">
-                            {{ hostingPlan.plan_name }}
-                            <div class="flex items-center gap-2">
-                                <Badge v-if="hostingPlan.discount_percent > 0" class="bg-red-500 text-white">
+                <div class="border border-blue-200 bg-blue-50/30 rounded-lg p-4">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <Server class="h-5 w-5 text-blue-600" />
+                            <div>
+                                <h3 class="font-semibold text-gray-900">{{ hostingPlan.plan_name }}</h3>
+                                <div class="flex items-center gap-3 text-sm text-gray-600 mt-1">
+                                    <span class="flex items-center gap-1">
+                                        <HardDrive class="h-3 w-3" />
+                                        {{ hostingPlan.storage_gb }}GB
+                                    </span>
+                                    <span class="flex items-center gap-1">
+                                        <Server class="h-3 w-3" />
+                                        {{ hostingPlan.cpu_cores }} Core
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <div class="text-right">
+                                <div v-if="bundleSavings > 0" class="text-xs text-gray-500">
+                                    <span class="line-through">{{ formatPrice(getDiscountedPrice(hostingPlan.selling_price, hostingPlan.discount_percent)) }}</span>
+                                </div>
+                                <div class="text-lg font-bold text-blue-600">{{ formatPrice(hostingPrice) }}</div>
+                            </div>
+                            <div class="flex flex-col gap-1">
+                                <Badge v-if="hostingPlan.discount_percent > 0" class="bg-red-500 text-white text-xs px-2 py-0.5">
                                     {{ hostingPlan.discount_percent }}% OFF
                                 </Badge>
-                                <Badge v-if="qualifiesForDiscount && domainOption === 'new'" class="bg-green-500 text-white">
-                                    Bundle Discount 10%
+                                <Badge v-if="qualifiesForDiscount && domainOption === 'new'" class="bg-green-500 text-white text-xs px-2 py-0.5">
+                                    Bundle 10%
                                 </Badge>
                             </div>
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent class="space-y-3">
-                        <div class="grid grid-cols-2 gap-4 text-sm">
-                            <div class="flex items-center gap-2">
-                                <HardDrive class="h-4 w-4 text-blue-500" />
-                                <span>Storage: {{ hostingPlan.storage_gb }}GB</span>
-                            </div>
-                            <div class="flex items-center gap-2">
-                                <Server class="h-4 w-4 text-green-500" />
-                                <span>CPU: {{ hostingPlan.cpu_cores }} Cores</span>
-                            </div>
                         </div>
-                        <div class="text-right">
-                            <div v-if="bundleSavings > 0" class="text-sm">
-                                <span class="line-through text-muted-foreground">{{ formatPrice(getDiscountedPrice(hostingPlan.selling_price, hostingPlan.discount_percent)) }}</span>
-                                <span class="ml-2 text-green-600 font-semibold">Hemat {{ formatPrice(bundleSavings) }}</span>
-                            </div>
-                            <div class="text-lg font-bold text-blue-600">{{ formatPrice(hostingPrice) }}</div>
-                        </div>
-                    </CardContent>
-                </Card>
+                    </div>
+                    <div v-if="bundleSavings > 0" class="mt-2 text-xs text-green-600 text-center bg-green-50 rounded px-2 py-1">
+                        Hemat {{ formatPrice(bundleSavings) }} dengan bundle discount
+                    </div>
+                </div>
 
                 <!-- Domain Selection -->
                 <div class="space-y-4">
