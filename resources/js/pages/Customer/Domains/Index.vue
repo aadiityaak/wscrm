@@ -3,11 +3,12 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import HostingOrderModal from '@/components/HostingOrderModal.vue';
 import CustomerLayout from '@/layouts/CustomerLayout.vue';
 import customer from '@/routes/customer';
 import { type BreadcrumbItem } from '@/types';
 import { Head, router } from '@inertiajs/vue3';
-import { Crown, Globe, Search, ShoppingCart, Star, TrendingUp } from 'lucide-vue-next';
+import { Crown, Globe, Search, Server, ShoppingCart, Star, TrendingUp } from 'lucide-vue-next';
 import { ref } from 'vue';
 
 interface DomainPrice {
@@ -20,8 +21,22 @@ interface DomainPrice {
     is_active: boolean;
 }
 
+interface HostingPlan {
+    id: number;
+    plan_name: string;
+    storage_gb: number;
+    cpu_cores: number;
+    ram_gb: number;
+    bandwidth: string;
+    selling_price: number;
+    discount_percent: number;
+    features: string[];
+    is_active: boolean;
+}
+
 interface Props {
     domainPrices: DomainPrice[];
+    hostingPlans: HostingPlan[];
     filters: {
         search?: string;
     };
@@ -86,6 +101,7 @@ const orderDomain = (domainPriceId: number) => {
                 quantity: 1,
             },
         ],
+        billing_cycle: 'annually', // Domain orders are typically annual
     });
 };
 </script>

@@ -3,11 +3,12 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import HostingOrderModal from '@/components/HostingOrderModal.vue';
 import CustomerLayout from '@/layouts/CustomerLayout.vue';
 import customer from '@/routes/customer';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link, router } from '@inertiajs/vue3';
-import { AlertCircle, ArrowLeft, Check, Crown, Globe, Search, ShoppingCart, X } from 'lucide-vue-next';
+import { AlertCircle, ArrowLeft, Check, Crown, Globe, Search, Server, ShoppingCart, X } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 
 interface DomainPrice {
@@ -20,15 +21,38 @@ interface DomainPrice {
     is_active: boolean;
 }
 
+interface HostingPlan {
+    id: number;
+    plan_name: string;
+    storage_gb: number;
+    cpu_cores: number;
+    ram_gb: number;
+    bandwidth: string;
+    selling_price: number;
+    discount_percent: number;
+    features: string[];
+    is_active: boolean;
+}
+
+interface ExistingDomain {
+    id: number;
+    domain_name: string;
+    status: string;
+}
+
 interface Props {
     domain: string;
     requestedExtension: string;
     domainPrices: DomainPrice[];
+    hostingPlans: HostingPlan[];
 }
 
 const props = defineProps<Props>();
 
 const newSearch = ref(props.domain);
+const showHostingModal = ref(false);
+const selectedHostingPlan = ref<HostingPlan | null>(null);
+const selectedDomainForHosting = ref('');
 
 const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Dashboard', href: customer.dashboard().url },
@@ -74,6 +98,34 @@ const getDomainStatus = (extension: string) => {
 
 const orderDomain = (domainPriceId: number, extension: string) => {
     const fullDomain = `${props.domain}.${extension}`;
+    
+    // Show hosting offer first
+    if (props.hostingPlans.length > 0) {
+        selectedDomainForHosting.value = fullDomain;
+        showHostingOfferModal(props.hostingPlans[0]); // Show first (smallest) hosting plan
+    } else {
+        // Direct domain order if no hosting plans available
+        router.post(customer.orders.store().url, {
+            items: [
+                {
+                    item_type: 'domain',
+                    item_id: domainPriceId,
+                    domain_name: fullDomain,
+                    quantity: 1,
+                },
+            ],
+            billing_cycle: 'annually', // Domain orders are typically annual
+        });
+    }
+};
+
+const showHostingOfferModal = (hostingPlan: HostingPlan) => {
+    selectedHostingPlan.value = hostingPlan;
+    showHostingModal.value = true;
+};
+
+const orderDomainOnly = (domainPriceId: number, extension: string) => {
+    const fullDomain = `${props.domain}.${extension}`;
     router.post(customer.orders.store().url, {
         items: [
             {
@@ -83,6 +135,7 @@ const orderDomain = (domainPriceId: number, extension: string) => {
                 quantity: 1,
             },
         ],
+        billing_cycle: 'annually', // Domain orders are typically annual
     });
 };
 
@@ -160,16 +213,59 @@ const otherDomains = computed(() => {
                                     <div class="text-2xl font-bold text-blue-600">
                                         {{ formatPrice(domainPrices.find((d) => d.extension === requestedExtension)?.selling_price || 0) }}
                                     </div>
-                                    <Button
-                                        @click="
-                                            orderDomain(domainPrices.find((d) => d.extension === requestedExtension)?.id || 0, requestedExtension)
-                                        "
-                                        size="lg"
-                                    >
-                                        <ShoppingCart class="mr-2 h-4 w-4" />
-                                        Register Now
-                                    </Button>
+                                    <div class="space-y-2">
+                                        <Button
+                                            @click="
+                                                orderDomain(domainPrices.find((d) => d.extension === requestedExtension)?.id || 0, requestedExtension)
+                                            "
+                                            size="lg"
+                                        >
+                                            <ShoppingCart class="mr-2 h-4 w-4" />
+                                            Register + Hosting
+                                        </Button>
+                                        <Button
+                                            @click="
+                                                orderDomainOnly(domainPrices.find((d) => d.extension === requestedExtension)?.id || 0, requestedExtension)
+                                            "
+                                            variant="outline"
+                                            size="sm"
+                                            class="w-full"
+                                        >
+                                            Domain Only
+                                        </Button>
+                                    </div>
                                 </div>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
+
+            <!-- Hosting Offer -->
+            <div v-if="hostingPlans.length > 0">
+                <Card class="border-green-200 bg-green-50/50">
+                    <CardContent class="pt-6">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-3">
+                                <div class="rounded-full bg-green-100 p-2">
+                                    <Server class="h-5 w-5 text-green-600" />
+                                </div>
+                                <div>
+                                    <h3 class="font-semibold text-green-900">Need hosting for your domain?</h3>
+                                    <p class="text-sm text-green-700">Get started with our hosting plans. Perfect for your new domain!</p>
+                                </div>
+                            </div>
+                            <div class="flex gap-2">
+                                <Button
+                                    v-for="plan in hostingPlans.slice(0, 2)"
+                                    :key="plan.id"
+                                    variant="outline"
+                                    size="sm"
+                                    class="border-green-300 text-green-700 hover:bg-green-100"
+                                    @click="showHostingOfferModal(plan)"
+                                >
+                                    {{ plan.plan_name }} - {{ formatPrice(plan.selling_price * (1 - plan.discount_percent / 100)) }}
+                                </Button>
                             </div>
                         </div>
                     </CardContent>
@@ -217,10 +313,15 @@ const otherDomains = computed(() => {
                                     <span>{{ formatPrice(domainPrice.renewal_price_with_tax) }}/year</span>
                                 </div>
 
-                                <Button @click="orderDomain(domainPrice.id, domainPrice.extension)" class="w-full">
-                                    <ShoppingCart class="mr-2 h-4 w-4" />
-                                    Register
-                                </Button>
+                                <div class="space-y-2">
+                                    <Button @click="orderDomain(domainPrice.id, domainPrice.extension)" class="w-full">
+                                        <ShoppingCart class="mr-2 h-4 w-4" />
+                                        Register + Hosting
+                                    </Button>
+                                    <Button @click="orderDomainOnly(domainPrice.id, domainPrice.extension)" variant="outline" size="sm" class="w-full">
+                                        Domain Only
+                                    </Button>
+                                </div>
                             </div>
 
                             <div v-else class="space-y-3">
@@ -264,7 +365,14 @@ const otherDomains = computed(() => {
                                     <div class="text-xs text-muted-foreground">first year</div>
                                 </div>
 
-                                <Button @click="orderDomain(domainPrice.id, domainPrice.extension)" size="sm" class="w-full"> Register </Button>
+                                <div class="space-y-1">
+                                    <Button @click="orderDomain(domainPrice.id, domainPrice.extension)" size="sm" class="w-full text-xs">
+                                        Register + Hosting
+                                    </Button>
+                                    <Button @click="orderDomainOnly(domainPrice.id, domainPrice.extension)" variant="outline" size="sm" class="w-full text-xs">
+                                        Domain Only
+                                    </Button>
+                                </div>
                             </div>
 
                             <div v-else class="text-center">
@@ -300,5 +408,15 @@ const otherDomains = computed(() => {
                 </CardContent>
             </Card>
         </div>
+
+        <!-- Hosting Order Modal -->
+        <HostingOrderModal
+            v-if="selectedHostingPlan"
+            :open="showHostingModal"
+            @update:open="showHostingModal = $event"
+            :hostingPlan="selectedHostingPlan"
+            :domainPrices="domainPrices"
+            :existingDomains="[]"
+        />
     </CustomerLayout>
 </template>

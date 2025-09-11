@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Customer;
 
 use App\Http\Controllers\Controller;
 use App\Models\DomainPrice;
+use App\Models\HostingPlan;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -19,8 +20,15 @@ class DomainController extends Controller
             ->orderBy('selling_price')
             ->get();
 
+        // Get hosting plans for upsell
+        $hostingPlans = HostingPlan::where('is_active', true)
+            ->orderBy('storage_gb')
+            ->limit(3) // Show top 3 plans for selection
+            ->get();
+
         return Inertia::render('Customer/Domains/Index', [
             'domainPrices' => $domainPrices,
+            'hostingPlans' => $hostingPlans,
             'filters' => request()->only(['search']),
         ]);
     }
@@ -44,10 +52,17 @@ class DomainController extends Controller
             ->orderBy('selling_price')
             ->get();
 
+        // Get hosting plans for upsell
+        $hostingPlans = HostingPlan::where('is_active', true)
+            ->orderBy('storage_gb')
+            ->limit(3) // Show top 3 plans for selection
+            ->get();
+
         return Inertia::render('Customer/Domains/Search', [
             'domain' => $domain,
             'requestedExtension' => $extension,
             'domainPrices' => $availableExtensions,
+            'hostingPlans' => $hostingPlans,
         ]);
     }
 }
