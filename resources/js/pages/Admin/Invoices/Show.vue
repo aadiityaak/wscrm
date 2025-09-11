@@ -127,9 +127,11 @@ const getTypeColor = (type: string) => {
                     <p class="text-muted-foreground">Invoice details and information</p>
                 </div>
                 <div class="flex items-center gap-2">
-                    <Button variant="outline">
-                        <Download class="mr-2 h-4 w-4" />
-                        Download PDF
+                    <Button variant="outline" asChild>
+                        <a :href="`/admin/invoices/${invoice.id}/download`" target="_blank" rel="noopener">
+                            <Download class="mr-2 h-4 w-4" />
+                            Download PDF
+                        </a>
                     </Button>
                     <Button asChild>
                         <Link :href="`/admin/invoices/${invoice.id}/edit`"> Edit Invoice </Link>
@@ -181,15 +183,30 @@ const getTypeColor = (type: string) => {
                             <Separator />
 
                             <div>
-                                <div class="mb-2 text-sm font-medium text-muted-foreground">Amount</div>
+                                <div class="mb-2 text-sm font-medium text-muted-foreground">Detail Tagihan</div>
                                 <div v-if="invoice.discount && invoice.discount > 0" class="space-y-2">
-                                    <div class="text-lg text-muted-foreground line-through">{{ formatPrice(invoice.amount) }}</div>
-                                    <div class="text-sm text-red-600">Potongan: -{{ formatPrice(invoice.discount) }}</div>
-                                    <div class="text-3xl font-bold text-green-600">{{ formatPrice(invoice.amount - invoice.discount) }}</div>
-                                    <div class="text-sm text-muted-foreground">Final Amount</div>
+                                    <div class="flex justify-between text-sm">
+                                        <span>Subtotal:</span>
+                                        <span>{{ formatPrice(Number(invoice.amount) + Number(invoice.discount)) }}</span>
+                                    </div>
+                                    <div class="flex justify-between text-sm text-green-600">
+                                        <span>Diskon:</span>
+                                        <span>-{{ formatPrice(invoice.discount) }}</span>
+                                    </div>
+                                    <Separator />
+                                    <div class="flex justify-between text-lg font-semibold">
+                                        <span>Total:</span>
+                                        <span>{{ formatPrice(invoice.amount) }}</span>
+                                    </div>
                                 </div>
-                                <div v-else class="text-3xl font-bold">{{ formatPrice(invoice.amount) }}</div>
-                                <div class="mt-1 text-sm text-muted-foreground">Billing Cycle: {{ invoice.billing_cycle.replace('_', ' ') }}</div>
+                                <div v-else class="space-y-2">
+                                    <div class="flex justify-between text-lg font-semibold">
+                                        <span>Total:</span>
+                                        <span>{{ formatPrice(invoice.amount) }}</span>
+                                    </div>
+                                </div>
+                                <div class="text-3xl font-bold mt-2">{{ formatPrice(invoice.amount) }}</div>
+                                <div class="mt-1 text-sm text-muted-foreground">Siklus Tagihan: {{ invoice.billing_cycle.replace('_', ' ') }}</div>
                             </div>
 
                             <Separator v-if="invoice.payment_method || invoice.paid_at" />

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Customer;
 use App\Models\Invoice;
 use App\Services\InvoiceGeneratorService;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -16,13 +17,13 @@ class InvoiceController extends Controller
     {
         // Auto-generate renewal invoices for services expiring within 30 days
         $generatedCount = $generator->generateRenewalInvoices(30);
-        
+
         // Add message to session if invoices were generated
         $generationMessage = null;
         if ($generatedCount > 0) {
             $generationMessage = "Auto-generated {$generatedCount} renewal invoice(s) for expiring services.";
         }
-        
+
         $query = Invoice::with(['customer', 'order']);
 
         // Search functionality
@@ -135,6 +136,25 @@ class InvoiceController extends Controller
         $count = $generator->generateRenewalInvoices(30);
 
         return back()->with('message', "Generated {$count} renewal invoice(s) successfully.");
+    }
+
+    public function downloadPdf(Invoice $invoice)
+    {
+        try {
+            $invoice->load(['customer', 'order.orderItems']);
+
+            $pdf = Pdf::loadView('invoices.pdf', compact('invoice'))
+                ->setPaper('a4', 'portrait');
+
+            $filename = 'invoice-'.str_replace(['/', '\\'], '-', $invoice->invoice_number).'.pdf';
+
+            return $pdf->download($filename);
+
+        } catch (\Exception $e) {
+            \Log::error('PDF Generation Error: '.$e->getMessage());
+
+            return back()->with('error', 'Gagal menggenerate PDF: '.$e->getMessage());
+        }
     }
 
     /**

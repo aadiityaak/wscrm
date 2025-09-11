@@ -24,6 +24,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'verified'])->group(
     })->name('services.show');
     Route::resource('service-plans', ServicePlanController::class)->only(['index', 'show', 'store', 'update', 'destroy']);
     Route::resource('invoices', InvoiceController::class)->only(['index', 'show', 'store', 'update']);
+    Route::get('invoices/{invoice}/download', [InvoiceController::class, 'downloadPdf'])->name('invoices.download');
     Route::post('invoices/generate-renewals', [InvoiceController::class, 'generateRenewalInvoices'])->name('invoices.generate-renewals');
     Route::resource('domain-prices', DomainPriceController::class);
     Route::resource('hosting-plans', HostingPlanController::class);
@@ -35,7 +36,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'verified'])->group(
     Route::delete('bulk-pricing/delete-config/{id}', [BulkPricingController::class, 'deleteConfig'])->name('bulk-pricing.delete-config');
     Route::resource('banks', BankController::class);
     Route::patch('banks/{bank}/toggle-status', [BankController::class, 'toggleStatus'])->name('banks.toggle-status');
-    
+
     // Customer Impersonation
     Route::post('impersonate/{customer}', [ImpersonateController::class, 'impersonate'])->name('impersonate');
     Route::post('stop-impersonation', [ImpersonateController::class, 'stopImpersonation'])->name('stop-impersonation');
