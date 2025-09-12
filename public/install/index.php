@@ -175,6 +175,9 @@ function handleEnvironmentSetup() {
     $dbPassword = $_POST['db_password'] ?? ''; // Don't trim password, might have spaces
     $skipPermissions = isset($_POST['skip_permissions']) && $_POST['skip_permissions'] === '1';
     
+    // Debug: Show what we got
+    error_log("Extracted values - Host: '$dbHost', Port: '$dbPort', Database: '$dbDatabase', Username: '$dbUsername', Password: '" . (empty($dbPassword) ? 'EMPTY' : '***SET***') . "'");
+    
     // Only validate if user actually submitted the form (not first visit to step 2)
     if (isset($_POST['step']) && $_POST['step'] == 2) {
         // Validate required fields
@@ -267,31 +270,77 @@ VITE_APP_NAME=\"\${APP_NAME}\"
 ";
     }
     
-    $envContent = str_replace([
-        'APP_NAME=Laravel',
-        'APP_URL=http://localhost',
-        'DB_CONNECTION=sqlite',
-        'DB_HOST=127.0.0.1',
-        'DB_PORT=3306',
-        'DB_DATABASE=laravel',
-        'DB_USERNAME=root',
-        'DB_PASSWORD=',
-    ], [
-        "APP_NAME=\"$appName\"",
-        "APP_URL=$appUrl",
-        "DB_CONNECTION=mysql",
-        "DB_HOST=$dbHost",
-        "DB_PORT=$dbPort",
-        "DB_DATABASE=$dbDatabase",
-        "DB_USERNAME=$dbUsername",
-        "DB_PASSWORD=$dbPassword",
-    ], $envTemplate);
+    // More flexible replacement to handle different .env formats including commented lines
+    $replacements = [
+        '/^APP_NAME=.*$/m' => "APP_NAME=\"$appName\"",
+        '/^APP_URL=.*$/m' => "APP_URL=$appUrl",
+        '/^DB_CONNECTION=.*$/m' => "DB_CONNECTION=mysql",
+        '/^#?\s*DB_HOST=.*$/m' => "DB_HOST=$dbHost",
+        '/^#?\s*DB_PORT=.*$/m' => "DB_PORT=$dbPort",
+        '/^#?\s*DB_DATABASE=.*$/m' => "DB_DATABASE=$dbDatabase",
+        '/^#?\s*DB_USERNAME=.*$/m' => "DB_USERNAME=$dbUsername",
+        '/^#?\s*DB_PASSWORD=.*$/m' => "DB_PASSWORD=$dbPassword",
+    ];
+    
+    $envContent = $envTemplate;
+    foreach ($replacements as $pattern => $replacement) {
+        $originalContent = $envContent;
+        $envContent = preg_replace($pattern, $replacement, $envContent);
+        
+        // Log each replacement attempt
+        if ($envContent !== $originalContent) {
+            error_log("Successfully replaced pattern: $pattern with: $replacement");
+        } else {
+            error_log("Pattern not found: $pattern - attempting string replacement fallback");
+            // Fallback for patterns that don't match
+            if (strpos($pattern, 'DB_USERNAME') !== false && strpos($envContent, 'DB_USERNAME=') !== false) {
+                $envContent = preg_replace('/DB_USERNAME=.*/', "DB_USERNAME=$dbUsername", $envContent);
+            }
+        }
+    }
+    
+    // Final safety check - if DB_USERNAME still not found, append it
+    if (strpos($envContent, "DB_USERNAME=$dbUsername") === false) {
+        error_log("CRITICAL: DB_USERNAME not found in final content, appending manually");
+        // Find DB_PASSWORD line and insert DB_USERNAME before it
+        if (strpos($envContent, 'DB_PASSWORD=') !== false) {
+            $envContent = str_replace('DB_PASSWORD=', "DB_USERNAME=$dbUsername\nDB_PASSWORD=", $envContent);
+        } else {
+            // Just append at the end
+            $envContent .= "\nDB_USERNAME=$dbUsername\n";
+        }
+    }
+    
+    // Debug: Show what will be written to .env
+    error_log("Final .env content preview (first 500 chars): " . substr($envContent, 0, 500));
     
     // Generate app key
     $appKey = 'base64:' . base64_encode(random_bytes(32));
-    $envContent = str_replace('APP_KEY=', "APP_KEY=$appKey", $envContent);
+    $envContent = preg_replace('/^APP_KEY=.*$/m', "APP_KEY=$appKey", $envContent);
     
-    file_put_contents(__DIR__ . '/../.env', $envContent);
+    // Debug: Final check before writing
+    error_log("About to write .env file. Content length: " . strlen($envContent));
+    error_log("DB_USERNAME in final content: " . (strpos($envContent, "DB_USERNAME=$dbUsername") !== false ? 'FOUND' : 'NOT FOUND'));
+    
+    $envPath = __DIR__ . '/../.env';
+    $writeResult = file_put_contents($envPath, $envContent);
+    
+    if ($writeResult === false) {
+        error_log("ERROR: Failed to write .env file to $envPath");
+        showStep(2, 'Error: Tidak dapat menulis file .env. Periksa permissions folder.', true);
+        return;
+    } else {
+        error_log("SUCCESS: Wrote $writeResult bytes to .env file");
+        
+        // Verify the file was written correctly
+        if (file_exists($envPath)) {
+            $writtenContent = file_get_contents($envPath);
+            error_log("Verification: .env file exists, size: " . strlen($writtenContent));
+            error_log("Verification: DB_USERNAME in written file: " . (strpos($writtenContent, "DB_USERNAME=$dbUsername") !== false ? 'FOUND' : 'NOT FOUND'));
+        } else {
+            error_log("ERROR: .env file does not exist after write attempt");
+        }
+    }
     
     // Try to create essential directories if they don't exist
     $essentialDirs = [
@@ -375,6 +424,10 @@ function handleDatabaseSetup() {
         $dbDatabase = $env['DB_DATABASE'] ?? 'wscrm_db';
         $dbUsername = $env['DB_USERNAME'] ?? '';
         $dbPassword = $env['DB_PASSWORD'] ?? '';
+        
+        // Debug: Show what we read from .env
+        error_log("Read from .env - Host: '$dbHost', Port: '$dbPort', Database: '$dbDatabase', Username: '$dbUsername', Password: '" . (empty($dbPassword) ? 'EMPTY' : '***SET***') . "'");
+        error_log("Full .env data: " . print_r($env, true));
         
         // Connect to MySQL database
         $dsn = "mysql:host=$dbHost;port=$dbPort;dbname=$dbDatabase;charset=utf8mb4";
