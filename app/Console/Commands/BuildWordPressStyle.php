@@ -78,6 +78,21 @@ class BuildWordPressStyle extends Command
 
         $this->copyDirectory(base_path(), $tempDir, $excludes);
 
+        // Ensure critical files exist
+        $criticalFiles = [
+            '.env.example' => base_path('.env.example'),
+            'artisan' => base_path('artisan'),
+            'index.php' => base_path('index.php'),
+        ];
+
+        foreach ($criticalFiles as $target => $source) {
+            $targetPath = $tempDir . '/' . $target;
+            if (!File::exists($targetPath) && File::exists($source)) {
+                File::copy($source, $targetPath);
+                $this->line("✅ Copied critical file: $target");
+            }
+        }
+
         // Create empty storage directories dengan permissions
         $storageDirs = [
             'storage/app/public',

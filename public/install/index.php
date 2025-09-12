@@ -44,8 +44,6 @@ function parseEnvFile($path) {
     return $env;
 }
 
-try {
-
 // Check if already installed
 if (file_exists(__DIR__ . '/../.env') && !file_exists(__DIR__ . '/../storage/installer.lock')) {
     // Check if database connection works
@@ -69,24 +67,32 @@ if (file_exists(__DIR__ . '/../.env') && !file_exists(__DIR__ . '/../storage/ins
 
 // Handle installation process
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Handle test connection request
-    if (isset($_POST['test_connection'])) {
-        handleTestConnection();
-        exit;
-    }
-    
-    $step = $_POST['step'] ?? 1;
-    
-    switch ($step) {
-        case 2:
-            handleEnvironmentSetup();
-            break;
-        case 3:
-            handleDatabaseSetup();
-            break;
-        case 4:
-            handleFinalSetup();
-            break;
+    try {
+        // Handle test connection request
+        if (isset($_POST['test_connection'])) {
+            handleTestConnection();
+            exit;
+        }
+        
+        $step = $_POST['step'] ?? 1;
+        
+        switch ($step) {
+            case 2:
+                handleEnvironmentSetup();
+                break;
+            case 3:
+                handleDatabaseSetup();
+                break;
+            case 4:
+                handleFinalSetup();
+                break;
+        }
+    } catch (Exception $e) {
+        // Handle any uncaught exceptions during POST processing
+        showStep(1, '🚨 Installer Error: ' . $e->getMessage() . '<br><br><strong>File:</strong> ' . $e->getFile() . '<br><strong>Line:</strong> ' . $e->getLine(), true);
+    } catch (Error $e) {
+        // Handle fatal errors during POST processing
+        showStep(1, '💥 Fatal Error: ' . $e->getMessage() . '<br><br><strong>File:</strong> ' . $e->getFile() . '<br><strong>Line:</strong> ' . $e->getLine(), true);
     }
 } else {
     // GET request - show current step
@@ -188,7 +194,78 @@ function handleEnvironmentSetup() {
         }
     }
     
-    $envTemplate = file_get_contents(__DIR__ . '/../.env.example');
+    // Try to get .env.example, create default if not exists
+    $envExamplePath = __DIR__ . '/../.env.example';
+    if (file_exists($envExamplePath)) {
+        $envTemplate = file_get_contents($envExamplePath);
+    } else {
+        // Create default .env template if .env.example is missing
+        $envTemplate = "APP_NAME=WSCRM
+APP_ENV=production
+APP_KEY=
+APP_DEBUG=false
+APP_TIMEZONE=UTC
+APP_URL=http://localhost
+
+APP_LOCALE=en
+APP_FALLBACK_LOCALE=en
+APP_FAKER_LOCALE=en_US
+
+APP_MAINTENANCE_DRIVER=file
+APP_MAINTENANCE_STORE=database
+
+BCRYPT_ROUNDS=12
+
+LOG_CHANNEL=stack
+LOG_STACK=single
+LOG_DEPRECATIONS_CHANNEL=null
+LOG_LEVEL=debug
+
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=laravel
+DB_USERNAME=root
+DB_PASSWORD=
+
+SESSION_DRIVER=database
+SESSION_LIFETIME=120
+SESSION_ENCRYPT=false
+SESSION_PATH=/
+SESSION_DOMAIN=null
+
+BROADCAST_CONNECTION=log
+FILESYSTEM_DISK=local
+QUEUE_CONNECTION=database
+
+CACHE_STORE=database
+CACHE_PREFIX=
+
+MEMCACHED_HOST=127.0.0.1
+
+REDIS_CLIENT=phpredis
+REDIS_HOST=127.0.0.1
+REDIS_PASSWORD=null
+REDIS_PORT=6379
+
+MAIL_MAILER=log
+MAIL_HOST=127.0.0.1
+MAIL_PORT=2525
+MAIL_USERNAME=null
+MAIL_PASSWORD=null
+MAIL_ENCRYPTION=null
+MAIL_FROM_ADDRESS=\"hello@example.com\"
+MAIL_FROM_NAME=\"\${APP_NAME}\"
+
+AWS_ACCESS_KEY_ID=
+AWS_SECRET_ACCESS_KEY=
+AWS_DEFAULT_REGION=us-east-1
+AWS_BUCKET=
+AWS_USE_PATH_STYLE_ENDPOINT=false
+
+VITE_APP_NAME=\"\${APP_NAME}\"
+";
+    }
     
     $envContent = str_replace([
         'APP_NAME=Laravel',
@@ -1166,29 +1243,5 @@ function showSuccess() {
     </body>
     </html>
     <?php
-}
-
-} catch (Exception $e) {
-    // Handle any uncaught exceptions
-    echo "<!DOCTYPE html><html><head><title>Installer Error</title></head><body>";
-    echo "<h1>🚨 Installer Error</h1>";
-    echo "<p><strong>Error:</strong> " . htmlspecialchars($e->getMessage()) . "</p>";
-    echo "<p><strong>File:</strong> " . htmlspecialchars($e->getFile()) . "</p>";
-    echo "<p><strong>Line:</strong> " . $e->getLine() . "</p>";
-    echo "<p><strong>Stack trace:</strong></p>";
-    echo "<pre>" . htmlspecialchars($e->getTraceAsString()) . "</pre>";
-    echo "<hr>";
-    echo "<p><a href='debug.php'>🔧 Run Debug Check</a></p>";
-    echo "</body></html>";
-} catch (Error $e) {
-    // Handle fatal errors
-    echo "<!DOCTYPE html><html><head><title>Fatal Error</title></head><body>";
-    echo "<h1>💥 Fatal Error</h1>";
-    echo "<p><strong>Error:</strong> " . htmlspecialchars($e->getMessage()) . "</p>";
-    echo "<p><strong>File:</strong> " . htmlspecialchars($e->getFile()) . "</p>";
-    echo "<p><strong>Line:</strong> " . $e->getLine() . "</p>";
-    echo "<hr>";
-    echo "<p><a href='debug.php'>🔧 Run Debug Check</a></p>";
-    echo "</body></html>";
 }
 ?>
