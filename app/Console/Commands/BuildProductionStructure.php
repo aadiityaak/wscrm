@@ -22,7 +22,7 @@ class BuildProductionStructure extends Command
      *
      * @var string
      */
-    protected $description = 'Create production build structure with Laravel and public_html folders';
+    protected $description = 'Create production build structure with WSCRM and public_html folders';
 
     /**
      * Execute the console command.
@@ -32,26 +32,26 @@ class BuildProductionStructure extends Command
         $this->info('Building production structure...');
 
         $distPath = base_path('dist');
-        $laravelPath = $distPath.'/laravel';
+        $wscrmPath = $distPath.'/wscrm';
         $publicHtmlPath = $distPath.'/public_html';
 
         // Create directories
-        File::makeDirectory($laravelPath, 0755, true, true);
+        File::makeDirectory($wscrmPath, 0755, true, true);
         File::makeDirectory($publicHtmlPath, 0755, true, true);
 
         $this->info('Created dist directories');
 
-        // Copy Laravel files (excluding public directory)
-        $this->copyLaravelFiles($laravelPath);
-        $this->info('Copied Laravel files');
+        // Copy WSCRM files (excluding public directory)
+        $this->copyWscrmFiles($wscrmPath);
+        $this->info('Copied WSCRM files');
 
         // Copy public files to public_html
         $this->copyPublicFiles($publicHtmlPath);
         $this->info('Copied public files to public_html');
 
-        // Create public directory in Laravel folder and copy build assets
-        $this->createLaravelPublicBuild($laravelPath, $publicHtmlPath);
-        $this->info('Created Laravel public/build directory');
+        // Create public directory in WSCRM folder and copy build assets
+        $this->createWscrmPublicBuild($wscrmPath, $publicHtmlPath);
+        $this->info('Created WSCRM public/build directory');
 
         // Modify index.php for production structure
         $this->modifyIndexPhpForProduction($publicHtmlPath);
@@ -68,7 +68,7 @@ class BuildProductionStructure extends Command
         return self::SUCCESS;
     }
 
-    private function copyLaravelFiles(string $destination): void
+    private function copyWscrmFiles(string $destination): void
     {
         $excludePaths = [
             'public',
@@ -201,48 +201,48 @@ class BuildProductionStructure extends Command
 
         $content = File::get($indexPhpPath);
 
-        // Replace paths to point to ../laravel/ instead of ../
+        // Replace paths to point to ../wscrm/ instead of ../
         $content = str_replace(
             "require __DIR__.'/../vendor/autoload.php';",
-            "require __DIR__.'/../laravel/vendor/autoload.php';",
+            "require __DIR__.'/../wscrm/vendor/autoload.php';",
             $content
         );
 
         $content = str_replace(
             "require_once __DIR__.'/../bootstrap/app.php';",
-            "require_once __DIR__.'/../laravel/bootstrap/app.php';",
+            "require_once __DIR__.'/../wscrm/bootstrap/app.php';",
             $content
         );
 
         $content = str_replace(
             "file_exists(\$maintenance = __DIR__.'/../storage/framework/maintenance.php')",
-            "file_exists(\$maintenance = __DIR__.'/../laravel/storage/framework/maintenance.php')",
+            "file_exists(\$maintenance = __DIR__.'/../wscrm/storage/framework/maintenance.php')",
             $content
         );
 
         File::put($indexPhpPath, $content);
     }
 
-    private function createLaravelPublicBuild(string $laravelPath, string $publicHtmlPath): void
+    private function createWscrmPublicBuild(string $wscrmPath, string $publicHtmlPath): void
     {
-        $laravelPublicPath = $laravelPath.'/public';
-        $laravelBuildPath = $laravelPublicPath.'/build';
+        $wscrmPublicPath = $wscrmPath.'/public';
+        $wscrmBuildPath = $wscrmPublicPath.'/build';
         $publicHtmlBuildPath = $publicHtmlPath.'/build';
 
-        // Create public directory in Laravel folder
-        File::makeDirectory($laravelPublicPath, 0755, true, true);
-        File::makeDirectory($laravelBuildPath, 0755, true, true);
+        // Create public directory in WSCRM folder
+        File::makeDirectory($wscrmPublicPath, 0755, true, true);
+        File::makeDirectory($wscrmBuildPath, 0755, true, true);
 
-        // Copy build directory from public_html to laravel/public
+        // Copy build directory from public_html to wscrm/public
         if (File::exists($publicHtmlBuildPath)) {
             // Copy manifest.json
             if (File::exists($publicHtmlBuildPath.'/manifest.json')) {
-                File::copy($publicHtmlBuildPath.'/manifest.json', $laravelBuildPath.'/manifest.json');
+                File::copy($publicHtmlBuildPath.'/manifest.json', $wscrmBuildPath.'/manifest.json');
             }
 
             // Copy assets directory
             $assetsSource = $publicHtmlBuildPath.'/assets';
-            $assetsDestination = $laravelBuildPath.'/assets';
+            $assetsDestination = $wscrmBuildPath.'/assets';
 
             if (File::exists($assetsSource)) {
                 File::makeDirectory($assetsDestination, 0755, true, true);
@@ -273,8 +273,8 @@ class BuildProductionStructure extends Command
 
         $zip = new ZipArchive;
         if ($zip->open($zipFile, ZipArchive::CREATE | ZipArchive::OVERWRITE) === true) {
-            // Add laravel directory
-            $this->addDirectoryToZip($zip, realpath($distPath.'/laravel'), 'laravel');
+            // Add wscrm directory
+            $this->addDirectoryToZip($zip, realpath($distPath.'/wscrm'), 'wscrm');
 
             // Add public_html directory
             $this->addDirectoryToZip($zip, realpath($distPath.'/public_html'), 'public_html');
