@@ -137,6 +137,53 @@ This is a **Laravel 12 + Vue 3 + Inertia.js** application with the following set
 - **Native HTML Elements**: Prefer native `<input type="radio">`, `<select>` over custom UI components
 - **Example**: See `HostingOrderModal.vue` and Admin Customers modals
 
+## ⚠️ CRITICAL SECURITY GUIDELINES
+
+### Script Security & Destructive Operations
+**NEVER create commands or scripts that can destroy project files or data without extensive safety checks.**
+
+#### Mandatory Safety Requirements:
+1. **Pre-execution Validation**:
+   - Validate all file paths are within project boundaries
+   - Confirm operations only affect intended directories (e.g., `dist`, `temp-*`)
+   - Check for existence of critical files (`artisan`, `composer.json`, `.git`)
+   - Require explicit user confirmation for any destructive operations
+
+2. **Path Protection**:
+   - **NEVER** delete or modify folders: `app`, `config`, `database`, `routes`, `resources`, `.git`, `vendor`
+   - Only allow deletion of build/output directories: `dist`, `temp-*`, `build`
+   - Always use absolute paths and validate against `base_path()`
+
+3. **User Confirmation Required**:
+   - Any command that deletes files must show confirmation prompt
+   - Display exactly what will be deleted before execution
+   - Default answer should be "No" for safety
+
+4. **Git Safety**:
+   - Always warn if there are uncommitted changes
+   - Recommend `git status` and `git add .` before running destructive commands
+   - Consider creating automatic git stash before major operations
+
+5. **Backup Reminders**:
+   - Commands should remind users to backup critical data
+   - Suggest creating git commits before running build commands
+   - Log all file operations for debugging purposes
+
+#### Example Safe Implementation:
+```php
+// GOOD - Safe with validation
+if (basename($distDir) === 'dist' && str_contains($distDir, base_path())) {
+    $this->info("🗑️ Menghapus folder dist: {$distDir}");
+    File::deleteDirectory($distDir);
+}
+
+// BAD - Dangerous without validation  
+File::deleteDirectory($distDir); // Could delete anything!
+```
+
+### Historical Context
+This project previously experienced **complete data loss** due to unsafe build commands that deleted the entire project directory, leaving only `.git` and `node_modules`. Always implement multiple layers of protection to prevent such disasters.
+
 ===
 
 <laravel-boost-guidelines>

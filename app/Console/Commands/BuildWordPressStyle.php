@@ -27,13 +27,29 @@ class BuildWordPressStyle extends Command
     {
         $this->info('🚀 Memulai build package deployment...');
         
+        // SAFETY CHECKS - Mencegah penghapusan file yang tidak diinginkan
+        $this->performSafetyChecks();
+        
         $outputPath = $this->option('output');
         $distDir = dirname($outputPath);
         $tempDir = $distDir . '/temp-package';
 
-        // Clean dan create directories
+        // Validasi path untuk mencegah penghapusan folder project
+        if (!$this->validatePaths($distDir, $tempDir)) {
+            $this->error('❌ Path tidak aman. Build dibatalkan untuk keamanan.');
+            return self::FAILURE;
+        }
+
+        // Clean dan create directories dengan validasi keamanan
         if (File::exists($distDir)) {
-            File::deleteDirectory($distDir);
+            // Pastikan hanya menghapus folder dist, bukan folder lain
+            if (basename($distDir) === 'dist' && str_contains($distDir, base_path())) {
+                $this->info("🗑️ Menghapus folder dist: {$distDir}");
+                File::deleteDirectory($distDir);
+            } else {
+                $this->error("❌ Tidak aman menghapus folder: {$distDir}");
+                return self::FAILURE;
+            }
         }
         
         File::makeDirectory($distDir, 0755, true);
@@ -70,6 +86,76 @@ class BuildWordPressStyle extends Command
         $this->line("3. Ikuti panduan instalasi");
 
         return self::SUCCESS;
+    }
+
+    /**
+     * Perform safety checks sebelum menjalankan build
+     */
+    private function performSafetyChecks(): void
+    {
+        // Check 1: Pastikan kita berada di root project Laravel
+        if (!File::exists(base_path('artisan'))) {
+            $this->error('❌ File artisan tidak ditemukan. Pastikan Anda menjalankan command dari root project Laravel.');
+            exit(1);
+        }
+
+        // Check 2: Pastikan ada file composer.json
+        if (!File::exists(base_path('composer.json'))) {
+            $this->error('❌ File composer.json tidak ditemukan.');
+            exit(1);
+        }
+
+        // Check 3: Periksa git status - warn jika ada uncommitted changes
+        if (File::exists(base_path('.git'))) {
+            $this->warn('⚠️  PERINGATAN: Pastikan semua perubahan sudah di-commit ke git.');
+            $this->warn('   Command ini akan memodifikasi file dan folder.');
+            
+            if (!$this->confirm('Lanjutkan build package?', false)) {
+                $this->info('Build dibatalkan oleh user.');
+                exit(0);
+            }
+        }
+
+        // Check 4: Pastikan frontend assets sudah ter-build atau akan di-build
+        $this->info('✅ Safety checks passed.');
+    }
+
+    /**
+     * Validasi path untuk mencegah operasi berbahaya
+     */
+    private function validatePaths(string $distDir, string $tempDir): bool
+    {
+        $basePath = base_path();
+        
+        // Pastikan dist directory berada di dalam project
+        if (!str_starts_with($distDir, $basePath)) {
+            $this->error("❌ Dist directory harus berada di dalam project: {$distDir}");
+            return false;
+        }
+
+        // Pastikan dist directory adalah folder 'dist'
+        if (basename($distDir) !== 'dist') {
+            $this->error("❌ Directory output harus bernama 'dist': {$distDir}");
+            return false;
+        }
+
+        // Pastikan temp directory aman
+        if (!str_starts_with($tempDir, $basePath)) {
+            $this->error("❌ Temp directory harus berada di dalam project: {$tempDir}");
+            return false;
+        }
+
+        // Pastikan tidak menimpa folder project penting
+        $protectedDirs = ['app', 'config', 'database', 'routes', 'resources', '.git'];
+        foreach ($protectedDirs as $protected) {
+            if (str_contains($distDir, $basePath . '/' . $protected) || 
+                str_contains($tempDir, $basePath . '/' . $protected)) {
+                $this->error("❌ Tidak boleh menggunakan folder protected: {$protected}");
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private function copyApplicationFiles(string $tempDir): void
@@ -162,10 +248,13 @@ class BuildWordPressStyle extends Command
             }
         }
         
-        // Remove the public directory after flattening
-        File::deleteDirectory($publicDir);
-        
-        $this->line('✅ Flattened public directory structure');
+        // Remove the public directory after flattening (HANYA di temp directory!)
+        if (str_contains($publicDir, 'temp-package') && File::exists($publicDir)) {
+            File::deleteDirectory($publicDir);
+            $this->line('✅ Flattened public directory structure');
+        } else {
+            $this->error('❌ BAHAYA: Tidak akan menghapus public directory yang bukan di temp folder');
+        }
     }
 
     private function setupInstaller(string $tempDir): void
