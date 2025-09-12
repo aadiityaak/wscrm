@@ -140,7 +140,8 @@
       "mcp__laravel-boost__application-info",
       "Bash(mkdir:*)",
       "Read(//d/**)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(rm:*)"
     ],
     "deny": [],
     "ask": []

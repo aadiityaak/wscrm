@@ -641,3 +641,72 @@ $pages->assertNoJavascriptErrors()->assertNoConsoleLogs();
 - Every change must be programmatically tested. Write a new test or update an existing test, then run the affected tests to make sure they pass.
 - Run the minimum number of tests needed to ensure code quality and speed. Use `php artisan test` with a specific filename or filter.
 </laravel-boost-guidelines>
+
+# Debugging Installer Issues
+
+## Common Problems and Solutions
+
+### 1. Internal Server Error on /install/v2.php
+**Problem**: Installer shows "Internal Server Error" without details
+
+**Debug Steps**:
+1. **Enable error reporting** in `/install/v2.php`:
+```php
+// Enable error reporting for debugging
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+```
+
+2. **Check PHP version**: Requires PHP 8.2+
+3. **Check file permissions**: Ensure installer files are readable
+4. **Check hosting error logs**: Look in cPanel → Error Logs
+
+### 2. Index.php Redirect Loop Issues  
+**Problem**: Page keeps redirecting or shows errors after extract
+
+**Root Cause**: Wrong path detection for flat deployment structure
+
+**Solution**: The `public/index.php` has been updated to handle:
+- Flat deployment: `/wscrm/` folder in same directory
+- Moved deployment: `/wscrm/` folder outside web root  
+- Standard Laravel: files in parent directory
+
+**Path Priority Order**:
+1. `/../wscrm/vendor/autoload.php` (wscrm moved outside web root)
+2. `/wscrm/vendor/autoload.php` (wscrm in same directory) 
+3. `/../vendor/autoload.php` (standard Laravel structure)
+
+**Installer Lock Detection**:
+- Checks multiple paths for `installer.lock`
+- Prevents redirect loops during installation
+- Automatically detects completion status
+
+### 3. Package Structure Verification
+Before deployment, verify package contains:
+```
+├── index.php (updated with smart path detection)
+├── .htaccess
+├── install/
+│   ├── v2.php (with error reporting enabled)
+│   └── index.php
+├── wscrm/
+│   ├── app/
+│   ├── vendor/
+│   ├── bootstrap/
+│   └── storage/
+└── README.txt
+```
+
+### 4. Emergency Debugging
+If still getting errors, create `/debug.php` in web root:
+```php
+<?php
+phpinfo();
+echo "<hr>";
+echo "Document Root: " . $_SERVER['DOCUMENT_ROOT'] . "<br>";
+echo "Current Dir: " . __DIR__ . "<br>";
+echo "Install Dir Exists: " . (is_dir(__DIR__ . '/install') ? 'YES' : 'NO') . "<br>";
+echo "WSCRM Dir Exists: " . (is_dir(__DIR__ . '/wscrm') ? 'YES' : 'NO') . "<br>";
+echo "Vendor Exists: " . (file_exists(__DIR__ . '/wscrm/vendor/autoload.php') ? 'YES' : 'NO') . "<br>";
+?>
+```

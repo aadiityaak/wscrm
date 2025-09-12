@@ -1,12 +1,12 @@
 <?php
 
-// Disable error reporting for production
-error_reporting(0);
-ini_set('display_errors', 0);
+// Enable error reporting for debugging
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
 
-// Enable error reporting for debugging (uncomment if needed)
-// error_reporting(E_ALL);
-// ini_set('display_errors', 1);
+// Disable error reporting for production (comment out for debugging)
+// error_reporting(0);
+// ini_set('display_errors', 0);
 
 function parseEnvFile($envPath) {
     if (!file_exists($envPath)) {
