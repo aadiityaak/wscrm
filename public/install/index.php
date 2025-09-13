@@ -30,6 +30,50 @@ function parseEnvFile($envPath) {
     return $env;
 }
 
+function executeSimpleCommand($command) {
+    // Simple command execution without exec() complexity
+    if (!function_exists('shell_exec')) {
+        return 'Error: shell_exec function is disabled on this server';
+    }
+    
+    // Try to use php directly since we're on shared hosting
+    if (strpos($command, 'php ') === 0) {
+        // Try the most common hosting-compatible approach
+        $testPhp = @shell_exec('php --version 2>/dev/null');
+        if ($testPhp && strpos($testPhp, 'PHP') !== false) {
+            // php command works directly
+            $output = @shell_exec($command . ' 2>&1');
+        } else {
+            // Try common cPanel paths
+            $phpPaths = [
+                '/opt/cpanel/ea-php83/root/usr/bin/php',
+                '/opt/cpanel/ea-php82/root/usr/bin/php',
+                '/opt/cpanel/ea-php81/root/usr/bin/php',
+                '/usr/local/bin/php',
+                '/usr/bin/php'
+            ];
+            
+            $phpFound = false;
+            foreach ($phpPaths as $phpPath) {
+                if (is_executable($phpPath)) {
+                    $command = str_replace('php ', $phpPath . ' ', $command);
+                    $output = @shell_exec($command . ' 2>&1');
+                    $phpFound = true;
+                    break;
+                }
+            }
+            
+            if (!$phpFound) {
+                return 'Error: Could not find PHP executable on this server';
+            }
+        }
+    } else {
+        $output = @shell_exec($command . ' 2>&1');
+    }
+    
+    return $output ?: 'Command executed (no output)';
+}
+
 function detectWscrmFolder() {
     $currentDir = rtrim(str_replace('\\', '/', __DIR__), '/');  // Normalize path
     $publicHtmlDir = dirname($currentDir); 
@@ -626,6 +670,79 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 ]);
             }
             exit;
+            
+        case 'laravel_command':
+            $command = $_POST['command'] ?? '';
+            $targetWscrmPath = str_replace('\\', '/', dirname($_SERVER['DOCUMENT_ROOT'])) . '/wscrm';
+            
+            if (!is_dir($targetWscrmPath)) {
+                echo json_encode(['success' => false, 'message' => 'Laravel directory not found']);
+                exit;
+            }
+            
+            $currentDir = getcwd();
+            chdir($targetWscrmPath);
+            
+            try {
+                switch ($command) {
+                    case 'migrate':
+                        $output = executeSimpleCommand('php artisan migrate --force');
+                        break;
+                    case 'db_seed':
+                        $output = executeSimpleCommand('php artisan db:seed --force');
+                        break;
+                    case 'storage_link':
+                        $output = executeSimpleCommand('php artisan storage:link');
+                        break;
+                    case 'key_generate':
+                        $output = executeSimpleCommand('php artisan key:generate --force');
+                        break;
+                    case 'clear_cache':
+                        $output = executeSimpleCommand('php artisan cache:clear');
+                        $output .= "\n" . executeSimpleCommand('php artisan config:clear');
+                        $output .= "\n" . executeSimpleCommand('php artisan route:clear');
+                        $output .= "\n" . executeSimpleCommand('php artisan view:clear');
+                        break;
+                    case 'optimize':
+                        $output = executeSimpleCommand('php artisan optimize');
+                        break;
+                    case 'config_cache':
+                        $output = executeSimpleCommand('php artisan config:cache');
+                        break;
+                    case 'check_env':
+                        $envPath = '.env';
+                        if (file_exists($envPath)) {
+                            $envSize = filesize($envPath);
+                            $envModified = date('Y-m-d H:i:s', filemtime($envPath));
+                            $envContent = file_get_contents($envPath);
+                            $hasAppKey = strpos($envContent, 'APP_KEY=') !== false && strpos($envContent, 'APP_KEY=base64:') !== false;
+                            
+                            $output = "Environment File Check:\n";
+                            $output .= ".env exists: Yes\n";
+                            $output .= ".env size: {$envSize} bytes\n";
+                            $output .= ".env modified: {$envModified}\n";
+                            $output .= "APP_KEY set: " . ($hasAppKey ? 'Yes' : 'No') . "\n";
+                            
+                            // Check database connection
+                            preg_match('/DB_CONNECTION=(.*)/', $envContent, $dbMatch);
+                            $dbConnection = isset($dbMatch[1]) ? trim($dbMatch[1]) : 'not set';
+                            $output .= "DB_CONNECTION: {$dbConnection}\n";
+                        } else {
+                            $output = ".env file not found";
+                        }
+                        break;
+                    default:
+                        $output = 'Unknown command';
+                }
+                
+                chdir($currentDir);
+                echo json_encode(['success' => true, 'message' => 'Command executed successfully', 'output' => $output]);
+                
+            } catch (Exception $e) {
+                chdir($currentDir);
+                echo json_encode(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
+            }
+            exit;
     }
 }
 
@@ -995,13 +1112,39 @@ $step3Complete = file_exists($targetWscrmPath . '/.env'); // Environment configu
             <div class="alert alert-success">
                 <strong>✅ Instalasi Sudah Selesai!</strong><br>
                 WSCRM sudah terinstall di: <code><?= htmlspecialchars($targetWscrmPath) ?></code><br><br>
+                
+                <div class="alert alert-info" style="margin-top: 15px;">
+                    <strong>🛠️ Tools Tambahan:</strong> Sebelum menghapus installer, Anda dapat menjalankan tools di bawah untuk setup final:
+                </div>
+                
+                <!-- Laravel Tools Section -->
+                <div style="background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; padding: 20px; margin: 20px 0;">
+                    <h4 style="margin: 0 0 15px 0; color: #333; font-size: 1.2em;">🚀 Setup Tools Laravel</h4>
+                    
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-bottom: 20px;">
+                        <button onclick="runLaravelCommand('migrate')" class="btn" style="background: #28a745; color: white;">📊 Run Migrations</button>
+                        <button onclick="runLaravelCommand('db_seed')" class="btn" style="background: #17a2b8; color: white;">🌱 Run DB Seeder</button>
+                        <button onclick="runLaravelCommand('storage_link')" class="btn" style="background: #ffc107; color: black;">🔗 Create Storage Link</button>
+                        <button onclick="runLaravelCommand('key_generate')" class="btn" style="background: #dc3545; color: white;">🔑 Generate App Key</button>
+                    </div>
+                    
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-bottom: 20px;">
+                        <button onclick="runLaravelCommand('clear_cache')" class="btn" style="background: #6f42c1; color: white;">🧹 Clear All Cache</button>
+                        <button onclick="runLaravelCommand('optimize')" class="btn" style="background: #fd7e14; color: white;">⚡ Optimize App</button>
+                        <button onclick="runLaravelCommand('config_cache')" class="btn" style="background: #20c997; color: white;">⚙️ Cache Config</button>
+                        <button onclick="runLaravelCommand('check_env')" class="btn" style="background: #6c757d; color: white;">📄 Check .env</button>
+                    </div>
+                    
+                    <div id="laravel-tools-result" style="margin-top: 15px;"></div>
+                </div>
+                
                 <div class="alert alert-info" style="margin-top: 15px;">
                     <strong>⚠️ Penting:</strong> Aplikasi tidak dapat diakses selama folder install masih ada.<br>
                     Silakan hapus folder install terlebih dahulu untuk mengakses aplikasi.
                 </div>
                 
                 <div style="margin-top: 15px;">
-                    <button onclick="deleteInstallFolder()" class="btn btn-success" style="margin-right: 10px;">🗑️ Hapus Folder Install & Buka Aplikasi</button>
+                    <button onclick="deleteInstallFolder()" class="btn btn-success" style="margin-right: 10px; font-size: 1.1em; padding: 12px 20px;">🗑️ Hapus Folder Install & Buka Aplikasi</button>
                     <a href="../" class="btn" style="background: #6c757d; color: white; text-decoration: none; display: inline-block;">👀 Coba Buka Aplikasi (Akan Error)</a>
                 </div>
                 <div id="delete-result" style="margin-top: 15px;"></div>
@@ -1474,6 +1617,52 @@ $step3Complete = file_exists($targetWscrmPath . '/.env'); // Environment configu
             })
             .catch(error => {
                 document.getElementById('delete-result').innerHTML = `
+                    <div class="alert alert-error">
+                        <strong>❌ Error: ${error.message}</strong>
+                    </div>
+                `;
+                btn.disabled = false;
+                btn.textContent = originalText;
+            });
+        }
+        
+        function runLaravelCommand(command) {
+            const btn = event.target;
+            const originalText = btn.textContent;
+            btn.disabled = true;
+            btn.textContent = '⏳ Running...';
+            
+            fetch('index.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `action=laravel_command&command=${encodeURIComponent(command)}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                const resultDiv = document.getElementById('laravel-tools-result');
+                
+                if (data.success) {
+                    resultDiv.innerHTML = `
+                        <div class="alert alert-success">
+                            <strong>✅ ${data.message}</strong><br>
+                            <pre style="margin-top: 10px; background: #f8f9fa; padding: 10px; border-radius: 4px; font-size: 12px; max-height: 200px; overflow-y: auto;">${data.output || 'No output'}</pre>
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="alert alert-error">
+                            <strong>❌ ${data.message}</strong>
+                        </div>
+                    `;
+                }
+                
+                btn.disabled = false;
+                btn.textContent = originalText;
+            })
+            .catch(error => {
+                document.getElementById('laravel-tools-result').innerHTML = `
                     <div class="alert alert-error">
                         <strong>❌ Error: ${error.message}</strong>
                     </div>
