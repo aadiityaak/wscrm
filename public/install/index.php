@@ -1,12 +1,12 @@
 <?php
 
 // Enable error reporting for debugging
-// error_reporting(E_ALL);
-// ini_set('display_errors', 1);
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
 
 // Disable error reporting for production (comment out for debugging)
-error_reporting(0);
-ini_set('display_errors', 0);
+// error_reporting(0);
+// ini_set('display_errors', 0);
 
 function parseEnvFile($envPath) {
     if (!file_exists($envPath)) {
@@ -237,6 +237,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit;
             
         case 'configure_env':
+            // Log received data for debugging
+            error_log('📝 configure_env action started');
+            error_log('📋 POST data: ' . print_r($_POST, true));
+            
             $appUrl = $_POST['app_url'] ?? '';
             $appName = $_POST['app_name'] ?? 'WSCRM';
             $dbType = $_POST['db_type'] ?? 'sqlite';
@@ -251,8 +255,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $publicHtmlParent = str_replace('\\', '/', dirname($_SERVER['DOCUMENT_ROOT']));
             $targetWscrmPath = $publicHtmlParent . '/wscrm';
             
+            error_log('🎯 Target wscrm path: ' . $targetWscrmPath);
+            error_log('📁 Directory exists: ' . (is_dir($targetWscrmPath) ? 'YES' : 'NO'));
+            
             if (!is_dir($targetWscrmPath)) {
-                echo json_encode(['success' => false, 'message' => 'Folder wscrm tidak ditemukan di lokasi target']);
+                error_log('❌ Target wscrm directory not found: ' . $targetWscrmPath);
+                echo json_encode(['success' => false, 'message' => 'Folder wscrm tidak ditemukan di lokasi target: ' . $targetWscrmPath]);
                 exit;
             }
             
@@ -260,8 +268,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $envPath = $targetWscrmPath . '/.env';
             $envTemplate = $targetWscrmPath . '/.env.example';
             
+            error_log('📄 Env template path: ' . $envTemplate);
+            error_log('📄 Template exists: ' . (file_exists($envTemplate) ? 'YES' : 'NO'));
+            error_log('📄 Target env path: ' . $envPath);
+            
             if (!file_exists($envTemplate)) {
-                echo json_encode(['success' => false, 'message' => 'File .env.example tidak ditemukan']);
+                error_log('❌ .env.example not found: ' . $envTemplate);
+                echo json_encode(['success' => false, 'message' => 'File .env.example tidak ditemukan: ' . $envTemplate]);
                 exit;
             }
             
@@ -289,18 +302,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     exit;
                 }
                 
+                // Quote password if it contains special characters
+                $quotedPassword = $dbPassword;
+                if (preg_match('/[\\s#"\'\\\\]/', $dbPassword)) {
+                    $quotedPassword = '"' . str_replace('"', '\\"', $dbPassword) . '"';
+                }
+                
                 $replacements = array_merge($replacements, [
                     'DB_CONNECTION=sqlite' => 'DB_CONNECTION=mysql',
                     'DB_HOST=127.0.0.1' => 'DB_HOST=' . $dbHost,
                     'DB_PORT=3306' => 'DB_PORT=' . $dbPort,
                     'DB_DATABASE=database/database.sqlite' => 'DB_DATABASE=' . $dbName,
                     'DB_USERNAME=null' => 'DB_USERNAME=' . $dbUsername,
-                    'DB_PASSWORD=null' => 'DB_PASSWORD=' . $dbPassword,
+                    'DB_PASSWORD=null' => 'DB_PASSWORD=' . $quotedPassword,
                     '# DB_HOST=127.0.0.1' => 'DB_HOST=' . $dbHost,
                     '# DB_PORT=3306' => 'DB_PORT=' . $dbPort,
                     '# DB_DATABASE=wscrm' => 'DB_DATABASE=' . $dbName,
                     '# DB_USERNAME=root' => 'DB_USERNAME=' . $dbUsername,
-                    '# DB_PASSWORD=' => 'DB_PASSWORD=' . $dbPassword,
+                    '# DB_PASSWORD=' => 'DB_PASSWORD=' . $quotedPassword,
                 ]);
             } else {
                 // Ensure SQLite configuration
@@ -313,57 +332,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $envContent = str_replace(array_keys($replacements), array_values($replacements), $envContent);
             
             // Write .env file
+            error_log('💾 Writing .env file to: ' . $envPath);
+            error_log('📝 Content length: ' . strlen($envContent) . ' bytes');
+            
             if (!file_put_contents($envPath, $envContent)) {
-                echo json_encode(['success' => false, 'message' => 'Gagal menulis file .env']);
+                error_log('❌ Failed to write .env file to: ' . $envPath);
+                $parentDir = dirname($envPath);
+                error_log('📁 Parent directory writable: ' . (is_writable($parentDir) ? 'YES' : 'NO'));
+                echo json_encode(['success' => false, 'message' => 'Gagal menulis file .env ke: ' . $envPath]);
                 exit;
             }
             
-            // Generate APP_KEY using Laravel's key:generate command
+            error_log('✅ .env file written successfully');
+            
+            // Generate APP_KEY manually (exec() disabled on hosting)
             $keyGenerated = false;
             $appKey = '';
             
-            // Try to generate key using PHP artisan
-            if (file_exists($targetWscrmPath . '/artisan')) {
-                $currentDir = getcwd();
-                chdir($targetWscrmPath);
-                
-                // Try to run key:generate command
-                $output = [];
-                $returnVar = 0;
-                exec('php artisan key:generate --show --no-interaction 2>&1', $output, $returnVar);
-                
-                chdir($currentDir);
-                
-                if ($returnVar === 0 && !empty($output)) {
-                    $appKey = trim(end($output));
-                    if (strpos($appKey, 'base64:') === 0) {
-                        $keyGenerated = true;
-                        
-                        // Update .env file with generated key
-                        $envContent = file_get_contents($envPath);
-                        if (strpos($envContent, 'APP_KEY=') !== false) {
-                            $envContent = preg_replace('/^APP_KEY=.*$/m', 'APP_KEY=' . $appKey, $envContent);
-                        } else {
-                            $envContent .= "\nAPP_KEY=" . $appKey;
-                        }
-                        file_put_contents($envPath, $envContent);
-                    }
-                }
+            // Generate key manually since exec() is disabled
+            error_log('🔑 Generating APP_KEY manually (exec disabled)');
+            $appKey = 'base64:' . base64_encode(random_bytes(32));
+            
+            // Update .env file with generated key
+            $envContent = file_get_contents($envPath);
+            if (strpos($envContent, 'APP_KEY=') !== false) {
+                $envContent = preg_replace('/^APP_KEY=.*$/m', 'APP_KEY=' . $appKey, $envContent);
+            } else {
+                $envContent .= "\nAPP_KEY=" . $appKey;
             }
             
-            // Fallback: Generate key manually if artisan failed
-            if (!$keyGenerated) {
-                $appKey = 'base64:' . base64_encode(random_bytes(32));
-                
-                // Update .env file with generated key
-                $envContent = file_get_contents($envPath);
-                if (strpos($envContent, 'APP_KEY=') !== false) {
-                    $envContent = preg_replace('/^APP_KEY=.*$/m', 'APP_KEY=' . $appKey, $envContent);
-                } else {
-                    $envContent .= "\nAPP_KEY=" . $appKey;
-                }
-                file_put_contents($envPath, $envContent);
+            if (file_put_contents($envPath, $envContent)) {
                 $keyGenerated = true;
+                error_log('✅ APP_KEY generated and saved: ' . substr($appKey, 0, 20) . '...');
+            } else {
+                error_log('❌ Failed to save APP_KEY to .env file');
             }
             
             // Create installer lock file
@@ -379,10 +381,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $htaccessContent = file_get_contents($htaccessTemplatePath);
                 $htaccessContent = str_replace('{{DATE}}', date('Y-m-d H:i:s'), $htaccessContent);
                 
-                // Generate .htaccess in root directory (where wscrm is located)
-                $rootDir = dirname(dirname(__DIR__)); // Go up two levels from install directory
-                $htaccessPath = $rootDir . '/.htaccess';
-                file_put_contents($htaccessPath, $htaccessContent);
+                // Generate .htaccess in public_html directory (web root)
+                $publicHtmlDir = $_SERVER['DOCUMENT_ROOT'];
+                $htaccessPath = $publicHtmlDir . '/.htaccess';
+                
+                error_log('📄 Creating .htaccess at: ' . $htaccessPath);
+                
+                if (file_put_contents($htaccessPath, $htaccessContent)) {
+                    error_log('✅ .htaccess created successfully in public_html');
+                } else {
+                    error_log('❌ Failed to create .htaccess in public_html');
+                }
             }
             
             $successMessage = 'Environment berhasil dikonfigurasi. Installer lock file telah dibuat.';
@@ -433,35 +442,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             file_put_contents($envFile, $envContent);
                             error_log("🔑 APP_KEY generated for: $path");
                             
-                            // Clear Laravel cache after generating APP_KEY
-                            $currentDir = getcwd();
-                            chdir($path);
-                            
-                            // Clear config cache
-                            exec('php artisan config:clear 2>&1', $output1, $returnVar1);
-                            if ($returnVar1 === 0) {
-                                error_log("✅ Config cache cleared");
-                            }
-                            
-                            // Clear application cache
-                            exec('php artisan cache:clear 2>&1', $output2, $returnVar2);
-                            if ($returnVar2 === 0) {
-                                error_log("✅ Application cache cleared");
-                            }
-                            
-                            // Clear route cache
-                            exec('php artisan route:clear 2>&1', $output3, $returnVar3);
-                            if ($returnVar3 === 0) {
-                                error_log("✅ Route cache cleared");
-                            }
-                            
-                            // Clear view cache
-                            exec('php artisan view:clear 2>&1', $output4, $returnVar4);
-                            if ($returnVar4 === 0) {
-                                error_log("✅ View cache cleared");
-                            }
-                            
-                            chdir($currentDir);
+                            // Note: Cache clearing skipped (exec() disabled on hosting)
+                            error_log("ℹ️ Cache clearing skipped (exec disabled on shared hosting)");
                         }
                         break;
                     }
@@ -1012,8 +994,17 @@ $step3Complete = file_exists($targetWscrmPath . '/.env'); // Environment configu
         <?php if ($isAlreadyInstalled): ?>
             <div class="alert alert-success">
                 <strong>✅ Instalasi Sudah Selesai!</strong><br>
-                WSCRM sudah terinstall di: <code><?= htmlspecialchars($targetWscrmPath) ?></code><br>
-                <a href="../" class="btn btn-success" style="margin-top: 10px; text-decoration: none; display: inline-block;">Buka Aplikasi</a>
+                WSCRM sudah terinstall di: <code><?= htmlspecialchars($targetWscrmPath) ?></code><br><br>
+                <div class="alert alert-info" style="margin-top: 15px;">
+                    <strong>⚠️ Penting:</strong> Aplikasi tidak dapat diakses selama folder install masih ada.<br>
+                    Silakan hapus folder install terlebih dahulu untuk mengakses aplikasi.
+                </div>
+                
+                <div style="margin-top: 15px;">
+                    <button onclick="deleteInstallFolder()" class="btn btn-success" style="margin-right: 10px;">🗑️ Hapus Folder Install & Buka Aplikasi</button>
+                    <a href="../" class="btn" style="background: #6c757d; color: white; text-decoration: none; display: inline-block;">👀 Coba Buka Aplikasi (Akan Error)</a>
+                </div>
+                <div id="delete-result" style="margin-top: 15px;"></div>
             </div>
         <?php else: ?>
             <div class="step <?= $step1Complete ? 'completed' : '' ?>" id="step1">
