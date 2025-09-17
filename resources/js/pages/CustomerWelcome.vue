@@ -1,13 +1,9 @@
 <script setup lang="ts">
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Head, Link, usePage } from '@inertiajs/vue3';
-import { CheckCircle, Globe, LayoutGrid, Menu, Server, Shield, Star, Users, X } from 'lucide-vue-next';
-import { ref } from 'vue';
-
-const page = usePage();
-const isAdmin = page.props.auth?.user !== null; // User yang login melalui guard 'web' adalah admin
-const mobileMenuOpen = ref(false);
+import CustomerPublicLayout from '@/layouts/CustomerPublicLayout.vue';
+import { Link } from '@inertiajs/vue3';
+import { CheckCircle, Globe, Server, Shield, Star, Users } from 'lucide-vue-next';
 
 const features = [
     {
@@ -43,86 +39,7 @@ const benefits = [
 </script>
 
 <template>
-    <Head title="Professional Web Hosting & Domain Services" />
-
-    <div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
-        <!-- Navigation -->
-        <nav class="container mx-auto px-4 py-4 sm:px-6">
-            <div class="flex items-center justify-between">
-                <!-- Logo -->
-                <div class="flex items-center space-x-2">
-                    <img src="/1.png" alt="WebSweetStudio" class="h-8 w-8 object-contain" />
-                    <span class="text-lg font-bold text-gray-900 sm:text-xl dark:text-white">WebsweetStudio.com</span>
-                </div>
-
-                <!-- Desktop Navigation -->
-                <div class="hidden items-center space-x-2 md:flex">
-                    <Button variant="ghost" size="sm" asChild>
-                        <Link href="/hosting">Hosting</Link>
-                    </Button>
-                    <Button variant="ghost" size="sm" asChild>
-                        <Link href="/domains">Domain</Link>
-                    </Button>
-                    <template v-if="isAdmin">
-                        <Button variant="outline" size="sm" asChild>
-                            <Link href="/dashboard" class="flex items-center gap-2">
-                                <LayoutGrid class="h-4 w-4" />
-                                Dashboard
-                            </Link>
-                        </Button>
-                    </template>
-                    <template v-else>
-                        <Button variant="outline" size="sm" asChild>
-                            <Link href="/customer/login">Masuk</Link>
-                        </Button>
-                        <Button size="sm" asChild>
-                            <Link href="/customer/register">Daftar</Link>
-                        </Button>
-                    </template>
-                </div>
-
-                <!-- Mobile Menu Button -->
-                <Button
-                    variant="ghost"
-                    size="sm"
-                    class="md:hidden"
-                    @click="mobileMenuOpen = !mobileMenuOpen"
-                >
-                    <Menu v-if="!mobileMenuOpen" class="h-5 w-5" />
-                    <X v-else class="h-5 w-5" />
-                </Button>
-            </div>
-
-            <!-- Mobile Navigation -->
-            <div
-                v-if="mobileMenuOpen"
-                class="mt-4 space-y-2 border-t pt-4 md:hidden"
-            >
-                <Button variant="ghost" class="w-full justify-start" asChild>
-                    <Link href="/hosting">Hosting</Link>
-                </Button>
-                <Button variant="ghost" class="w-full justify-start" asChild>
-                    <Link href="/domains">Domain</Link>
-                </Button>
-                <template v-if="isAdmin">
-                    <Button variant="outline" class="w-full justify-start" asChild>
-                        <Link href="/dashboard" class="flex items-center gap-2">
-                            <LayoutGrid class="h-4 w-4" />
-                            Dashboard
-                        </Link>
-                    </Button>
-                </template>
-                <template v-else>
-                    <Button variant="outline" class="w-full justify-start" asChild>
-                        <Link href="/customer/login">Masuk</Link>
-                    </Button>
-                    <Button class="w-full justify-start" asChild>
-                        <Link href="/customer/register">Daftar</Link>
-                    </Button>
-                </template>
-            </div>
-        </nav>
-
+    <CustomerPublicLayout title="Hosting Web Profesional & Layanan Domain - WebSweetStudio">
         <!-- Hero Section -->
         <section class="container mx-auto px-4 py-12 sm:px-6 sm:py-16 lg:py-20">
             <div class="mb-12 text-center sm:mb-16">
@@ -206,25 +123,5 @@ const benefits = [
             </div>
         </section>
 
-        <!-- Footer -->
-        <footer class="bg-gray-900 py-6 text-gray-300 sm:py-8">
-            <div class="container mx-auto px-4 sm:px-6">
-                <div class="flex flex-col items-center justify-between space-y-4 md:flex-row md:space-y-0">
-                    <div class="flex items-center space-x-2">
-                        <img src="/1.png" alt="WebSweetStudio" class="h-8 w-8 object-contain" />
-                        <span class="text-lg font-bold text-white sm:text-xl">WebsweetStudio.com</span>
-                    </div>
-                    <div class="flex flex-wrap justify-center gap-4 text-sm sm:gap-6">
-                        <Link href="/hosting" class="hover:text-white transition-colors">Hosting</Link>
-                        <Link href="/domains" class="hover:text-white transition-colors">Domain</Link>
-                        <Link href="/customer/login" class="hover:text-white transition-colors">Login Pelanggan</Link>
-                        <Link href="/login" class="hover:text-white transition-colors">Login Admin</Link>
-                    </div>
-                </div>
-                <div class="mt-4 border-t border-gray-700 pt-4 text-center text-xs sm:mt-6 sm:pt-6 sm:text-sm">
-                    <p>&copy; 2024 WebSweetStudio. Semua hak dilindungi.</p>
-                </div>
-            </div>
-        </footer>
-    </div>
+    </CustomerPublicLayout>
 </template>
