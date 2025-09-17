@@ -20,39 +20,3 @@
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteRule ^ public/index.php [L]
 </IfModule>
-
-# Security Protection
-<FilesMatch "^(\.env|\.env\..*|\.git.*|composer\.(json|lock)|package\.(json|lock)|artisan|phpunit\.xml)$">
-    Require all denied
-</FilesMatch>
-
-# Block access to Laravel directories
-<IfModule mod_rewrite.c>
-    RewriteRule ^(app|bootstrap|config|database|resources|routes|storage|tests|vendor)(/.*)?$ - [F,L]
-    RewriteRule ^(node_modules|dist)(/.*)?$ - [F,L]
-</IfModule>
-
-# Block access to sensitive file types
-<FilesMatch "\.(md|txt|log|ini|conf|cfg|sql|sqlite|lock|yaml|yml)$">
-    Require all denied
-</FilesMatch>
-
-# Security Headers
-<IfModule mod_headers.c>
-    Header always set X-Content-Type-Options nosniff
-    Header always set X-Frame-Options DENY
-    Header always set X-XSS-Protection "1; mode=block"
-    Header always set Referrer-Policy "strict-origin-when-cross-origin"
-</IfModule>
-
-# Disable server signature
-ServerTokens Prod
-ServerSignature Off
-
-# Disable directory browsing
-Options -Indexes
-
-# Block version control directories
-<DirectoryMatch "\.(git|svn)">
-    Require all denied
-</DirectoryMatch>

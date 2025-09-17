@@ -5,6 +5,7 @@ This document explains how to set up the production build system used in this La
 ## Overview
 
 The production build system creates a deployment-ready structure with:
+
 - `dist/laravel/` - Laravel application files (backend)
 - `dist/public_html/` - Public web files (frontend)
 - `dist/production.zip` - Complete deployment package
@@ -19,16 +20,16 @@ Add these scripts to your `composer.json`:
 
 ```json
 {
-  "scripts": {
-    "build:production": [
-      "powershell -Command \"if (Test-Path 'dist') { Remove-Item -Recurse -Force 'dist' }\"",
-      "npm run build:clean",
-      "@php artisan config:cache",
-      "@php artisan route:cache",
-      "@php artisan view:cache",
-      "@php artisan build:production-structure"
-    ]
-  }
+    "scripts": {
+        "build:production": [
+            "powershell -Command \"if (Test-Path 'dist') { Remove-Item -Recurse -Force 'dist' }\"",
+            "npm run build:clean",
+            "@php artisan config:cache",
+            "@php artisan route:cache",
+            "@php artisan view:cache",
+            "@php artisan build:production-structure"
+        ]
+    }
 }
 ```
 
@@ -38,17 +39,18 @@ Add these scripts to your `package.json`:
 
 ```json
 {
-  "scripts": {
-    "build": "vite build",
-    "build:clean": "rimraf public/build && vite build"
-  },
-  "devDependencies": {
-    "rimraf": "^6.0.1"
-  }
+    "scripts": {
+        "build": "vite build",
+        "build:clean": "rimraf public/build && vite build"
+    },
+    "devDependencies": {
+        "rimraf": "^6.0.1"
+    }
 }
 ```
 
 Install rimraf if not already installed:
+
 ```bash
 npm install --save-dev rimraf
 ```
@@ -238,33 +240,33 @@ class BuildProductionStructure extends Command
     private function modifyIndexPhpForProduction(string $publicHtmlPath): void
     {
         $indexPhpPath = $publicHtmlPath.'/index.php';
-        
+
         if (!File::exists($indexPhpPath)) {
             $this->error('index.php not found in public_html directory');
             return;
         }
-        
+
         $content = File::get($indexPhpPath);
-        
+
         // Replace paths to point to ../laravel/ instead of ../
         $content = str_replace(
             "require __DIR__.'/../vendor/autoload.php';",
             "require __DIR__.'/../laravel/vendor/autoload.php';",
             $content
         );
-        
+
         $content = str_replace(
             "require_once __DIR__.'/../bootstrap/app.php';",
             "require_once __DIR__.'/../laravel/bootstrap/app.php';",
             $content
         );
-        
+
         $content = str_replace(
             "file_exists(\$maintenance = __DIR__.'/../storage/framework/maintenance.php')",
             "file_exists(\$maintenance = __DIR__.'/../laravel/storage/framework/maintenance.php')",
             $content
         );
-        
+
         File::put($indexPhpPath, $content);
     }
 
@@ -288,20 +290,20 @@ class BuildProductionStructure extends Command
             // Copy assets directory
             $assetsSource = $publicHtmlBuildPath.'/assets';
             $assetsDestination = $laravelBuildPath.'/assets';
-            
+
             if (File::exists($assetsSource)) {
                 File::makeDirectory($assetsDestination, 0755, true, true);
-                
+
                 // Copy all files in assets directory
                 foreach (File::allFiles($assetsSource) as $file) {
                     $relativePath = str_replace($assetsSource.DIRECTORY_SEPARATOR, '', $file->getPathname());
                     $destinationFile = $assetsDestination.DIRECTORY_SEPARATOR.$relativePath;
                     $destinationDir = dirname($destinationFile);
-                    
+
                     if (!File::exists($destinationDir)) {
                         File::makeDirectory($destinationDir, 0755, true);
                     }
-                    
+
                     File::copy($file->getPathname(), $destinationFile);
                 }
             }
@@ -394,6 +396,7 @@ composer run build:production
 ```
 
 This will:
+
 1. Clean the `dist` directory
 2. Build optimized frontend assets
 3. Cache Laravel configurations
@@ -450,10 +453,10 @@ dist/
 3. Place `public_html/` contents in web root
 4. Set up database and configure web server
 5. Run initial setup:
-   ```bash
-   php artisan storage:link
-   php artisan migrate --force
-   ```
+    ```bash
+    php artisan storage:link
+    php artisan migrate --force
+    ```
 
 ## Customization
 
@@ -525,7 +528,7 @@ class BuildPackage extends Command
     public function handle(): int
     {
         $this->info('🚀 Memulai build package deployment...');
-        
+
         $outputPath = $this->option('output');
         $distDir = dirname($outputPath);
         $tempDir = $distDir . '/temp-package';
@@ -662,7 +665,7 @@ Generated: " . date('Y-m-d H:i:s');
 
         foreach ($iterator as $item) {
             $relativePath = str_replace($source . DIRECTORY_SEPARATOR, '', $item);
-            
+
             // Skip excluded paths
             foreach ($excludes as $exclude) {
                 if (str_starts_with($relativePath, $exclude)) {
@@ -683,7 +686,7 @@ Generated: " . date('Y-m-d H:i:s');
     private function createZipPackage(string $tempDir, string $outputPath): void
     {
         $zip = new ZipArchive();
-        
+
         if ($zip->open($outputPath, ZipArchive::CREATE | ZipArchive::OVERWRITE) === TRUE) {
             $files = new RecursiveIteratorIterator(
                 new RecursiveDirectoryIterator($tempDir),
@@ -751,12 +754,12 @@ $laravel_root = __DIR__;
 // Check if we're in standard Laravel structure (public folder)
 if (file_exists(__DIR__ . '/../vendor/autoload.php')) {
     $laravel_root = __DIR__ . '/..';
-} 
+}
 // Check if we're in flat deployment (all files in same level)
 elseif (file_exists(__DIR__ . '/vendor/autoload.php')) {
     $laravel_root = __DIR__;
-} 
-// Check if Laravel is in parent directory 
+}
+// Check if Laravel is in parent directory
 elseif (file_exists(dirname(__DIR__) . '/vendor/autoload.php')) {
     $laravel_root = dirname(__DIR__);
 }
@@ -814,7 +817,7 @@ if (file_exists(__DIR__ . '/../../.env') && !file_exists(__DIR__ . '/../../stora
 // Handle installation process
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $step = $_POST['step'] ?? 1;
-    
+
     switch ($step) {
         case 2:
             handleEnvironmentSetup();
@@ -832,9 +835,9 @@ function handleEnvironmentSetup() {
     $appName = $_POST['app_name'] ?? 'WSCRM';
     $appUrl = $_POST['app_url'] ?? 'http://localhost';
     $dbConnection = $_POST['db_connection'] ?? 'sqlite';
-    
+
     $envTemplate = file_get_contents(__DIR__ . '/../../.env.example');
-    
+
     $envContent = str_replace([
         'APP_NAME=Laravel',
         'APP_URL=http://localhost',
@@ -844,13 +847,13 @@ function handleEnvironmentSetup() {
         "APP_URL=$appUrl",
         "DB_CONNECTION=$dbConnection",
     ], $envTemplate);
-    
+
     // Generate app key
     $appKey = 'base64:' . base64_encode(random_bytes(32));
     $envContent = str_replace('APP_KEY=', "APP_KEY=$appKey", $envContent);
-    
+
     file_put_contents(__DIR__ . '/../../.env', $envContent);
-    
+
     // Create SQLite database file
     if ($dbConnection === 'sqlite') {
         $dbPath = __DIR__ . '/../../database/database.sqlite';
@@ -858,7 +861,7 @@ function handleEnvironmentSetup() {
             touch($dbPath);
         }
     }
-    
+
     showStep(3, 'Environment berhasil dikonfigurasi');
 }
 
@@ -866,18 +869,18 @@ function handleDatabaseSetup() {
     // Run migrations
     $output = [];
     $return = 0;
-    
+
     chdir(__DIR__ . '/../..');
     exec('php artisan migrate --force 2>&1', $output, $return);
-    
+
     if ($return !== 0) {
         showStep(3, 'Error saat migrasi database: ' . implode('\n', $output), true);
         return;
     }
-    
+
     // Run seeders if exists
     exec('php artisan db:seed --force 2>&1', $output, $return);
-    
+
     showStep(4, 'Database berhasil disetup');
 }
 
@@ -887,14 +890,14 @@ function handleFinalSetup() {
     exec('php artisan config:clear 2>&1');
     exec('php artisan route:clear 2>&1');
     exec('php artisan view:clear 2>&1');
-    
+
     // Create lock file
     file_put_contents(__DIR__ . '/../../storage/installer.lock', date('Y-m-d H:i:s'));
-    
+
     // Create admin user if requested
     $adminEmail = $_POST['admin_email'] ?? '';
     $adminPassword = $_POST['admin_password'] ?? '';
-    
+
     if ($adminEmail && $adminPassword) {
         // Create admin user via artisan command
         $command = "php artisan tinker --execute=\"
@@ -907,7 +910,7 @@ function handleFinalSetup() {
         \"";
         exec($command . ' 2>&1');
     }
-    
+
     showSuccess();
 }
 
@@ -956,74 +959,15 @@ Update `public/.htaccess` with security protection for public_html deployment:
 <IfModule mod_rewrite.c>
     # Block app, config, database, storage, tests, vendor directories
     RewriteRule ^(app|bootstrap|config|database|resources|routes|storage|tests|vendor)(/.*)?$ - [F,L]
-    
+
     # Block PHP files di root kecuali index.php dan installer
     RewriteCond %{REQUEST_FILENAME} -f
     RewriteCond %{REQUEST_URI} ^/[^/]+\.php$
     RewriteCond %{REQUEST_URI} !^/(index\.php|install/.*)$
     RewriteRule .* - [F,L]
-    
+
     # Block access to node_modules dan dist folders
     RewriteRule ^(node_modules|dist)(/.*)?$ - [F,L]
-</IfModule>
-
-# Block access ke specific file types yang sensitive
-<FilesMatch "\.(md|txt|log|ini|conf|cfg|sql|sqlite|lock|yaml|yml)$">
-    Require all denied
-</FilesMatch>
-
-# Security Headers
-<IfModule mod_headers.c>
-    Header always set X-Content-Type-Options nosniff
-    Header always set X-Frame-Options DENY  
-    Header always set X-XSS-Protection "1; mode=block"
-    Header always set Referrer-Policy "strict-origin-when-cross-origin"
-    Header always set Permissions-Policy "geolocation=(), microphone=(), camera=()"
-</IfModule>
-
-# Disable server signature untuk security
-ServerTokens Prod
-ServerSignature Off
-
-# Disable directory browsing
-Options -Indexes
-
-# Disable access ke version control directories
-<DirectoryMatch "\.(git|svn)">
-    Require all denied
-</DirectoryMatch>
-
-# Set proper MIME types
-<IfModule mod_mime.c>
-    AddType application/javascript .js
-    AddType text/css .css
-</IfModule>
-
-# Gzip compression untuk better performance
-<IfModule mod_deflate.c>
-    AddOutputFilterByType DEFLATE text/plain
-    AddOutputFilterByType DEFLATE text/html
-    AddOutputFilterByType DEFLATE text/xml
-    AddOutputFilterByType DEFLATE text/css
-    AddOutputFilterByType DEFLATE application/xml
-    AddOutputFilterByType DEFLATE application/xhtml+xml
-    AddOutputFilterByType DEFLATE application/rss+xml
-    AddOutputFilterByType DEFLATE application/javascript
-    AddOutputFilterByType DEFLATE application/x-javascript
-</IfModule>
-
-# Cache static files
-<IfModule mod_expires.c>
-    ExpiresActive on
-    ExpiresByType text/css "access plus 1 year"
-    ExpiresByType application/javascript "access plus 1 year"
-    ExpiresByType image/png "access plus 1 year"
-    ExpiresByType image/jpg "access plus 1 year"
-    ExpiresByType image/jpeg "access plus 1 year"
-    ExpiresByType image/gif "access plus 1 year"
-    ExpiresByType image/svg+xml "access plus 1 year"
-    ExpiresByType image/x-icon "access plus 1 year"
-    ExpiresByType image/webp "access plus 1 year"
 </IfModule>
 ```
 
@@ -1059,16 +1003,16 @@ class UpdateController extends Controller
     {
         try {
             $response = Http::timeout(10)->get("https://api.github.com/repos/" . self::GITHUB_REPO . "/releases/latest");
-            
+
             if (!$response->successful()) {
                 return response()->json(['error' => 'Tidak dapat mengecek update'], 500);
             }
 
             $latestRelease = $response->json();
             $currentVersion = $this->getCurrentVersion();
-            
+
             $hasUpdate = version_compare($latestRelease['tag_name'], $currentVersion, '>');
-            
+
             return response()->json([
                 'has_update' => $hasUpdate,
                 'current_version' => $currentVersion,
@@ -1090,41 +1034,41 @@ class UpdateController extends Controller
     {
         try {
             set_time_limit(300); // 5 minutes timeout
-            
+
             $downloadUrl = $request->input('download_url');
             $version = $request->input('version');
-            
+
             if (!$downloadUrl || !$version) {
                 return response()->json(['error' => 'Parameter tidak lengkap'], 400);
             }
 
             // Step 1: Create backup
             $this->createBackup();
-            
+
             // Step 2: Download update
             $updateFile = $this->downloadUpdate($downloadUrl, $version);
-            
+
             // Step 3: Extract and install
             $this->extractAndInstall($updateFile, $version);
-            
+
             // Step 4: Run post-update tasks
             $this->runPostUpdateTasks();
-            
+
             // Step 5: Cleanup
             $this->cleanupUpdate($updateFile);
-            
+
             return response()->json([
                 'success' => true,
                 'message' => 'Update berhasil diinstall ke versi ' . $version,
                 'version' => $version
             ]);
-            
+
         } catch (Exception $e) {
             Log::error('Update failed: ' . $e->getMessage());
-            
+
             // Attempt to restore backup on failure
             $this->restoreBackup();
-            
+
             return response()->json(['error' => 'Update gagal: ' . $e->getMessage()], 500);
         }
     }
@@ -1132,12 +1076,12 @@ class UpdateController extends Controller
     private function getCurrentVersion(): string
     {
         $composerPath = base_path('composer.json');
-        
+
         if (file_exists($composerPath)) {
             $composer = json_decode(file_get_contents($composerPath), true);
             return $composer['version'] ?? '1.0.0';
         }
-        
+
         return '1.0.0';
     }
 
@@ -1151,20 +1095,17 @@ Add these scripts to `composer.json`:
 
 ```json
 {
-  "scripts": {
-    "build:package": [
-      "powershell -Command \"if (Test-Path 'dist') { Remove-Item -Recurse -Force 'dist' }\"",
-      "@php artisan build:package"
-    ],
-    "build:flat-deployment": [
-      "powershell -Command \"if (Test-Path 'dist') { Remove-Item -Recurse -Force 'dist' }\"",
-      "npm run build",
-      "@php artisan config:cache",
-      "@php artisan route:cache", 
-      "@php artisan view:cache",
-      "@php artisan build:flat-deployment"
-    ]
-  }
+    "scripts": {
+        "build:package": ["powershell -Command \"if (Test-Path 'dist') { Remove-Item -Recurse -Force 'dist' }\"", "@php artisan build:package"],
+        "build:flat-deployment": [
+            "powershell -Command \"if (Test-Path 'dist') { Remove-Item -Recurse -Force 'dist' }\"",
+            "npm run build",
+            "@php artisan config:cache",
+            "@php artisan route:cache",
+            "@php artisan view:cache",
+            "@php artisan build:flat-deployment"
+        ]
+    }
 }
 ```
 
@@ -1174,26 +1115,28 @@ Add version to `composer.json`:
 
 ```json
 {
-  "name": "your-app/name",
-  "version": "1.0.0",
-  "description": "Your application description"
+    "name": "your-app/name",
+    "version": "1.0.0",
+    "description": "Your application description"
 }
 ```
 
 ### Package-Style Usage
 
 #### For End Users (Installation)
+
 1. Download ZIP dari GitHub releases atau build
-2. Extract ke `public_html/` atau domain folder  
+2. Extract ke `public_html/` atau domain folder
 3. Buka `http://yourdomain.com/install/`
 4. Ikuti wizard instalasi:
-   - System requirements check
-   - App configuration (name, URL, database)
-   - Database setup (auto-migration)  
-   - Admin account creation (optional)
+    - System requirements check
+    - App configuration (name, URL, database)
+    - Database setup (auto-migration)
+    - Admin account creation (optional)
 5. Done! Aplikasi siap digunakan
 
 #### For Developers (Building)
+
 ```bash
 # Build package
 composer run build:package
@@ -1203,8 +1146,9 @@ composer run build:package
 ```
 
 #### For Updates
+
 1. Admin buka `/admin/system/update`
-2. Click "Cek Update" 
+2. Click "Cek Update"
 3. Jika ada update, click "Install Update"
 4. System otomatis backup, download, extract, dan install
 5. Auto-rollback jika gagal
@@ -1214,7 +1158,7 @@ composer run build:package
 **Package deployment tetap secure dengan:**
 
 - ✅ `.htaccess` protection untuk block sensitive files
-- ✅ Auto-detect deployment structure  
+- ✅ Auto-detect deployment structure
 - ✅ Block akses ke Laravel directories
 - ✅ Security headers
 - ✅ Directory browsing disabled
@@ -1223,19 +1167,19 @@ composer run build:package
 
 ### Deployment Comparison
 
-| Feature | Traditional Laravel | Package-Style |
-|---------|-------------------|-----------------|
-| Installation | Requires SSH/command line | Extract + web interface |
-| User Skill | Technical (developer) | Non-technical (end user) |
-| Security | Maximum (files outside web) | Good (protected via .htaccess) |
-| Updates | Manual/CI/CD | One-click from admin |
-| Shared Hosting | Complex setup | Simple extract |
-| Distribution | Multiple files | Single ZIP |
+| Feature        | Traditional Laravel         | Package-Style                  |
+| -------------- | --------------------------- | ------------------------------ |
+| Installation   | Requires SSH/command line   | Extract + web interface        |
+| User Skill     | Technical (developer)       | Non-technical (end user)       |
+| Security       | Maximum (files outside web) | Good (protected via .htaccess) |
+| Updates        | Manual/CI/CD                | One-click from admin           |
+| Shared Hosting | Complex setup               | Simple extract                 |
+| Distribution   | Multiple files              | Single ZIP                     |
 
 ### Best Practices
 
 1. **Always test** builds in clean environment before release
-2. **Use HTTPS** untuk download updates dan security  
+2. **Use HTTPS** untuk download updates dan security
 3. **Regular backups** sebelum update
 4. **Monitor logs** untuk security issues
 5. **Version control** releases dengan semantic versioning
