@@ -781,7 +781,9 @@ $app->handleRequest(Request::capture());
 
 #### 3. Package-Style Installer
 
-Create `public/install/index.php` with visual installer interface:
+Create `public/install/index.php` with visual installer interface.
+
+**Note:** Untuk menggunakan admin-tools.php setelah deployment, pastikan fungsi `shell_exec` tidak diblokir oleh hosting. Admin tools sudah optimized untuk auto-detect PHP path di berbagai hosting environment.
 
 ```php
 <?php
