@@ -232,19 +232,53 @@ const footerNavItems: NavItem[] = [
 
                         <!-- Minimized submenu items -->
                         <div v-if="isMinimized && expandedGroups.has(item.title.toLowerCase().replace(' ', '-'))" class="mt-1 space-y-1">
-                            <Link
-                                v-for="child in item.children"
-                                :key="child.title"
-                                :href="child.href"
-                                :class="[
-                                    'flex cursor-pointer items-center justify-center rounded-md px-3 py-2 text-sm transition-colors hover:bg-sidebar-accent/50',
-                                    'text-sidebar-foreground/60',
-                                    child.href === $page.url ? 'bg-sidebar-accent font-medium text-sidebar-accent-foreground' : '',
-                                ]"
-                                :title="child.title"
-                            >
-                                <component :is="child.icon" class="h-3.5 w-3.5 flex-shrink-0" />
-                            </Link>
+                            <template v-for="child in item.children" :key="child.title">
+                                <!-- Child without nested children -->
+                                <Link
+                                    v-if="!child.children"
+                                    :href="child.href"
+                                    :class="[
+                                        'flex cursor-pointer items-center justify-center rounded-md px-3 py-2 text-sm transition-colors hover:bg-sidebar-accent/50',
+                                        'text-sidebar-foreground/60',
+                                        child.href === $page.url ? 'bg-sidebar-accent font-medium text-sidebar-accent-foreground' : '',
+                                    ]"
+                                    :title="child.title"
+                                >
+                                    <component :is="child.icon" class="h-3.5 w-3.5 flex-shrink-0" />
+                                </Link>
+
+                                <!-- Child with nested children (show nested children directly in minimized mode) -->
+                                <div v-else class="space-y-1">
+                                    <button
+                                        @click="toggleGroup(child.title.toLowerCase().replace(' ', '-'))"
+                                        :class="[
+                                            'flex cursor-pointer items-center justify-center rounded-md px-3 py-2 text-sm transition-colors hover:bg-sidebar-accent/50',
+                                            'text-sidebar-foreground/60',
+                                            expandedGroups.has(child.title.toLowerCase().replace(' ', '-')) ? 'bg-sidebar-accent/30' : '',
+                                        ]"
+                                        :title="child.title"
+                                    >
+                                        <component :is="child.icon" class="h-3.5 w-3.5 flex-shrink-0" />
+                                    </button>
+
+                                    <!-- Nested children in minimized mode -->
+                                    <div v-if="expandedGroups.has(child.title.toLowerCase().replace(' ', '-'))" class="space-y-1 pl-2">
+                                        <Link
+                                            v-for="nestedChild in child.children"
+                                            :key="nestedChild.title"
+                                            :href="nestedChild.href"
+                                            :class="[
+                                                'flex cursor-pointer items-center justify-center rounded-md px-2 py-1.5 text-xs transition-colors hover:bg-sidebar-accent/30',
+                                                'text-sidebar-foreground/50',
+                                                nestedChild.href === $page.url ? 'bg-sidebar-accent font-medium text-sidebar-accent-foreground' : '',
+                                            ]"
+                                            :title="nestedChild.title"
+                                        >
+                                            <component :is="nestedChild.icon" class="h-3 w-3 flex-shrink-0" />
+                                        </Link>
+                                    </div>
+                                </div>
+                            </template>
                         </div>
 
                         <!-- Submenu items (expanded) -->
@@ -252,18 +286,60 @@ const footerNavItems: NavItem[] = [
                             v-if="!isMinimized && expandedGroups.has(item.title.toLowerCase().replace(' ', '-'))"
                             class="mt-1 ml-2 space-y-1 border-l-2 border-sidebar-accent/20 pl-3"
                         >
-                            <Link
-                                v-for="child in item.children"
-                                :key="child.title"
-                                :href="child.href"
-                                :class="[
-                                    'flex cursor-pointer items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors hover:bg-sidebar-accent',
-                                    child.href === $page.url ? 'bg-sidebar-accent font-medium' : '',
-                                ]"
-                            >
-                                <component :is="child.icon" class="h-4 w-4 flex-shrink-0" />
-                                <span class="truncate">{{ child.title }}</span>
-                            </Link>
+                            <template v-for="child in item.children" :key="child.title">
+                                <!-- Child without nested children -->
+                                <Link
+                                    v-if="!child.children"
+                                    :href="child.href"
+                                    :class="[
+                                        'flex cursor-pointer items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors hover:bg-sidebar-accent',
+                                        child.href === $page.url ? 'bg-sidebar-accent font-medium' : '',
+                                    ]"
+                                >
+                                    <component :is="child.icon" class="h-4 w-4 flex-shrink-0" />
+                                    <span class="truncate">{{ child.title }}</span>
+                                </Link>
+
+                                <!-- Child with nested children (nested submenu) -->
+                                <div v-else>
+                                    <button
+                                        @click="toggleGroup(child.title.toLowerCase().replace(' ', '-'))"
+                                        :class="[
+                                            'flex w-full cursor-pointer items-center justify-between rounded-md px-3 py-2 text-sm transition-colors hover:bg-sidebar-accent',
+                                            'text-left',
+                                        ]"
+                                    >
+                                        <div class="flex items-center gap-2">
+                                            <component :is="child.icon" class="h-4 w-4 flex-shrink-0" />
+                                            <span class="truncate">{{ child.title }}</span>
+                                        </div>
+                                        <component
+                                            :is="expandedGroups.has(child.title.toLowerCase().replace(' ', '-')) ? ChevronDown : ChevronRight"
+                                            class="h-3 w-3 flex-shrink-0"
+                                        />
+                                    </button>
+
+                                    <!-- Nested submenu items -->
+                                    <div
+                                        v-if="expandedGroups.has(child.title.toLowerCase().replace(' ', '-'))"
+                                        class="mt-1 ml-4 space-y-1 border-l-2 border-sidebar-accent/10 pl-3"
+                                    >
+                                        <Link
+                                            v-for="nestedChild in child.children"
+                                            :key="nestedChild.title"
+                                            :href="nestedChild.href"
+                                            :class="[
+                                                'flex cursor-pointer items-center gap-2 rounded-md px-3 py-1.5 text-xs transition-colors hover:bg-sidebar-accent/50',
+                                                'text-sidebar-foreground/70',
+                                                nestedChild.href === $page.url ? 'bg-sidebar-accent font-medium text-sidebar-accent-foreground' : '',
+                                            ]"
+                                        >
+                                            <component :is="nestedChild.icon" class="h-3.5 w-3.5 flex-shrink-0" />
+                                            <span class="truncate">{{ nestedChild.title }}</span>
+                                        </Link>
+                                    </div>
+                                </div>
+                            </template>
                         </div>
                     </div>
                 </template>

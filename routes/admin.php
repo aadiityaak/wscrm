@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\BankController;
 use App\Http\Controllers\Admin\BulkPricingController;
 use App\Http\Controllers\Admin\CustomerController;
 use App\Http\Controllers\Admin\DomainPriceController;
+use App\Http\Controllers\Admin\ExpenseController;
 use App\Http\Controllers\Admin\HostingPlanController;
 use App\Http\Controllers\Admin\ImpersonateController;
 use App\Http\Controllers\Admin\InvoiceController;
@@ -36,6 +37,11 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'verified'])->group(
     Route::delete('bulk-pricing/delete-config/{id}', [BulkPricingController::class, 'deleteConfig'])->name('bulk-pricing.delete-config');
     Route::resource('banks', BankController::class);
     Route::patch('banks/{bank}/toggle-status', [BankController::class, 'toggleStatus'])->name('banks.toggle-status');
+
+    // Expense Management
+    Route::get('expenses/monthly', [ExpenseController::class, 'monthly'])->name('expenses.monthly');
+    Route::get('expenses/yearly', [ExpenseController::class, 'yearly'])->name('expenses.yearly');
+    Route::get('expenses/one-time', [ExpenseController::class, 'oneTime'])->name('expenses.one-time');
 
     // Customer Impersonation
     Route::post('impersonate/{customer}', [ImpersonateController::class, 'impersonate'])->name('impersonate');
