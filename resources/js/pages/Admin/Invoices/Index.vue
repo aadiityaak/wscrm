@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
-import { AlertTriangle, Clock, DollarSign, Edit, Eye, FileText, Plus, Search, X } from 'lucide-vue-next';
+import { AlertTriangle, CheckCircle, Clock, DollarSign, Edit, Eye, FileText, Plus, Search, X } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 
 interface Customer {
@@ -218,6 +218,19 @@ const getDefaultDueDate = () => {
     date.setDate(date.getDate() + 14); // 14 days from now
     return date.toISOString().split('T')[0];
 };
+
+const markAsPaid = (invoice: Invoice) => {
+    if (invoice.status === 'paid') {
+        return; // Already paid
+    }
+
+    router.patch(`/admin/invoices/${invoice.id}/mark-paid`, {}, {
+        preserveScroll: true,
+        onSuccess: () => {
+            // Success message will be shown via flash message
+        },
+    });
+};
 </script>
 
 <template>
@@ -395,6 +408,15 @@ const getDefaultDueDate = () => {
                                     </Button>
                                     <Button size="sm" variant="outline" @click="openEditModal(invoice)" class="cursor-pointer">
                                         <Edit class="h-3 w-3" />
+                                    </Button>
+                                    <Button
+                                        v-if="invoice.status !== 'paid'"
+                                        size="sm"
+                                        @click="markAsPaid(invoice)"
+                                        class="bg-green-600 hover:bg-green-700 text-white border-green-600"
+                                        title="Tandai sebagai dibayar"
+                                    >
+                                        <CheckCircle class="h-3 w-3" />
                                     </Button>
                                 </div>
                             </div>

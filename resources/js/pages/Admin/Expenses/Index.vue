@@ -147,7 +147,7 @@ const totalYearly = computed(() => {
 
 const totalOneTime = computed(() => {
     return props.oneTimeExpenses
-        .filter(expense => expense.status === 'paid')
+        .filter(expense => expense.status === 'active')
         .reduce((total, expense) => {
             const amount = parseFloat(expense.amount) || 0;
             const amountInIDR = expense.currency === 'USD' ? (amount * 15000) : amount;
@@ -162,8 +162,10 @@ const grandTotal = computed(() => {
 const currentYear = new Date().getFullYear();
 const thisYearOneTime = computed(() => {
     return props.oneTimeExpenses.filter(expense => {
-        const expenseYear = new Date(expense.paid_date || '').getFullYear();
-        return expenseYear === currentYear && expense.status === 'paid';
+        // Use created_at if paid_date is null
+        const dateToCheck = expense.paid_date || expense.created_at;
+        const expenseYear = new Date(dateToCheck).getFullYear();
+        return expenseYear === currentYear && expense.status === 'active';
     });
 });
 
@@ -306,15 +308,22 @@ const confirmDelete = () => {
             <!-- Modern Dashboard Summary -->
             <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
                 <!-- Monthly Profit Card -->
-                <Card class="relative overflow-hidden border-0 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white">
+                <Card :class="[
+                    'relative overflow-hidden border-0 text-white',
+                    monthlyProfit >= 0
+                        ? 'bg-gradient-to-r from-emerald-500 to-emerald-600'
+                        : 'bg-gradient-to-r from-red-500 to-red-600'
+                ]">
                     <CardContent class="p-6">
                         <div class="flex items-center justify-between">
                             <div class="space-y-2">
-                                <p class="text-emerald-100 text-sm font-medium">Keuntungan Bulan Ini</p>
+                                <p :class="monthlyProfit >= 0 ? 'text-emerald-100' : 'text-red-100'" class="text-sm font-medium">
+                                    {{ monthlyProfit >= 0 ? 'Keuntungan Bulan Ini' : 'Kerugian Bulan Ini' }}
+                                </p>
                                 <div class="text-3xl font-bold">
                                     {{ formatPrice(Math.abs(monthlyProfit), 'IDR') }}
                                 </div>
-                                <div class="flex items-center space-x-2 text-emerald-100 text-sm">
+                                <div :class="monthlyProfit >= 0 ? 'text-emerald-100' : 'text-red-100'" class="flex items-center space-x-2 text-sm">
                                     <DollarSign class="h-4 w-4" />
                                     <span>{{ props.revenueData?.currentMonth || 'September 2025' }}</span>
                                 </div>
@@ -323,11 +332,11 @@ const confirmDelete = () => {
                                 <DollarSign class="h-6 w-6" />
                             </div>
                         </div>
-                        <div class="mt-4 pt-4 border-t border-emerald-400/30">
-                            <div class="flex justify-between text-sm text-emerald-100">
+                        <div :class="monthlyProfit >= 0 ? 'border-emerald-400/30' : 'border-red-400/30'" class="mt-4 pt-4 border-t">
+                            <div :class="monthlyProfit >= 0 ? 'text-emerald-100' : 'text-red-100'" class="flex justify-between text-sm">
                                 <span>Pemasukan: {{ formatPrice(monthlyRevenue, 'IDR') }}</span>
                             </div>
-                            <div class="flex justify-between text-sm text-emerald-100">
+                            <div :class="monthlyProfit >= 0 ? 'text-emerald-100' : 'text-red-100'" class="flex justify-between text-sm">
                                 <span>Pengeluaran: {{ formatPrice(totalMonthly, 'IDR') }}</span>
                             </div>
                         </div>
@@ -335,15 +344,22 @@ const confirmDelete = () => {
                 </Card>
 
                 <!-- Yearly Profit Card -->
-                <Card class="relative overflow-hidden border-0 bg-gradient-to-r from-blue-500 to-blue-600 text-white">
+                <Card :class="[
+                    'relative overflow-hidden border-0 text-white',
+                    yearlyProfit >= 0
+                        ? 'bg-gradient-to-r from-blue-500 to-blue-600'
+                        : 'bg-gradient-to-r from-red-500 to-red-600'
+                ]">
                     <CardContent class="p-6">
                         <div class="flex items-center justify-between">
                             <div class="space-y-2">
-                                <p class="text-blue-100 text-sm font-medium">Keuntungan Tahun Ini</p>
+                                <p :class="yearlyProfit >= 0 ? 'text-blue-100' : 'text-red-100'" class="text-sm font-medium">
+                                    {{ yearlyProfit >= 0 ? 'Keuntungan Tahun Ini' : 'Kerugian Tahun Ini' }}
+                                </p>
                                 <div class="text-3xl font-bold">
                                     {{ formatPrice(Math.abs(yearlyProfit), 'IDR') }}
                                 </div>
-                                <div class="flex items-center space-x-2 text-blue-100 text-sm">
+                                <div :class="yearlyProfit >= 0 ? 'text-blue-100' : 'text-red-100'" class="flex items-center space-x-2 text-sm">
                                     <Clock class="h-4 w-4" />
                                     <span>{{ props.revenueData?.currentYear || '2025' }}</span>
                                 </div>
@@ -352,11 +368,11 @@ const confirmDelete = () => {
                                 <Clock class="h-6 w-6" />
                             </div>
                         </div>
-                        <div class="mt-4 pt-4 border-t border-blue-400/30">
-                            <div class="flex justify-between text-sm text-blue-100">
+                        <div :class="yearlyProfit >= 0 ? 'border-blue-400/30' : 'border-red-400/30'" class="mt-4 pt-4 border-t">
+                            <div :class="yearlyProfit >= 0 ? 'text-blue-100' : 'text-red-100'" class="flex justify-between text-sm">
                                 <span>Pemasukan: {{ formatPrice(yearlyRevenue, 'IDR') }}</span>
                             </div>
-                            <div class="flex justify-between text-sm text-blue-100">
+                            <div :class="yearlyProfit >= 0 ? 'text-blue-100' : 'text-red-100'" class="flex justify-between text-sm">
                                 <span>Pengeluaran: {{ formatPrice(totalYearly, 'IDR') }}</span>
                             </div>
                         </div>

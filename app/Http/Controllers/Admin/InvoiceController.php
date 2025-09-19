@@ -158,6 +158,24 @@ class InvoiceController extends Controller
     }
 
     /**
+     * Mark invoice as paid
+     */
+    public function markAsPaid(Invoice $invoice)
+    {
+        // Only allow marking unpaid invoices as paid
+        if ($invoice->status === 'paid') {
+            return back()->with('error', 'Invoice sudah dalam status dibayar.');
+        }
+
+        $invoice->update([
+            'status' => 'paid',
+            'paid_at' => now()
+        ]);
+
+        return back()->with('success', 'Invoice berhasil ditandai sebagai dibayar.');
+    }
+
+    /**
      * Helper method to get invoice number from service
      */
     protected function generateInvoiceNumber(): string
