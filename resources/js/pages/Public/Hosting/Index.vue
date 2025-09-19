@@ -96,7 +96,7 @@ const filteredPlans = computed(() => {
 <template>
     <CustomerPublicLayout title="Paket Hosting Web Profesional - WebSweetStudio">
         <!-- Hero Section -->
-        <section class="container mx-auto px-4 py-12 sm:px-6 sm:py-16">
+        <section class="mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
             <div class="mb-8 space-y-4 text-center sm:mb-12 sm:space-y-6">
                 <h1 class="text-3xl font-bold tracking-tight sm:text-4xl lg:text-5xl">Paket Hosting Web Profesional</h1>
                 <p class="mx-auto max-w-3xl text-base text-muted-foreground sm:text-lg lg:text-xl">
@@ -122,39 +122,51 @@ const filteredPlans = computed(() => {
                 <Card>
                     <CardContent class="pt-6">
                         <div class="flex items-center justify-center">
-                            <div class="grid grid-cols-2 gap-1 rounded-lg bg-muted p-1 sm:flex sm:items-center sm:space-x-1">
-                                <Button @click="activeTab = 'basic'" :variant="activeTab === 'basic' ? 'default' : 'ghost'" size="sm" class="px-3 sm:px-6">
-                                    <Filter class="mr-1 h-4 w-4 sm:mr-2" />
-                                    <span class="hidden sm:inline">Paket </span>Dasar
+                            <div class="grid w-full max-w-2xl grid-cols-2 gap-1 rounded-lg bg-muted p-1 md:flex md:items-center md:space-x-1">
+                                <Button @click="activeTab = 'basic'" :variant="activeTab === 'basic' ? 'default' : 'ghost'" size="sm" class="flex-1 px-2 text-xs md:px-4 md:text-sm">
+                                    <Filter class="mr-1 h-3 w-3 md:mr-2 md:h-4 md:w-4" />
+                                    <span class="hidden md:inline">Paket </span>Dasar
                                 </Button>
-                                <Button @click="activeTab = 'lite'" :variant="activeTab === 'lite' ? 'default' : 'ghost'" size="sm" class="px-3 sm:px-6">
-                                    <Server class="mr-1 h-4 w-4 sm:mr-2" />
-                                    <span class="hidden sm:inline">Paket </span>Lite
+                                <Button @click="activeTab = 'lite'" :variant="activeTab === 'lite' ? 'default' : 'ghost'" size="sm" class="flex-1 px-2 text-xs md:px-4 md:text-sm">
+                                    <Server class="mr-1 h-3 w-3 md:mr-2 md:h-4 md:w-4" />
+                                    <span class="hidden md:inline">Paket </span>Lite
                                 </Button>
                                 <Button
                                     @click="activeTab = 'premium'"
                                     :variant="activeTab === 'premium' ? 'default' : 'ghost'"
                                     size="sm"
-                                    class="px-3 sm:px-6"
+                                    class="flex-1 px-2 text-xs md:px-4 md:text-sm"
                                 >
-                                    <Check class="mr-1 h-4 w-4 sm:mr-2" />
-                                    <span class="hidden sm:inline">Paket </span>Premium
+                                    <Check class="mr-1 h-3 w-3 md:mr-2 md:h-4 md:w-4" />
+                                    <span class="hidden md:inline">Paket </span>Premium
                                 </Button>
-                                <Button @click="activeTab = 'all'" :variant="activeTab === 'all' ? 'default' : 'ghost'" size="sm" class="px-3 sm:px-6">
-                                    Semua Paket
+                                <Button @click="activeTab = 'all'" :variant="activeTab === 'all' ? 'default' : 'ghost'" size="sm" class="flex-1 px-2 text-xs md:px-4 md:text-sm">
+                                    <span class="hidden sm:inline">Semua </span>Paket
                                 </Button>
                             </div>
                         </div>
 
                         <!-- Active Filter Info -->
-                        <div class="mt-4 text-center">
-                            <p class="text-sm text-muted-foreground">
-                                <span v-if="activeTab === 'basic'">Menampilkan paket hosting Dasar & Standar - sempurna untuk website pribadi</span>
-                                <span v-else-if="activeTab === 'lite'">Menampilkan paket hosting Lite & Minimal - bagus untuk proyek kecil</span>
-                                <span v-else-if="activeTab === 'premium'">Menampilkan paket hosting Premium & Pro - ideal untuk website bisnis</span>
-                                <span v-else>Menampilkan semua paket hosting yang tersedia</span>
+                        <div class="mt-4 space-y-2 text-center">
+                            <p class="px-4 text-xs text-muted-foreground sm:text-sm">
+                                <span v-if="activeTab === 'basic'">
+                                    <span class="hidden sm:inline">Menampilkan paket hosting Dasar & Standar - sempurna untuk website pribadi</span>
+                                    <span class="sm:hidden">Paket Dasar untuk website pribadi</span>
+                                </span>
+                                <span v-else-if="activeTab === 'lite'">
+                                    <span class="hidden sm:inline">Menampilkan paket hosting Lite & Minimal - bagus untuk proyek kecil</span>
+                                    <span class="sm:hidden">Paket Lite untuk proyek kecil</span>
+                                </span>
+                                <span v-else-if="activeTab === 'premium'">
+                                    <span class="hidden sm:inline">Menampilkan paket hosting Premium & Pro - ideal untuk website bisnis</span>
+                                    <span class="sm:hidden">Paket Premium untuk bisnis</span>
+                                </span>
+                                <span v-else>
+                                    <span class="hidden sm:inline">Menampilkan semua paket hosting yang tersedia</span>
+                                    <span class="sm:hidden">Semua paket tersedia</span>
+                                </span>
                             </p>
-                            <p class="mt-1 text-xs text-muted-foreground">{{ filteredPlans.length }} paket tersedia</p>
+                            <p class="text-xs text-muted-foreground">{{ filteredPlans.length }} paket tersedia</p>
                         </div>
                     </CardContent>
                 </Card>

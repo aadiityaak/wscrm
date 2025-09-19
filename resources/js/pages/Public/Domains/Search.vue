@@ -104,7 +104,7 @@ const getExtensionRenewalPrice = (extension: string): number => {
 
     <div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
         <!-- Navigation -->
-        <nav class="container mx-auto px-6 py-4">
+        <nav class="mx-auto max-w-6xl px-6 py-4">
             <div class="flex items-center justify-between">
                 <Link href="/" class="flex items-center space-x-2">
                     <img src="/1.png" alt="WebSweetStudio" class="h-8 w-8 object-contain" />
@@ -127,7 +127,7 @@ const getExtensionRenewalPrice = (extension: string): number => {
             </div>
         </nav>
 
-        <div class="container mx-auto max-w-6xl px-6 py-8">
+        <div class="mx-auto max-w-6xl px-6 py-8">
             <!-- Header -->
             <div class="mb-8 flex items-center justify-between">
                 <div class="flex items-center space-x-4">
@@ -231,7 +231,7 @@ const getExtensionRenewalPrice = (extension: string): number => {
 
         <!-- Footer -->
         <footer class="mt-16 bg-gray-900 py-8 text-gray-300">
-            <div class="container mx-auto px-6">
+            <div class="mx-auto max-w-6xl px-6">
                 <div class="flex flex-col items-center justify-between md:flex-row">
                     <Link href="/" class="mb-4 flex items-center space-x-2 md:mb-0">
                         <img src="/1.png" alt="WebSweetStudio" class="h-8 w-8 object-contain" />

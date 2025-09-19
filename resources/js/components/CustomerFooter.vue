@@ -5,7 +5,7 @@ import { Link } from '@inertiajs/vue3';
 <template>
     <!-- Footer -->
     <footer class="bg-gray-900 py-6 text-gray-300 sm:py-8">
-        <div class="container mx-auto px-4 sm:px-6">
+        <div class="mx-auto max-w-6xl px-4 sm:px-6">
             <div class="flex flex-col items-center justify-between space-y-4 md:flex-row md:space-y-0">
                 <div class="flex items-center space-x-2">
                     <img src="/1.png" alt="WebSweetStudio" class="h-8 w-8 object-contain" />

@@ -59,25 +59,25 @@ const getPopularExtensions = () => {
     return props.domainPrices
         .filter((domain) => {
             const cleanExt = domain.extension.replace('.', '');
-            return ['com', 'net', 'org', 'info', 'id'].includes(cleanExt);
+            return ['com', 'id', 'my.id'].includes(cleanExt);
         })
         .sort((a, b) => a.selling_price - b.selling_price);
 };
 
 const isPremium = (extension: string) => {
     const cleanExt = extension.replace('.', '');
-    return ['com', 'net', 'org'].includes(cleanExt);
+    return ['com'].includes(cleanExt);
 };
 
 const isPopular = (extension: string) => {
     const cleanExt = extension.replace('.', '');
-    return ['com', 'net', 'org', 'id', 'co.id'].includes(cleanExt);
+    return ['com', 'id', 'my.id'].includes(cleanExt);
 };
 </script>
 
 <template>
     <CustomerPublicLayout title="Registrasi Domain - Temukan Domain Sempurna Anda - WebSweetStudio">
-        <section class="container mx-auto px-4 py-12 sm:px-6 sm:py-16">
+        <section class="mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
             <!-- Hero Section -->
             <div
                 class="mb-12 space-y-6 rounded-3xl border border-blue-100 bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 py-12 text-center sm:mb-16 sm:space-y-8 sm:py-20"
@@ -126,9 +126,7 @@ const isPopular = (extension: string) => {
                             <span>•</span>
                             <button class="font-medium text-blue-600 hover:text-blue-800">.id</button>
                             <span>•</span>
-                            <button class="font-medium text-blue-600 hover:text-blue-800">.org</button>
-                            <span>•</span>
-                            <button class="font-medium text-blue-600 hover:text-blue-800">.net</button>
+                            <button class="font-medium text-blue-600 hover:text-blue-800">.my.id</button>
                         </div>
                     </CardContent>
                 </Card>
@@ -143,11 +141,11 @@ const isPopular = (extension: string) => {
                     </p>
                 </div>
 
-                <div class="mx-auto grid max-w-7xl gap-4 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3 xl:grid-cols-4">
+                <div class="mx-auto grid max-w-4xl gap-4 grid-cols-1 sm:gap-6 lg:grid-cols-3">
                     <Card
                         v-for="domain in getPopularExtensions()"
                         :key="domain.id"
-                        class="group relative cursor-pointer overflow-hidden border-2 transition-all hover:scale-105 hover:border-blue-300 hover:shadow-xl"
+                        class="group relative cursor-pointer overflow-hidden border-2 transition-all hover:scale-105 hover:border-blue-300 hover:shadow-xl lg:max-w-none max-w-sm mx-auto"
                     >
                         <!-- Premium Badge -->
                         <div v-if="isPremium(domain.extension)" class="absolute top-2 right-2 z-10 sm:top-3 sm:right-3">

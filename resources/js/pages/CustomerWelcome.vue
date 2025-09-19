@@ -41,7 +41,7 @@ const benefits = [
 <template>
     <CustomerPublicLayout title="Hosting Web Profesional & Layanan Domain - WebSweetStudio">
         <!-- Hero Section -->
-        <section class="container mx-auto px-4 py-12 sm:px-6 sm:py-16 lg:py-20">
+        <section class="mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-16 lg:py-20">
             <div class="mb-12 text-center sm:mb-16">
                 <h1 class="mb-4 text-3xl font-bold leading-tight text-gray-900 sm:mb-6 sm:text-4xl md:text-5xl lg:text-6xl dark:text-white">
                     Hosting Web Profesional
@@ -109,7 +109,7 @@ const benefits = [
 
         <!-- CTA Section -->
         <section class="bg-blue-600 py-12 sm:py-16 dark:bg-blue-700">
-            <div class="container mx-auto px-4 text-center sm:px-6">
+            <div class="mx-auto max-w-6xl px-4 text-center sm:px-6">
                 <h2 class="mb-4 text-2xl font-bold text-white sm:mb-6 sm:text-3xl">Siap untuk Memulai?</h2>
                 <p class="mx-auto mb-6 max-w-2xl text-sm text-blue-100 sm:mb-8 sm:text-base">Bergabunglah dengan ribuan pelanggan yang puas yang mempercayai kebutuhan hosting web mereka kepada kami.</p>
                 <div class="flex flex-col gap-3 sm:flex-row sm:justify-center sm:gap-4">

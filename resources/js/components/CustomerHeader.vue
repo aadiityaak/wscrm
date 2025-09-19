@@ -12,7 +12,8 @@ const mobileMenuOpen = ref(false);
 
 <template>
     <!-- Navigation -->
-    <nav class="container mx-auto px-4 py-4 sm:px-6">
+    <nav class="sticky top-0 z-40 bg-white shadow-sm dark:bg-gray-900 dark:shadow-gray-800/20">
+        <div class="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:py-8">
         <div class="flex items-center justify-between">
             <!-- Logo -->
             <div class="flex items-center space-x-2">
@@ -136,6 +137,7 @@ const mobileMenuOpen = ref(false);
                 </div>
                 </div>
             </Transition>
+        </div>
         </div>
     </nav>
 </template>
