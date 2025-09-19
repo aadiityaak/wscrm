@@ -250,37 +250,38 @@ const impersonateCustomer = (customer: Customer) => {
     <Head title="Admin - Kelola Pelanggan" />
 
     <AppLayout :breadcrumbs="breadcrumbs">
-        <div class="space-y-6 p-6">
-            <div class="flex items-center justify-between">
+        <div class="w-full max-w-none space-y-4 sm:space-y-6 p-3 sm:p-4 lg:p-6">
+            <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                    <h1 class="text-3xl font-bold tracking-tight">Kelola Pelanggan</h1>
-                    <p class="text-muted-foreground">Kelola akun dan informasi pelanggan</p>
+                    <h1 class="text-2xl sm:text-3xl font-bold tracking-tight">Kelola Pelanggan</h1>
+                    <p class="text-sm sm:text-base text-muted-foreground">Kelola akun dan informasi pelanggan</p>
                 </div>
-                <Button @click="showCreateModal = true" class="cursor-pointer">
+                <Button @click="showCreateModal = true" class="cursor-pointer w-full sm:w-auto">
                     <Plus class="mr-2 h-4 w-4" />
-                    Tambah Pelanggan
+                    <span class="hidden sm:inline">Tambah Pelanggan</span>
+                    <span class="sm:hidden">Tambah</span>
                 </Button>
             </div>
 
             <!-- Statistics Cards -->
-            <div class="grid gap-4 md:grid-cols-4">
+            <div class="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
                 <Card>
                     <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle class="text-sm font-medium">Total Pelanggan</CardTitle>
-                        <Users class="h-4 w-4 text-muted-foreground" />
+                        <CardTitle class="text-xs sm:text-sm font-medium">Total Pelanggan</CardTitle>
+                        <Users class="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        <div class="text-2xl font-bold">{{ customers?.total || 0 }}</div>
+                        <div class="text-xl sm:text-2xl font-bold">{{ customers?.total || 0 }}</div>
                     </CardContent>
                 </Card>
 
                 <Card>
                     <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle class="text-sm font-medium">Aktif</CardTitle>
-                        <UserCheck class="h-4 w-4 text-green-600" />
+                        <CardTitle class="text-xs sm:text-sm font-medium">Aktif</CardTitle>
+                        <UserCheck class="h-3 w-3 sm:h-4 sm:w-4 text-green-600" />
                     </CardHeader>
                     <CardContent>
-                        <div class="text-2xl font-bold text-green-600">
+                        <div class="text-xl sm:text-2xl font-bold text-green-600">
                             {{ customers?.data?.filter((c) => c.status === 'active').length || 0 }}
                         </div>
                     </CardContent>
@@ -288,11 +289,11 @@ const impersonateCustomer = (customer: Customer) => {
 
                 <Card>
                     <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle class="text-sm font-medium">Ditangguhkan</CardTitle>
-                        <UserX class="h-4 w-4 text-red-600" />
+                        <CardTitle class="text-xs sm:text-sm font-medium">Ditangguhkan</CardTitle>
+                        <UserX class="h-3 w-3 sm:h-4 sm:w-4 text-red-600" />
                     </CardHeader>
                     <CardContent>
-                        <div class="text-2xl font-bold text-red-600">
+                        <div class="text-xl sm:text-2xl font-bold text-red-600">
                             {{ customers?.data?.filter((c) => c.status === 'suspended').length || 0 }}
                         </div>
                     </CardContent>
@@ -300,11 +301,11 @@ const impersonateCustomer = (customer: Customer) => {
 
                 <Card>
                     <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle class="text-sm font-medium">Tidak Aktif</CardTitle>
-                        <Clock class="h-4 w-4 text-muted-foreground" />
+                        <CardTitle class="text-xs sm:text-sm font-medium">Tidak Aktif</CardTitle>
+                        <Clock class="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        <div class="text-2xl font-bold text-muted-foreground">
+                        <div class="text-xl sm:text-2xl font-bold text-muted-foreground">
                             {{ customers?.data?.filter((c) => c.status === 'inactive').length || 0 }}
                         </div>
                     </CardContent>
@@ -313,20 +314,20 @@ const impersonateCustomer = (customer: Customer) => {
 
             <!-- Customer List -->
             <Card>
-                <CardHeader>
-                    <CardTitle>Pelanggan</CardTitle>
-                    <CardDescription>Kelola akun dan informasi pelanggan</CardDescription>
+                <CardHeader class="pb-4">
+                    <CardTitle class="text-lg sm:text-xl">Pelanggan</CardTitle>
+                    <CardDescription class="text-sm">Kelola akun dan informasi pelanggan</CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent class="px-3 sm:px-4 lg:px-6">
                     <!-- Search and Filter -->
-                    <div class="mb-6 flex flex-col gap-4 sm:flex-row">
-                        <div class="relative max-w-sm flex-1">
+                    <div class="mb-4 sm:mb-6 flex flex-col gap-3 sm:gap-4 sm:flex-row">
+                        <div class="relative flex-1 max-w-none sm:max-w-sm">
                             <Search class="absolute top-2.5 left-2.5 h-4 w-4 text-muted-foreground" />
                             <Input v-model="search" placeholder="Cari pelanggan..." class="pl-8" @keyup.enter="handleSearch" />
                         </div>
                         <select
                             v-model="status"
-                            class="flex h-9 w-[180px] cursor-pointer rounded-md border border-input bg-background px-3 py-1 text-sm text-foreground shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none dark:bg-gray-800 dark:text-white"
+                            class="flex h-9 w-full sm:w-[180px] cursor-pointer rounded-md border border-input bg-background px-3 py-1 text-sm text-foreground shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none dark:bg-gray-800 dark:text-white"
                         >
                             <option value="">Semua Status</option>
                             <option value="active">Aktif</option>

@@ -10,7 +10,7 @@ import AppLayout from '@/layouts/AppLayout.vue';
 import { formatPrice } from '@/lib/utils';
 import { type BreadcrumbItem } from '@/types';
 import { Head, router, useForm } from '@inertiajs/vue3';
-import { Activity, AlertTriangle, CheckCircle, Clock, CreditCard, DollarSign, Edit, Plus, Repeat, TrendingDown, TrendingUp, Trash2, X } from 'lucide-vue-next';
+import { Activity, CheckCircle, Clock, CreditCard, DollarSign, Edit, Plus, Repeat, TrendingDown, TrendingUp, Trash2, X } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 
 interface Expense {
@@ -186,17 +186,7 @@ const monthlyProfit = computed(() => monthlyRevenue.value - totalMonthly.value);
 const yearlyProfit = computed(() => yearlyRevenue.value - (totalYearly.value + totalMonthly.value * 12));
 const overallProfit = computed(() => monthlyRevenue.value + yearlyRevenue.value - grandTotal.value);
 
-// Health Analysis
-const cashFlowRatio = computed(() => {
-    if (totalMonthly.value === 0) return 100;
-    return (monthlyRevenue.value / totalMonthly.value) * 100;
-});
-
-const expenseToRevenueRatio = computed(() => {
-    const totalRevenue = monthlyRevenue.value + yearlyRevenue.value;
-    if (totalRevenue === 0) return 100;
-    return (grandTotal.value / totalRevenue) * 100;
-});
+// Health Analysis (removed unused computed variables)
 
 const financialHealth = computed(() => {
     const profitMargin = (overallProfit.value / (monthlyRevenue.value + yearlyRevenue.value)) * 100;
@@ -206,7 +196,7 @@ const financialHealth = computed(() => {
     } else if (profitMargin >= 10) {
         return { status: 'good', label: 'Sehat', color: 'text-blue-600', bgColor: 'bg-blue-100', icon: 'Activity' };
     } else if (profitMargin >= 0) {
-        return { status: 'warning', label: 'Perlu Perhatian', color: 'text-yellow-600', bgColor: 'bg-yellow-100', icon: 'AlertTriangle' };
+        return { status: 'warning', label: 'Perlu Perhatian', color: 'text-yellow-600', bgColor: 'bg-yellow-100', icon: 'Activity' };
     } else {
         return { status: 'danger', label: 'Tidak Sehat', color: 'text-red-600', bgColor: 'bg-red-100', icon: 'TrendingDown' };
     }

@@ -23,24 +23,37 @@ const hasRekaUISidebar = sidebarContext !== null;
 // For custom sidebar (AppSidebar), we need to handle toggle manually
 const emit = defineEmits<{
     toggleSidebar: [];
+    toggleMobileSidebar: [];
 }>();
 </script>
 
 <template>
-    <header class="sticky top-0 z-40 flex h-16 items-center gap-4 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-6">
+    <header class="sticky top-0 z-40 flex h-16 items-center gap-4 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4 sm:px-6">
         <!-- Reka UI Sidebar Trigger (for CustomerLayout) -->
         <SidebarTrigger v-if="hasRekaUISidebar" />
 
-        <!-- Custom Sidebar Trigger (for AppSidebarLayout) -->
-        <Button
-            v-else
-            variant="ghost"
-            size="icon"
-            @click="emit('toggleSidebar')"
-            class="h-9 w-9"
-        >
-            <Menu class="h-4 w-4" />
-        </Button>
+        <!-- Custom Sidebar Triggers (for AppSidebarLayout) -->
+        <template v-else>
+            <!-- Mobile Menu Button -->
+            <Button
+                variant="ghost"
+                size="icon"
+                @click="emit('toggleMobileSidebar')"
+                class="h-9 w-9 lg:hidden"
+            >
+                <Menu class="h-4 w-4" />
+            </Button>
+
+            <!-- Desktop Sidebar Toggle -->
+            <Button
+                variant="ghost"
+                size="icon"
+                @click="emit('toggleSidebar')"
+                class="hidden lg:flex h-9 w-9"
+            >
+                <Menu class="h-4 w-4" />
+            </Button>
+        </template>
 
         <template v-if="breadcrumbs && breadcrumbs.length > 0">
             <Breadcrumbs :breadcrumbs="breadcrumbs" />

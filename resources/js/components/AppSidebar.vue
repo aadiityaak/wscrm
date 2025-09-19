@@ -21,12 +21,35 @@ import {
     ShoppingCart,
     Users,
 } from 'lucide-vue-next';
-import { onMounted, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import AppLogo from './AppLogo.vue';
 import AppLogoIcon from './AppLogoIcon.vue';
 
+interface Props {
+    forceExpanded?: boolean;
+}
+
+const props = withDefaults(defineProps<Props>(), {
+    forceExpanded: false,
+});
+
 const $page = usePage();
-const { isMinimized } = useSidebar();
+const { isMinimized, isMobileOpen, closeMobileSidebar } = useSidebar();
+
+// For mobile and desktop: determine when to show icons only
+const shouldShowIconsOnly = computed(() => {
+    // If forceExpanded is true (mobile), never show icons only
+    if (props.forceExpanded) return false;
+
+    // Otherwise use isMinimized state (desktop)
+    return isMinimized.value;
+});
+
+// Function to handle link clicks on mobile
+const handleLinkClick = () => {
+    // Close mobile sidebar when link is clicked
+    closeMobileSidebar();
+};
 
 // Get current user for role-based access
 const user = $page.props.auth.user;
@@ -159,14 +182,14 @@ const footerNavItems: NavItem[] = [
 
 <template>
     <aside
-        :class="['fixed inset-y-0 left-0 flex flex-col border-r border-border bg-sidebar transition-all duration-300', isMinimized ? 'w-16' : 'w-64']"
+        :class="['fixed inset-y-0 left-0 flex flex-col border-r border-border bg-sidebar transition-all duration-300', props.forceExpanded ? 'w-full' : (shouldShowIconsOnly ? 'w-16' : 'w-64')]"
     >
         <!-- Header -->
         <div class="border-b border-border p-4">
-            <Link v-if="!isMinimized" href="/dashboard" class="flex cursor-pointer items-center gap-2">
-                <AppLogo :show-text="!isMinimized" />
+            <Link v-if="!shouldShowIconsOnly" href="/dashboard" class="flex cursor-pointer items-center gap-2" @click="handleLinkClick">
+                <AppLogo :show-text="!shouldShowIconsOnly" />
             </Link>
-            <Link v-else href="/dashboard" class="flex cursor-pointer items-center justify-center">
+            <Link v-else href="/dashboard" class="flex cursor-pointer items-center justify-center" @click="handleLinkClick">
                 <div class="flex aspect-square size-8 items-center justify-center rounded-md">
                     <AppLogoIcon class="size-6 h-6 w-6" />
                 </div>
@@ -181,21 +204,22 @@ const footerNavItems: NavItem[] = [
                     <Link
                         v-if="!item.children"
                         :href="item.href"
+                        @click="handleLinkClick"
                         :class="[
                             'flex cursor-pointer items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors hover:bg-sidebar-accent',
                             item.href === $page.url ? 'bg-sidebar-accent font-medium' : '',
-                            isMinimized ? 'justify-center' : '',
+                            shouldShowIconsOnly ? 'justify-center' : '',
                         ]"
-                        :title="isMinimized ? item.title : ''"
+                        :title="shouldShowIconsOnly ? item.title : ''"
                     >
                         <component :is="item.icon" class="h-4 w-4 flex-shrink-0" />
-                        <span v-if="!isMinimized" class="truncate">{{ item.title }}</span>
+                        <span v-if="!shouldShowIconsOnly" class="truncate">{{ item.title }}</span>
                     </Link>
 
                     <!-- Group with children -->
                     <div v-else>
                         <button
-                            v-if="!isMinimized"
+                            v-if="!shouldShowIconsOnly"
                             @click="toggleGroup(item.title.toLowerCase().replace(' ', '-'))"
                             :class="[
                                 'flex w-full cursor-pointer items-center justify-between rounded-md px-3 py-2 text-sm transition-colors hover:bg-sidebar-accent',
@@ -226,12 +250,13 @@ const footerNavItems: NavItem[] = [
                         </button>
 
                         <!-- Minimized submenu items -->
-                        <div v-if="isMinimized && expandedGroups.has(item.title.toLowerCase().replace(' ', '-'))" class="mt-1 space-y-1">
+                        <div v-if="shouldShowIconsOnly && expandedGroups.has(item.title.toLowerCase().replace(' ', '-'))" class="mt-1 space-y-1">
                             <template v-for="child in item.children" :key="child.title">
                                 <!-- Child without nested children -->
                                 <Link
                                     v-if="!child.children"
                                     :href="child.href"
+                                    @click="handleLinkClick"
                                     :class="[
                                         'flex cursor-pointer items-center justify-center rounded-md px-3 py-2 text-sm transition-colors hover:bg-sidebar-accent/50',
                                         'text-sidebar-foreground/60',
@@ -262,6 +287,7 @@ const footerNavItems: NavItem[] = [
                                             v-for="nestedChild in child.children"
                                             :key="nestedChild.title"
                                             :href="nestedChild.href"
+                                            @click="handleLinkClick"
                                             :class="[
                                                 'flex cursor-pointer items-center justify-center rounded-md px-2 py-1.5 text-xs transition-colors hover:bg-sidebar-accent/30',
                                                 'text-sidebar-foreground/50',
@@ -278,7 +304,7 @@ const footerNavItems: NavItem[] = [
 
                         <!-- Submenu items (expanded) -->
                         <div
-                            v-if="!isMinimized && expandedGroups.has(item.title.toLowerCase().replace(' ', '-'))"
+                            v-if="!shouldShowIconsOnly && expandedGroups.has(item.title.toLowerCase().replace(' ', '-'))"
                             class="mt-1 ml-2 space-y-1 border-l-2 border-sidebar-accent/20 pl-3"
                         >
                             <template v-for="child in item.children" :key="child.title">
@@ -286,6 +312,7 @@ const footerNavItems: NavItem[] = [
                                 <Link
                                     v-if="!child.children"
                                     :href="child.href"
+                                    @click="handleLinkClick"
                                     :class="[
                                         'flex cursor-pointer items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors hover:bg-sidebar-accent',
                                         child.href === $page.url ? 'bg-sidebar-accent font-medium' : '',
@@ -323,6 +350,7 @@ const footerNavItems: NavItem[] = [
                                             v-for="nestedChild in child.children"
                                             :key="nestedChild.title"
                                             :href="nestedChild.href"
+                                            @click="handleLinkClick"
                                             :class="[
                                                 'flex cursor-pointer items-center gap-2 rounded-md px-3 py-1.5 text-xs transition-colors hover:bg-sidebar-accent/50',
                                                 'text-sidebar-foreground/70',
@@ -343,7 +371,7 @@ const footerNavItems: NavItem[] = [
 
         <!-- Footer -->
         <div class="border-t border-border p-4">
-            <NavUser :minimized="isMinimized" />
+            <NavUser :minimized="shouldShowIconsOnly" />
         </div>
     </aside>
 </template>
