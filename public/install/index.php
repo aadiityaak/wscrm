@@ -8,41 +8,43 @@ ini_set('display_errors', 1);
 // error_reporting(0);
 // ini_set('display_errors', 0);
 
-function parseEnvFile($envPath) {
-    if (!file_exists($envPath)) {
+function parseEnvFile($envPath)
+{
+    if (! file_exists($envPath)) {
         return [];
     }
-    
+
     $env = [];
     $lines = file($envPath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
-    
+
     foreach ($lines as $line) {
         if (strpos(trim($line), '#') === 0) {
             continue;
         }
-        
+
         if (strpos($line, '=') !== false) {
-            list($key, $value) = explode('=', $line, 2);
+            [$key, $value] = explode('=', $line, 2);
             $env[trim($key)] = trim($value, '"\' ');
         }
     }
-    
+
     return $env;
 }
 
-function executeSimpleCommand($command) {
+function executeSimpleCommand($command)
+{
     // Simple command execution without exec() complexity
-    if (!function_exists('shell_exec')) {
+    if (! function_exists('shell_exec')) {
         return 'Error: shell_exec function is disabled on this server';
     }
-    
+
     // Try to use php directly since we're on shared hosting
     if (strpos($command, 'php ') === 0) {
         // Try the most common hosting-compatible approach
         $testPhp = @shell_exec('php --version 2>/dev/null');
         if ($testPhp && strpos($testPhp, 'PHP') !== false) {
             // php command works directly
-            $output = @shell_exec($command . ' 2>&1');
+            $output = @shell_exec($command.' 2>&1');
         } else {
             // Try common cPanel paths
             $phpPaths = [
@@ -50,66 +52,67 @@ function executeSimpleCommand($command) {
                 '/opt/cpanel/ea-php82/root/usr/bin/php',
                 '/opt/cpanel/ea-php81/root/usr/bin/php',
                 '/usr/local/bin/php',
-                '/usr/bin/php'
+                '/usr/bin/php',
             ];
-            
+
             $phpFound = false;
             foreach ($phpPaths as $phpPath) {
                 if (is_executable($phpPath)) {
-                    $command = str_replace('php ', $phpPath . ' ', $command);
-                    $output = @shell_exec($command . ' 2>&1');
+                    $command = str_replace('php ', $phpPath.' ', $command);
+                    $output = @shell_exec($command.' 2>&1');
                     $phpFound = true;
                     break;
                 }
             }
-            
-            if (!$phpFound) {
+
+            if (! $phpFound) {
                 return 'Error: Could not find PHP executable on this server';
             }
         }
     } else {
-        $output = @shell_exec($command . ' 2>&1');
+        $output = @shell_exec($command.' 2>&1');
     }
-    
+
     return $output ?: 'Command executed (no output)';
 }
 
-function detectWscrmFolder() {
+function detectWscrmFolder()
+{
     $currentDir = rtrim(str_replace('\\', '/', __DIR__), '/');  // Normalize path
-    $publicHtmlDir = dirname($currentDir); 
+    $publicHtmlDir = dirname($currentDir);
     $publicHtmlParent = dirname($_SERVER['DOCUMENT_ROOT']);
-    
+
     // Normalize all paths to use forward slashes
     $publicHtmlDir = str_replace('\\', '/', $publicHtmlDir);
     $publicHtmlParent = str_replace('\\', '/', $publicHtmlParent);
-    
+
     // Debug info for troubleshooting
     $debugInfo = [
         'currentDir' => $currentDir,
         'publicHtmlDir' => $publicHtmlDir,
         'DOCUMENT_ROOT' => $_SERVER['DOCUMENT_ROOT'],
         'publicHtmlParent' => $publicHtmlParent,
-        'checks' => []
+        'checks' => [],
     ];
-    
+
     // Priority 1: Check if wscrm is already moved to parent of public_html (already installed)
-    $path1 = $publicHtmlParent . '/wscrm';
+    $path1 = $publicHtmlParent.'/wscrm';
     $exists1 = is_dir($path1);
     $debugInfo['checks'][] = ['path' => $path1, 'exists' => $exists1, 'priority' => 1];
     if ($exists1) {
         return rtrim($path1, '/'); // Remove trailing slash
     }
-    
+
     // Priority 2: Check if wscrm exists in public_html (fresh extract)
-    $path2 = $publicHtmlDir . '/wscrm';
+    $path2 = $publicHtmlDir.'/wscrm';
     $exists2 = is_dir($path2);
     $debugInfo['checks'][] = ['path' => $path2, 'exists' => $exists2, 'priority' => 2];
     if ($exists2) {
         return rtrim($path2, '/'); // Remove trailing slash
     }
-    
+
     // Priority 3: Check relative to install directory
-    $path3 = $currentDir . '/../wscrm';
+    $path3 = $currentDir.'/../wscrm';
     $path3 = realpath($path3); // Resolve relative path
     if ($path3) {
         $path3 = str_replace('\\', '/', $path3); // Normalize
@@ -119,220 +122,229 @@ function detectWscrmFolder() {
             return rtrim($path3, '/'); // Remove trailing slash
         }
     }
-    
+
     // Store debug info in session/global for troubleshooting
     $GLOBALS['wscrm_debug'] = $debugInfo;
-    
+
     return false;
 }
 
-function moveWscrmFolder($wscrmPath, $targetPath) {
+function moveWscrmFolder($wscrmPath, $targetPath)
+{
     // Normalize paths
     $wscrmPath = rtrim(str_replace('\\', '/', $wscrmPath), '/');
     $targetPath = rtrim(str_replace('\\', '/', $targetPath), '/');
-    
-    if (!is_dir($wscrmPath)) {
-        return ['success' => false, 'message' => 'Folder wscrm tidak ditemukan di: ' . $wscrmPath];
+
+    if (! is_dir($wscrmPath)) {
+        return ['success' => false, 'message' => 'Folder wscrm tidak ditemukan di: '.$wscrmPath];
     }
-    
+
     if (is_dir($targetPath)) {
-        return ['success' => false, 'message' => 'Folder target sudah ada di: ' . $targetPath];
+        return ['success' => false, 'message' => 'Folder target sudah ada di: '.$targetPath];
     }
-    
+
     // Create target directory if parent doesn't exist
     $targetParent = dirname($targetPath);
-    if (!is_dir($targetParent)) {
-        if (!mkdir($targetParent, 0755, true)) {
-            return ['success' => false, 'message' => 'Gagal membuat direktori parent: ' . $targetParent];
+    if (! is_dir($targetParent)) {
+        if (! mkdir($targetParent, 0755, true)) {
+            return ['success' => false, 'message' => 'Gagal membuat direktori parent: '.$targetParent];
         }
     }
-    
+
     // Move the folder
     if (rename($wscrmPath, $targetPath)) {
-        return ['success' => true, 'message' => 'Folder wscrm berhasil dipindahkan ke: ' . $targetPath];
+        return ['success' => true, 'message' => 'Folder wscrm berhasil dipindahkan ke: '.$targetPath];
     } else {
         return ['success' => false, 'message' => 'Gagal memindahkan folder wscrm'];
     }
 }
 
-function copyWscrmFolder($wscrmPath, $targetPath) {
+function copyWscrmFolder($wscrmPath, $targetPath)
+{
     // Normalize paths
     $wscrmPath = rtrim(str_replace('\\', '/', $wscrmPath), '/');
     $targetPath = rtrim(str_replace('\\', '/', $targetPath), '/');
-    
-    if (!is_dir($wscrmPath)) {
-        return ['success' => false, 'message' => 'Folder wscrm tidak ditemukan di: ' . $wscrmPath];
+
+    if (! is_dir($wscrmPath)) {
+        return ['success' => false, 'message' => 'Folder wscrm tidak ditemukan di: '.$wscrmPath];
     }
-    
+
     if (is_dir($targetPath)) {
-        return ['success' => false, 'message' => 'Folder target sudah ada di: ' . $targetPath];
+        return ['success' => false, 'message' => 'Folder target sudah ada di: '.$targetPath];
     }
-    
+
     // Create target directory
-    if (!mkdir($targetPath, 0755, true)) {
-        return ['success' => false, 'message' => 'Gagal membuat direktori target: ' . $targetPath];
+    if (! mkdir($targetPath, 0755, true)) {
+        return ['success' => false, 'message' => 'Gagal membuat direktori target: '.$targetPath];
     }
-    
+
     // Copy directory recursively
     $result = copyDirectory($wscrmPath, $targetPath);
-    
+
     if ($result) {
-        return ['success' => true, 'message' => 'Folder wscrm berhasil disalin ke: ' . $targetPath];
+        return ['success' => true, 'message' => 'Folder wscrm berhasil disalin ke: '.$targetPath];
     } else {
         return ['success' => false, 'message' => 'Gagal menyalin folder wscrm'];
     }
 }
 
-function copyDirectory($src, $dst) {
+function copyDirectory($src, $dst)
+{
     $dir = opendir($src);
-    if (!$dir) return false;
-    
+    if (! $dir) {
+        return false;
+    }
+
     while (($file = readdir($dir)) !== false) {
         if ($file != '.' && $file != '..') {
-            $srcFile = $src . '/' . $file;
-            $dstFile = $dst . '/' . $file;
-            
+            $srcFile = $src.'/'.$file;
+            $dstFile = $dst.'/'.$file;
+
             if (is_dir($srcFile)) {
-                if (!mkdir($dstFile, 0755, true)) {
+                if (! mkdir($dstFile, 0755, true)) {
                     closedir($dir);
+
                     return false;
                 }
-                if (!copyDirectory($srcFile, $dstFile)) {
+                if (! copyDirectory($srcFile, $dstFile)) {
                     closedir($dir);
+
                     return false;
                 }
             } else {
-                if (!copy($srcFile, $dstFile)) {
+                if (! copy($srcFile, $dstFile)) {
                     closedir($dir);
+
                     return false;
                 }
             }
         }
     }
-    
+
     closedir($dir);
+
     return true;
 }
 
 // Handle AJAX requests
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     header('Content-Type: application/json');
-    
+
     $action = $_POST['action'] ?? '';
-    
+
     switch ($action) {
         case 'detect_wscrm':
             $wscrmPath = detectWscrmFolder();
             if ($wscrmPath) {
                 // Check if wscrm is already in target location
                 $publicHtmlParent = dirname($_SERVER['DOCUMENT_ROOT']);
-                $targetPath = $publicHtmlParent . '/wscrm';
+                $targetPath = $publicHtmlParent.'/wscrm';
                 $isAlreadyInTargetLocation = (realpath($wscrmPath) === realpath($targetPath));
-                
+
                 echo json_encode([
-                    'success' => true, 
+                    'success' => true,
                     'path' => $wscrmPath,
-                    'message' => 'Folder wscrm ditemukan di: ' . $wscrmPath,
+                    'message' => 'Folder wscrm ditemukan di: '.$wscrmPath,
                     'already_in_target_location' => $isAlreadyInTargetLocation,
                     'target_path' => $targetPath,
-                    'debug' => $GLOBALS['wscrm_debug'] ?? null
+                    'debug' => $GLOBALS['wscrm_debug'] ?? null,
                 ]);
             } else {
                 echo json_encode([
-                    'success' => false, 
+                    'success' => false,
                     'message' => 'Folder wscrm tidak ditemukan',
-                    'debug' => $GLOBALS['wscrm_debug'] ?? null
+                    'debug' => $GLOBALS['wscrm_debug'] ?? null,
                 ]);
             }
             exit;
-            
+
         case 'move_wscrm':
             // Debug: Log semua data POST yang diterima
-            error_log('🔍 POST data received: ' . print_r($_POST, true));
-            
+            error_log('🔍 POST data received: '.print_r($_POST, true));
+
             $wscrmPath = $_POST['wscrm_path'] ?? '';
             $operation = $_POST['operation'] ?? 'move'; // 'move' or 'copy'
-            
+
             // Debug: Log nilai yang diambil
-            error_log('📍 wscrm_path: ' . $wscrmPath);
-            error_log('⚙️ operation: ' . $operation);
-            
+            error_log('📍 wscrm_path: '.$wscrmPath);
+            error_log('⚙️ operation: '.$operation);
+
             if (empty($wscrmPath)) {
-                $errorMsg = 'Path wscrm tidak valid. Received: ' . var_export($wscrmPath, true);
-                error_log('❌ ' . $errorMsg);
+                $errorMsg = 'Path wscrm tidak valid. Received: '.var_export($wscrmPath, true);
+                error_log('❌ '.$errorMsg);
                 echo json_encode(['success' => false, 'message' => $errorMsg, 'debug_post' => $_POST]);
                 exit;
             }
-            
-            // Normalize the received path 
+
+            // Normalize the received path
             $wscrmPath = rtrim(str_replace('\\', '/', $wscrmPath), '/');
-            
+
             // Determine target path (sejajar dengan public_html)
             $publicHtmlParent = str_replace('\\', '/', dirname($_SERVER['DOCUMENT_ROOT']));
-            $targetPath = $publicHtmlParent . '/wscrm';
-            
+            $targetPath = $publicHtmlParent.'/wscrm';
+
             if ($operation === 'copy') {
                 $result = copyWscrmFolder($wscrmPath, $targetPath);
             } else {
                 $result = moveWscrmFolder($wscrmPath, $targetPath);
             }
-            
+
             echo json_encode($result);
             exit;
-            
+
         case 'configure_env':
             // Log received data for debugging
             error_log('📝 configure_env action started');
-            error_log('📋 POST data: ' . print_r($_POST, true));
-            
+            error_log('📋 POST data: '.print_r($_POST, true));
+
             $appUrl = $_POST['app_url'] ?? '';
             $appName = $_POST['app_name'] ?? 'WSCRM';
             $dbType = $_POST['db_type'] ?? 'sqlite';
-            
+
             // Validate inputs
             if (empty($appUrl)) {
                 echo json_encode(['success' => false, 'message' => 'Application URL harus diisi']);
                 exit;
             }
-            
+
             // Get target wscrm path
             $publicHtmlParent = str_replace('\\', '/', dirname($_SERVER['DOCUMENT_ROOT']));
-            $targetWscrmPath = $publicHtmlParent . '/wscrm';
-            
-            error_log('🎯 Target wscrm path: ' . $targetWscrmPath);
-            error_log('📁 Directory exists: ' . (is_dir($targetWscrmPath) ? 'YES' : 'NO'));
-            
-            if (!is_dir($targetWscrmPath)) {
-                error_log('❌ Target wscrm directory not found: ' . $targetWscrmPath);
-                echo json_encode(['success' => false, 'message' => 'Folder wscrm tidak ditemukan di lokasi target: ' . $targetWscrmPath]);
+            $targetWscrmPath = $publicHtmlParent.'/wscrm';
+
+            error_log('🎯 Target wscrm path: '.$targetWscrmPath);
+            error_log('📁 Directory exists: '.(is_dir($targetWscrmPath) ? 'YES' : 'NO'));
+
+            if (! is_dir($targetWscrmPath)) {
+                error_log('❌ Target wscrm directory not found: '.$targetWscrmPath);
+                echo json_encode(['success' => false, 'message' => 'Folder wscrm tidak ditemukan di lokasi target: '.$targetWscrmPath]);
                 exit;
             }
-            
+
             // Create .env file
-            $envPath = $targetWscrmPath . '/.env';
-            $envTemplate = $targetWscrmPath . '/.env.example';
-            
-            error_log('📄 Env template path: ' . $envTemplate);
-            error_log('📄 Template exists: ' . (file_exists($envTemplate) ? 'YES' : 'NO'));
-            error_log('📄 Target env path: ' . $envPath);
-            
-            if (!file_exists($envTemplate)) {
-                error_log('❌ .env.example not found: ' . $envTemplate);
-                echo json_encode(['success' => false, 'message' => 'File .env.example tidak ditemukan: ' . $envTemplate]);
+            $envPath = $targetWscrmPath.'/.env';
+            $envTemplate = $targetWscrmPath.'/.env.example';
+
+            error_log('📄 Env template path: '.$envTemplate);
+            error_log('📄 Template exists: '.(file_exists($envTemplate) ? 'YES' : 'NO'));
+            error_log('📄 Target env path: '.$envPath);
+
+            if (! file_exists($envTemplate)) {
+                error_log('❌ .env.example not found: '.$envTemplate);
+                echo json_encode(['success' => false, 'message' => 'File .env.example tidak ditemukan: '.$envTemplate]);
                 exit;
             }
-            
+
             // Read .env.example and modify values
             $envContent = file_get_contents($envTemplate);
-            
+
             // Basic app configuration
             $replacements = [
-                'APP_NAME=Laravel' => 'APP_NAME="' . $appName . '"',
-                'APP_URL=http://localhost' => 'APP_URL=' . $appUrl,
+                'APP_NAME=Laravel' => 'APP_NAME="'.$appName.'"',
+                'APP_URL=http://localhost' => 'APP_URL='.$appUrl,
                 'APP_ENV=local' => 'APP_ENV=production',
-                'APP_DEBUG=true' => 'APP_DEBUG=false'
+                'APP_DEBUG=true' => 'APP_DEBUG=false',
             ];
-            
+
             // Database configuration
             if ($dbType === 'mysql') {
                 $dbHost = $_POST['db_host'] ?? 'localhost';
@@ -340,12 +352,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $dbName = $_POST['db_name'] ?? '';
                 $dbUsername = $_POST['db_username'] ?? '';
                 $dbPassword = $_POST['db_password'] ?? '';
-                
+
                 if (empty($dbName) || empty($dbUsername)) {
                     echo json_encode(['success' => false, 'message' => 'Database name dan username harus diisi untuk MySQL']);
                     exit;
                 }
-                
+
                 // Test database connection before proceeding
                 try {
                     $dsn = "mysql:host={$dbHost};port={$dbPort};dbname={$dbName}";
@@ -353,172 +365,172 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
                     error_log('✅ Database connection test successful');
                 } catch (PDOException $e) {
-                    error_log('❌ Database connection test failed: ' . $e->getMessage());
-                    echo json_encode(['success' => false, 'message' => 'Koneksi database gagal: ' . $e->getMessage()]);
+                    error_log('❌ Database connection test failed: '.$e->getMessage());
+                    echo json_encode(['success' => false, 'message' => 'Koneksi database gagal: '.$e->getMessage()]);
                     exit;
                 }
 
                 // Handle password properly - empty password should remain empty, not quoted
                 $quotedPassword = $dbPassword;
-                if (!empty($dbPassword) && preg_match('/[\\s#"\'\\\\]/', $dbPassword)) {
-                    $quotedPassword = '"' . str_replace('"', '\\"', $dbPassword) . '"';
+                if (! empty($dbPassword) && preg_match('/[\\s#"\'\\\\]/', $dbPassword)) {
+                    $quotedPassword = '"'.str_replace('"', '\\"', $dbPassword).'"';
                 }
-                
+
                 $replacements = array_merge($replacements, [
                     'DB_CONNECTION=sqlite' => 'DB_CONNECTION=mysql',
-                    'DB_HOST=127.0.0.1' => 'DB_HOST=' . $dbHost,
-                    'DB_PORT=3306' => 'DB_PORT=' . $dbPort,
-                    'DB_DATABASE=database/database.sqlite' => 'DB_DATABASE=' . $dbName,
-                    'DB_USERNAME=null' => 'DB_USERNAME=' . $dbUsername,
-                    'DB_PASSWORD=null' => 'DB_PASSWORD=' . $quotedPassword,
-                    '# DB_HOST=127.0.0.1' => 'DB_HOST=' . $dbHost,
-                    '# DB_PORT=3306' => 'DB_PORT=' . $dbPort,
-                    '# DB_DATABASE=wscrm' => 'DB_DATABASE=' . $dbName,
-                    '# DB_USERNAME=root' => 'DB_USERNAME=' . $dbUsername,
-                    '# DB_PASSWORD=' => 'DB_PASSWORD=' . $quotedPassword,
+                    'DB_HOST=127.0.0.1' => 'DB_HOST='.$dbHost,
+                    'DB_PORT=3306' => 'DB_PORT='.$dbPort,
+                    'DB_DATABASE=database/database.sqlite' => 'DB_DATABASE='.$dbName,
+                    'DB_USERNAME=null' => 'DB_USERNAME='.$dbUsername,
+                    'DB_PASSWORD=null' => 'DB_PASSWORD='.$quotedPassword,
+                    '# DB_HOST=127.0.0.1' => 'DB_HOST='.$dbHost,
+                    '# DB_PORT=3306' => 'DB_PORT='.$dbPort,
+                    '# DB_DATABASE=wscrm' => 'DB_DATABASE='.$dbName,
+                    '# DB_USERNAME=root' => 'DB_USERNAME='.$dbUsername,
+                    '# DB_PASSWORD=' => 'DB_PASSWORD='.$quotedPassword,
                 ]);
             } else {
                 // Ensure SQLite configuration
                 $replacements = array_merge($replacements, [
                     'DB_CONNECTION=mysql' => 'DB_CONNECTION=sqlite',
-                    'DB_DATABASE=' => 'DB_DATABASE=database/database.sqlite'
+                    'DB_DATABASE=' => 'DB_DATABASE=database/database.sqlite',
                 ]);
             }
-            
+
             $envContent = str_replace(array_keys($replacements), array_values($replacements), $envContent);
-            
+
             // Write .env file
-            error_log('💾 Writing .env file to: ' . $envPath);
-            error_log('📝 Content length: ' . strlen($envContent) . ' bytes');
-            
-            if (!file_put_contents($envPath, $envContent)) {
-                error_log('❌ Failed to write .env file to: ' . $envPath);
+            error_log('💾 Writing .env file to: '.$envPath);
+            error_log('📝 Content length: '.strlen($envContent).' bytes');
+
+            if (! file_put_contents($envPath, $envContent)) {
+                error_log('❌ Failed to write .env file to: '.$envPath);
                 $parentDir = dirname($envPath);
-                error_log('📁 Parent directory writable: ' . (is_writable($parentDir) ? 'YES' : 'NO'));
-                echo json_encode(['success' => false, 'message' => 'Gagal menulis file .env ke: ' . $envPath]);
+                error_log('📁 Parent directory writable: '.(is_writable($parentDir) ? 'YES' : 'NO'));
+                echo json_encode(['success' => false, 'message' => 'Gagal menulis file .env ke: '.$envPath]);
                 exit;
             }
-            
+
             error_log('✅ .env file written successfully');
-            
+
             // Generate APP_KEY manually (exec() disabled on hosting)
             $keyGenerated = false;
             $appKey = '';
-            
+
             // Generate key manually since exec() is disabled
             error_log('🔑 Generating APP_KEY manually (exec disabled)');
-            $appKey = 'base64:' . base64_encode(random_bytes(32));
-            
+            $appKey = 'base64:'.base64_encode(random_bytes(32));
+
             // Update .env file with generated key
             $envContent = file_get_contents($envPath);
             if (strpos($envContent, 'APP_KEY=') !== false) {
-                $envContent = preg_replace('/^APP_KEY=.*$/m', 'APP_KEY=' . $appKey, $envContent);
+                $envContent = preg_replace('/^APP_KEY=.*$/m', 'APP_KEY='.$appKey, $envContent);
             } else {
-                $envContent .= "\nAPP_KEY=" . $appKey;
+                $envContent .= "\nAPP_KEY=".$appKey;
             }
-            
+
             if (file_put_contents($envPath, $envContent)) {
                 $keyGenerated = true;
-                error_log('✅ APP_KEY generated and saved: ' . substr($appKey, 0, 20) . '...');
+                error_log('✅ APP_KEY generated and saved: '.substr($appKey, 0, 20).'...');
             } else {
                 error_log('❌ Failed to save APP_KEY to .env file');
             }
-            
+
             // Create installer lock file
-            $lockPath = $targetWscrmPath . '/storage/installer.lock';
-            if (!file_put_contents($lockPath, date('Y-m-d H:i:s'))) {
+            $lockPath = $targetWscrmPath.'/storage/installer.lock';
+            if (! file_put_contents($lockPath, date('Y-m-d H:i:s'))) {
                 echo json_encode(['success' => false, 'message' => 'Gagal membuat installer lock file']);
                 exit;
             }
-            
+
             // Generate .htaccess from template if exists
-            $htaccessTemplatePath = __DIR__ . '/htaccess-template.txt';
+            $htaccessTemplatePath = __DIR__.'/htaccess-template.txt';
             if (file_exists($htaccessTemplatePath)) {
                 $htaccessContent = file_get_contents($htaccessTemplatePath);
                 $htaccessContent = str_replace('{{DATE}}', date('Y-m-d H:i:s'), $htaccessContent);
-                
+
                 // Generate .htaccess in public_html directory (web root)
                 $publicHtmlDir = $_SERVER['DOCUMENT_ROOT'];
-                $htaccessPath = $publicHtmlDir . '/.htaccess';
-                
-                error_log('📄 Creating .htaccess at: ' . $htaccessPath);
-                
+                $htaccessPath = $publicHtmlDir.'/.htaccess';
+
+                error_log('📄 Creating .htaccess at: '.$htaccessPath);
+
                 if (file_put_contents($htaccessPath, $htaccessContent)) {
                     error_log('✅ .htaccess created successfully in public_html');
                 } else {
                     error_log('❌ Failed to create .htaccess in public_html');
                 }
             }
-            
+
             $successMessage = 'Environment berhasil dikonfigurasi. Installer lock file telah dibuat.';
             if ($keyGenerated) {
                 $successMessage .= ' Application key telah digenerate untuk keamanan.';
             }
-            
+
             echo json_encode([
-                'success' => true, 
-                'message' => $successMessage
+                'success' => true,
+                'message' => $successMessage,
             ]);
             exit;
-            
+
         case 'delete_install_folder':
             // Security check - only allow deletion if installation is complete
-            $targetWscrmPath = str_replace('\\', '/', dirname($_SERVER['DOCUMENT_ROOT'])) . '/wscrm';
-            
+            $targetWscrmPath = str_replace('\\', '/', dirname($_SERVER['DOCUMENT_ROOT'])).'/wscrm';
+
             // Debug: Check multiple possible paths including the one from UI
             $detectedPath = detectWscrmFolder();
             $possiblePaths = [
                 $targetWscrmPath,
                 $detectedPath,
-                '/home/appws/domains/app.websweetstudio.com/wscrm' // Hardcoded path from UI
+                '/home/appws/domains/app.websweetstudio.com/wscrm', // Hardcoded path from UI
             ];
-            
+
             // Remove duplicates and empty values
             $possiblePaths = array_unique(array_filter($possiblePaths));
-            
+
             $isInstallComplete = false;
             $actualWscrmPath = '';
-            
+
             // Generate APP_KEY if not exists to prevent errors
             foreach ($possiblePaths as $path) {
                 if ($path && is_dir($path)) {
-                    $envFile = $path . '/.env';
+                    $envFile = $path.'/.env';
                     if (file_exists($envFile)) {
                         $envContent = file_get_contents($envFile);
                         // Check if APP_KEY is empty or not set
-                        if (preg_match('/^APP_KEY=\s*$/m', $envContent) || !preg_match('/^APP_KEY=/m', $envContent)) {
-                            $appKey = 'base64:' . base64_encode(random_bytes(32));
-                            
+                        if (preg_match('/^APP_KEY=\s*$/m', $envContent) || ! preg_match('/^APP_KEY=/m', $envContent)) {
+                            $appKey = 'base64:'.base64_encode(random_bytes(32));
+
                             if (preg_match('/^APP_KEY=/m', $envContent)) {
-                                $envContent = preg_replace('/^APP_KEY=.*$/m', 'APP_KEY=' . $appKey, $envContent);
+                                $envContent = preg_replace('/^APP_KEY=.*$/m', 'APP_KEY='.$appKey, $envContent);
                             } else {
-                                $envContent .= "\nAPP_KEY=" . $appKey;
+                                $envContent .= "\nAPP_KEY=".$appKey;
                             }
-                            
+
                             file_put_contents($envFile, $envContent);
                             error_log("🔑 APP_KEY generated for: $path");
-                            
+
                             // Note: Cache clearing skipped (exec() disabled on hosting)
-                            error_log("ℹ️ Cache clearing skipped (exec disabled on shared hosting)");
+                            error_log('ℹ️ Cache clearing skipped (exec disabled on shared hosting)');
                         }
                         break;
                     }
                 }
             }
-            
+
             foreach ($possiblePaths as $path) {
                 if ($path && is_dir($path)) {
-                    $envFile = $path . '/.env';
-                    $lockFile = $path . '/storage/installer.lock';
-                    $storageDir = $path . '/storage';
-                    
+                    $envFile = $path.'/.env';
+                    $lockFile = $path.'/storage/installer.lock';
+                    $storageDir = $path.'/storage';
+
                     // Log detailed check for debugging
                     error_log("🔍 Checking path: $path");
-                    error_log("📁 Directory exists: " . (is_dir($path) ? 'YES' : 'NO'));
-                    error_log("📄 .env exists: " . (file_exists($envFile) ? 'YES' : 'NO') . " at $envFile");
-                    error_log("🔒 installer.lock exists: " . (file_exists($lockFile) ? 'YES' : 'NO') . " at $lockFile");
-                    error_log("📂 storage dir exists: " . (is_dir($storageDir) ? 'YES' : 'NO') . " at $storageDir");
-                    
+                    error_log('📁 Directory exists: '.(is_dir($path) ? 'YES' : 'NO'));
+                    error_log('📄 .env exists: '.(file_exists($envFile) ? 'YES' : 'NO')." at $envFile");
+                    error_log('🔒 installer.lock exists: '.(file_exists($lockFile) ? 'YES' : 'NO')." at $lockFile");
+                    error_log('📂 storage dir exists: '.(is_dir($storageDir) ? 'YES' : 'NO')." at $storageDir");
+
                     // Check if .env exists (primary requirement)
                     if (file_exists($envFile)) {
                         // Check if installer.lock exists OR if storage directory exists (fallback)
@@ -526,14 +538,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             $isInstallComplete = true;
                             $actualWscrmPath = $path;
                             error_log("✅ Installation complete found at: $path");
-                            error_log("📄 .env: YES, 🔒 installer.lock: " . (file_exists($lockFile) ? 'YES' : 'NO') . ", 📂 storage: " . (is_dir($storageDir) ? 'YES' : 'NO'));
+                            error_log('📄 .env: YES, 🔒 installer.lock: '.(file_exists($lockFile) ? 'YES' : 'NO').', 📂 storage: '.(is_dir($storageDir) ? 'YES' : 'NO'));
                             break;
                         }
                     }
                 }
             }
-            
-            if (!$isInstallComplete) {
+
+            if (! $isInstallComplete) {
                 // Debug info for troubleshooting
                 $debugInfo = [
                     'DOCUMENT_ROOT' => $_SERVER['DOCUMENT_ROOT'],
@@ -541,13 +553,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     'calculated_target' => $targetWscrmPath,
                     'detected_wscrm' => $detectedPath,
                     'possible_paths' => $possiblePaths,
-                    'checks' => []
+                    'checks' => [],
                 ];
-                
+
                 foreach ($possiblePaths as $path) {
                     if ($path) {
-                        $envPath = $path . '/.env';
-                        $lockPath = $path . '/storage/installer.lock';
+                        $envPath = $path.'/.env';
+                        $lockPath = $path.'/storage/installer.lock';
                         $debugInfo['checks'][] = [
                             'path' => $path,
                             'is_dir' => is_dir($path),
@@ -555,49 +567,50 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             'env_path' => $envPath,
                             'has_lock' => file_exists($lockPath),
                             'lock_path' => $lockPath,
-                            'storage_dir_exists' => is_dir($path . '/storage')
+                            'storage_dir_exists' => is_dir($path.'/storage'),
                         ];
                     }
                 }
-                
+
                 echo json_encode([
-                    'success' => false, 
+                    'success' => false,
                     'message' => 'Instalasi belum selesai. Folder install tidak dapat dihapus. Debug info tersedia di console.',
-                    'debug' => $debugInfo
+                    'debug' => $debugInfo,
                 ]);
                 exit;
             }
-            
+
             // Delete install folder recursively
             $installPath = __DIR__;
-            
-            function deleteDirectory($dir) {
-                if (!is_dir($dir)) {
+
+            function deleteDirectory($dir)
+            {
+                if (! is_dir($dir)) {
                     return false;
                 }
-                
-                $files = array_diff(scandir($dir), array('.', '..'));
-                
+
+                $files = array_diff(scandir($dir), ['.', '..']);
+
                 foreach ($files as $file) {
-                    $filePath = $dir . '/' . $file;
+                    $filePath = $dir.'/'.$file;
                     if (is_dir($filePath)) {
                         deleteDirectory($filePath);
                     } else {
                         unlink($filePath);
                     }
                 }
-                
+
                 return rmdir($dir);
             }
-            
+
             if (deleteDirectory($installPath)) {
                 // Prepare success message with details
                 $successMessage = 'Folder install berhasil dihapus.';
                 $details = [];
-                
+
                 // Check if APP_KEY was generated (look for log entries)
                 if ($actualWscrmPath) {
-                    $envFile = $actualWscrmPath . '/.env';
+                    $envFile = $actualWscrmPath.'/.env';
                     if (file_exists($envFile)) {
                         $envContent = file_get_contents($envFile);
                         if (preg_match('/^APP_KEY=base64:/m', $envContent)) {
@@ -605,46 +618,46 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         }
                     }
                 }
-                
+
                 // Add cache clearing info
                 $details[] = '✅ Cache konfigurasi telah dibersihkan';
                 $details[] = '✅ Cache aplikasi telah dioptimasi';
-                
-                if (!empty($details)) {
-                    $successMessage .= '\n\n' . implode('\n', $details);
+
+                if (! empty($details)) {
+                    $successMessage .= '\n\n'.implode('\n', $details);
                 }
-                
+
                 echo json_encode([
-                    'success' => true, 
+                    'success' => true,
                     'message' => $successMessage,
-                    'details' => $details
+                    'details' => $details,
                 ]);
             } else {
                 echo json_encode(['success' => false, 'message' => 'Gagal menghapus folder install. Periksa permission folder.']);
             }
             exit;
-            
+
         case 'test_database':
             $dbHost = $_POST['db_host'] ?? 'localhost';
             $dbPort = $_POST['db_port'] ?? '3306';
             $dbName = $_POST['db_name'] ?? '';
             $dbUsername = $_POST['db_username'] ?? '';
             $dbPassword = $_POST['db_password'] ?? '';
-            
+
             if (empty($dbName) || empty($dbUsername)) {
                 echo json_encode(['success' => false, 'message' => 'Database name dan username harus diisi']);
                 exit;
             }
-            
+
             try {
                 // Test connection
                 $dsn = "mysql:host={$dbHost};port={$dbPort};charset=utf8mb4";
                 $pdo = new PDO($dsn, $dbUsername, $dbPassword, [
                     PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
                     PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-                    PDO::ATTR_TIMEOUT => 5
+                    PDO::ATTR_TIMEOUT => 5,
                 ]);
-                
+
                 // Check if database exists, create if not
                 $stmt = $pdo->query("SHOW DATABASES LIKE '{$dbName}'");
                 if ($stmt->rowCount() === 0) {
@@ -653,18 +666,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 } else {
                     $message = "Koneksi ke database '{$dbName}' berhasil!";
                 }
-                
+
                 // Test database selection
                 $pdo->exec("USE `{$dbName}`");
-                
+
                 echo json_encode([
                     'success' => true,
-                    'message' => $message
+                    'message' => $message,
                 ]);
-                
+
             } catch (PDOException $e) {
                 $errorMessage = $e->getMessage();
-                
+
                 // Provide user-friendly error messages
                 if (strpos($errorMessage, 'Access denied') !== false) {
                     $friendlyMessage = 'Username atau password salah';
@@ -673,28 +686,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 } elseif (strpos($errorMessage, 'Unknown database') !== false) {
                     $friendlyMessage = 'Database tidak ditemukan. Pastikan database sudah dibuat atau akan dibuat otomatis.';
                 } else {
-                    $friendlyMessage = 'Error: ' . $errorMessage;
+                    $friendlyMessage = 'Error: '.$errorMessage;
                 }
-                
+
                 echo json_encode([
                     'success' => false,
-                    'message' => $friendlyMessage
+                    'message' => $friendlyMessage,
                 ]);
             }
             exit;
-            
+
         case 'laravel_command':
             $command = $_POST['command'] ?? '';
-            $targetWscrmPath = str_replace('\\', '/', dirname($_SERVER['DOCUMENT_ROOT'])) . '/wscrm';
-            
-            if (!is_dir($targetWscrmPath)) {
+            $targetWscrmPath = str_replace('\\', '/', dirname($_SERVER['DOCUMENT_ROOT'])).'/wscrm';
+
+            if (! is_dir($targetWscrmPath)) {
                 echo json_encode(['success' => false, 'message' => 'Laravel directory not found']);
                 exit;
             }
-            
+
             $currentDir = getcwd();
             chdir($targetWscrmPath);
-            
+
             try {
                 switch ($command) {
                     case 'migrate':
@@ -711,9 +724,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         break;
                     case 'clear_cache':
                         $output = executeSimpleCommand('php artisan cache:clear');
-                        $output .= "\n" . executeSimpleCommand('php artisan config:clear');
-                        $output .= "\n" . executeSimpleCommand('php artisan route:clear');
-                        $output .= "\n" . executeSimpleCommand('php artisan view:clear');
+                        $output .= "\n".executeSimpleCommand('php artisan config:clear');
+                        $output .= "\n".executeSimpleCommand('php artisan route:clear');
+                        $output .= "\n".executeSimpleCommand('php artisan view:clear');
                         break;
                     case 'optimize':
                         $output = executeSimpleCommand('php artisan optimize');
@@ -728,31 +741,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             $envModified = date('Y-m-d H:i:s', filemtime($envPath));
                             $envContent = file_get_contents($envPath);
                             $hasAppKey = strpos($envContent, 'APP_KEY=') !== false && strpos($envContent, 'APP_KEY=base64:') !== false;
-                            
+
                             $output = "Environment File Check:\n";
                             $output .= ".env exists: Yes\n";
                             $output .= ".env size: {$envSize} bytes\n";
                             $output .= ".env modified: {$envModified}\n";
-                            $output .= "APP_KEY set: " . ($hasAppKey ? 'Yes' : 'No') . "\n";
-                            
+                            $output .= 'APP_KEY set: '.($hasAppKey ? 'Yes' : 'No')."\n";
+
                             // Check database connection
                             preg_match('/DB_CONNECTION=(.*)/', $envContent, $dbMatch);
                             $dbConnection = isset($dbMatch[1]) ? trim($dbMatch[1]) : 'not set';
                             $output .= "DB_CONNECTION: {$dbConnection}\n";
                         } else {
-                            $output = ".env file not found";
+                            $output = '.env file not found';
                         }
                         break;
                     default:
                         $output = 'Unknown command';
                 }
-                
+
                 chdir($currentDir);
                 echo json_encode(['success' => true, 'message' => 'Command executed successfully', 'output' => $output]);
-                
+
             } catch (Exception $e) {
                 chdir($currentDir);
-                echo json_encode(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
+                echo json_encode(['success' => false, 'message' => 'Error: '.$e->getMessage()]);
             }
             exit;
     }
@@ -761,15 +774,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 // Check installation progress
 $wscrmPath = detectWscrmFolder();
 $publicHtmlParent = str_replace('\\', '/', dirname($_SERVER['DOCUMENT_ROOT']));
-$targetWscrmPath = $publicHtmlParent . '/wscrm';
+$targetWscrmPath = $publicHtmlParent.'/wscrm';
 
 // Check if installation is completely finished
-$isAlreadyInstalled = is_dir($targetWscrmPath) && file_exists($targetWscrmPath . '/.env') && file_exists($targetWscrmPath . '/storage/installer.lock');
+$isAlreadyInstalled = is_dir($targetWscrmPath) && file_exists($targetWscrmPath.'/.env') && file_exists($targetWscrmPath.'/storage/installer.lock');
 
 // Check progress markers
-$step1Complete = (bool)$wscrmPath; // Folder detected
-$step2Complete = is_dir($targetWscrmPath); // Folder moved to target location  
-$step3Complete = file_exists($targetWscrmPath . '/.env'); // Environment configured
+$step1Complete = (bool) $wscrmPath; // Folder detected
+$step2Complete = is_dir($targetWscrmPath); // Folder moved to target location
+$step3Complete = file_exists($targetWscrmPath.'/.env'); // Environment configured
 
 ?>
 <!DOCTYPE html>
@@ -1127,7 +1140,7 @@ $step3Complete = file_exists($targetWscrmPath . '/.env'); // Environment configu
             <p>Installer untuk struktur package baru dengan folder wscrm terpisah</p>
         </div>
         
-        <?php if ($isAlreadyInstalled): ?>
+        <?php if ($isAlreadyInstalled) { ?>
             <div class="alert alert-success">
                 <strong>✅ Instalasi Sudah Selesai!</strong><br>
                 WSCRM sudah terinstall di: <code><?= htmlspecialchars($targetWscrmPath) ?></code><br><br>
@@ -1168,25 +1181,25 @@ $step3Complete = file_exists($targetWscrmPath . '/.env'); // Environment configu
                 </div>
                 <div id="delete-result" style="margin-top: 15px;"></div>
             </div>
-        <?php else: ?>
+        <?php } else { ?>
             <div class="step <?= $step1Complete ? 'completed' : '' ?>" id="step1">
                 <div class="step-title">📁 Step 1: Deteksi Folder WSCRM</div>
                 <div class="step-description">
                     Sistem akan mencari folder wscrm yang berisi file Laravel backend.
                 </div>
                 
-                <?php if ($step1Complete): ?>
+                <?php if ($step1Complete) { ?>
                     <div class="alert alert-success">
                         <strong>✅ Folder wscrm sudah ditemukan!</strong><br>
                         Lokasi: <div class="path-info"><?= htmlspecialchars($wscrmPath) ?></div>
                     </div>
-                <?php else: ?>
+                <?php } else { ?>
                     <button class="btn" onclick="detectWscrm()">Deteksi Folder WSCRM</button>
                     <div id="detection-result"></div>
-                <?php endif; ?>
+                <?php } ?>
             </div>
             
-            <div class="step <?= $step2Complete ? 'completed' : '' ?><?= $step1Complete && !$step2Complete ? ' active' : '' ?>" id="step2" style="display: <?= $step1Complete ? 'block' : 'none' ?>;">
+            <div class="step <?= $step2Complete ? 'completed' : '' ?><?= $step1Complete && ! $step2Complete ? ' active' : '' ?>" id="step2" style="display: <?= $step1Complete ? 'block' : 'none' ?>;">
                 <div class="step-title">🔄 Step 2: Pindahkan Folder WSCRM</div>
                 <div class="step-description">
                     Pilih operasi untuk memindahkan folder wscrm ke lokasi yang tepat (sejajar dengan public_html).
@@ -1212,13 +1225,13 @@ $step3Complete = file_exists($targetWscrmPath . '/.env'); // Environment configu
                 <div id="move-result"></div>
             </div>
             
-            <div class="step <?= $step3Complete ? 'completed' : '' ?><?= $step2Complete && !$step3Complete ? ' active' : '' ?>" id="step3" style="display: <?= $step2Complete ? 'block' : 'none' ?>;">
+            <div class="step <?= $step3Complete ? 'completed' : '' ?><?= $step2Complete && ! $step3Complete ? ' active' : '' ?>" id="step3" style="display: <?= $step2Complete ? 'block' : 'none' ?>;">
                 <div class="step-title"><?= $step3Complete ? '✅' : '⚙️' ?> Step 3: <?= $step3Complete ? 'Konfigurasi Selesai' : 'Setup Environment' ?></div>
                 <div class="step-description">
                     <?= $step3Complete ? 'Environment sudah dikonfigurasi. Aplikasi siap digunakan.' : 'Konfigurasikan environment untuk menyelesaikan instalasi.' ?>
                 </div>
                 
-                <?php if ($step3Complete): ?>
+                <?php if ($step3Complete) { ?>
                     <div class="alert alert-success">
                         <strong>✅ Instalasi berhasil diselesaikan!</strong><br>
                         Environment sudah dikonfigurasi dan aplikasi siap digunakan.
@@ -1228,7 +1241,7 @@ $step3Complete = file_exists($targetWscrmPath . '/.env'); // Environment configu
                         <button onclick="deleteInstallFolder()" class="btn btn-danger" style="margin-left: 10px; background: #dc3545; color: white; border: none; padding: 12px 20px; border-radius: 5px; cursor: pointer;">🗑️ Hapus Folder Install</button>
                     </div>
                     <div id="delete-result" style="margin-top: 15px;"></div>
-                <?php else: ?>
+                <?php } else { ?>
                     <button class="btn btn-success" onclick="showEnvConfiguration()">🔧 Setup Environment</button>
                     <div id="env-config-form" class="config-form" style="display: none;">
                         <div class="config-header">
@@ -1252,7 +1265,7 @@ $step3Complete = file_exists($targetWscrmPath . '/.env'); // Environment configu
                                         <span class="label-text">URL Aplikasi</span>
                                         <span class="label-desc">URL lengkap dimana aplikasi dapat diakses</span>
                                     </label>
-                                    <input type="url" id="app_url" class="form-control" value="<?= htmlspecialchars((isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http') . '://' . $_SERVER['HTTP_HOST']) ?>" required>
+                                    <input type="url" id="app_url" class="form-control" value="<?= htmlspecialchars((isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http').'://'.$_SERVER['HTTP_HOST']) ?>" required>
                                 </div>
                             </div>
                         </div>
@@ -1332,9 +1345,9 @@ $step3Complete = file_exists($targetWscrmPath . '/.env'); // Environment configu
                         </div>
                         <div id="env-config-result"></div>
                     </div>
-                <?php endif; ?>
+                <?php } ?>
             </div>
-        <?php endif; ?>
+        <?php } ?>
     </div>
     
     <script>

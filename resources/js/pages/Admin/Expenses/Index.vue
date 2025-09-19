@@ -2,12 +2,15 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { DatePicker } from '@/components/ui/date-picker';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { formatPrice } from '@/lib/utils';
 import { type BreadcrumbItem } from '@/types';
-import { Head } from '@inertiajs/vue3';
-import { CheckCircle, Clock, CreditCard, DollarSign, Plus, Repeat } from 'lucide-vue-next';
+import { Head, router, useForm } from '@inertiajs/vue3';
+import { CheckCircle, Clock, CreditCard, DollarSign, Edit, Plus, Repeat, Trash2, X } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 
 interface Expense {
@@ -33,6 +36,40 @@ const props = defineProps<Props>();
 
 // Active tab state
 const activeTab = ref('monthly');
+
+// Modal states
+const showCreateModal = ref(false);
+const showEditModal = ref(false);
+const showDeleteModal = ref(false);
+const selectedExpense = ref<Expense | null>(null);
+const expenseToDelete = ref<Expense | null>(null);
+
+// Form states
+const createForm = useForm({
+    name: '',
+    amount: '',
+    currency: 'IDR',
+    provider: '',
+    category: '',
+    next_billing: '',
+    paid_date: '',
+    status: 'active' as 'active' | 'inactive' | 'pending' | 'paid' | 'cancelled',
+    type: 'monthly' as 'monthly' | 'yearly' | 'one-time',
+    description: '',
+});
+
+const editForm = useForm({
+    name: '',
+    amount: '',
+    currency: 'IDR',
+    provider: '',
+    category: '',
+    next_billing: '',
+    paid_date: '',
+    status: 'active' as 'active' | 'inactive' | 'pending' | 'paid' | 'cancelled',
+    type: 'monthly' as 'monthly' | 'yearly' | 'one-time',
+    description: '',
+});
 
 const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Dashboard', href: '/dashboard' },
@@ -130,6 +167,78 @@ const thisYearOneTimeTotal = computed(() => {
         return total + expense.amount;
     }, 0);
 });
+
+// CRUD functions
+const openCreateModal = (type: 'monthly' | 'yearly' | 'one-time') => {
+    createForm.reset();
+    createForm.type = type;
+    showCreateModal.value = true;
+};
+
+const submitCreate = () => {
+    createForm.post('/admin/expenses', {
+        preserveScroll: true,
+        onSuccess: () => {
+            showCreateModal.value = false;
+            createForm.reset();
+        },
+        onError: (errors) => {
+            console.error('Create expense error:', errors);
+        },
+    });
+};
+
+const openEditModal = (expense: Expense) => {
+    selectedExpense.value = expense;
+    editForm.reset();
+    editForm.name = expense.name;
+    editForm.amount = expense.amount.toString();
+    editForm.currency = expense.currency;
+    editForm.provider = expense.provider;
+    editForm.category = expense.category;
+    editForm.next_billing = expense.next_billing || '';
+    editForm.paid_date = expense.paid_date || '';
+    editForm.status = expense.status;
+    editForm.type = expense.type;
+    editForm.description = '';
+    showEditModal.value = true;
+};
+
+const submitEdit = () => {
+    if (!selectedExpense.value) return;
+
+    editForm.put(`/admin/expenses/${selectedExpense.value.id}`, {
+        preserveScroll: true,
+        onSuccess: () => {
+            showEditModal.value = false;
+            editForm.reset();
+            selectedExpense.value = null;
+        },
+        onError: (errors) => {
+            console.error('Update expense error:', errors);
+        },
+    });
+};
+
+const openDeleteModal = (expense: Expense) => {
+    expenseToDelete.value = expense;
+    showDeleteModal.value = true;
+};
+
+const confirmDelete = () => {
+    if (!expenseToDelete.value) return;
+
+    router.delete(`/admin/expenses/${expenseToDelete.value.id}`, {
+        preserveScroll: true,
+        onSuccess: () => {
+            showDeleteModal.value = false;
+            expenseToDelete.value = null;
+        },
+        onError: (errors) => {
+            console.error('Delete expense error:', errors);
+        },
+    });
+};
 </script>
 
 <template>
@@ -143,7 +252,7 @@ const thisYearOneTimeTotal = computed(() => {
                     <h1 class="text-2xl font-bold tracking-tight">Data Pengeluaran</h1>
                     <p class="text-muted-foreground">Kelola semua pengeluaran bisnis terorganisir berdasarkan jenis pembayaran</p>
                 </div>
-                <Button class="cursor-pointer">
+                <Button @click="openCreateModal(activeTab as 'monthly' | 'yearly' | 'one-time')" class="cursor-pointer">
                     <Plus class="mr-2 h-4 w-4" />
                     Tambah Pengeluaran
                 </Button>
@@ -272,6 +381,7 @@ const thisYearOneTimeTotal = computed(() => {
                                         <TableHead>Biaya</TableHead>
                                         <TableHead>Billing Berikutnya</TableHead>
                                         <TableHead>Status</TableHead>
+                                        <TableHead class="w-[100px]">Aksi</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
@@ -285,6 +395,16 @@ const thisYearOneTimeTotal = computed(() => {
                                             <Badge :class="getStatusColor(expense.status)">
                                                 {{ getStatusText(expense.status) }}
                                             </Badge>
+                                        </TableCell>
+                                        <TableCell>
+                                            <div class="flex items-center gap-2">
+                                                <Button size="sm" variant="outline" @click="openEditModal(expense)" class="cursor-pointer">
+                                                    <Edit class="h-3 w-3" />
+                                                </Button>
+                                                <Button size="sm" variant="outline" @click="openDeleteModal(expense)" class="cursor-pointer">
+                                                    <Trash2 class="h-3 w-3" />
+                                                </Button>
+                                            </div>
                                         </TableCell>
                                     </TableRow>
                                 </TableBody>
@@ -315,6 +435,7 @@ const thisYearOneTimeTotal = computed(() => {
                                         <TableHead>Biaya</TableHead>
                                         <TableHead>Renewal Berikutnya</TableHead>
                                         <TableHead>Status</TableHead>
+                                        <TableHead class="w-[100px]">Aksi</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
@@ -328,6 +449,16 @@ const thisYearOneTimeTotal = computed(() => {
                                             <Badge :class="getStatusColor(expense.status)">
                                                 {{ getStatusText(expense.status) }}
                                             </Badge>
+                                        </TableCell>
+                                        <TableCell>
+                                            <div class="flex items-center gap-2">
+                                                <Button size="sm" variant="outline" @click="openEditModal(expense)" class="cursor-pointer">
+                                                    <Edit class="h-3 w-3" />
+                                                </Button>
+                                                <Button size="sm" variant="outline" @click="openDeleteModal(expense)" class="cursor-pointer">
+                                                    <Trash2 class="h-3 w-3" />
+                                                </Button>
+                                            </div>
                                         </TableCell>
                                     </TableRow>
                                 </TableBody>
@@ -358,6 +489,7 @@ const thisYearOneTimeTotal = computed(() => {
                                         <TableHead>Biaya</TableHead>
                                         <TableHead>Tanggal Pembayaran</TableHead>
                                         <TableHead>Status</TableHead>
+                                        <TableHead class="w-[100px]">Aksi</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
@@ -372,12 +504,389 @@ const thisYearOneTimeTotal = computed(() => {
                                                 {{ getStatusText(expense.status) }}
                                             </Badge>
                                         </TableCell>
+                                        <TableCell>
+                                            <div class="flex items-center gap-2">
+                                                <Button size="sm" variant="outline" @click="openEditModal(expense)" class="cursor-pointer">
+                                                    <Edit class="h-3 w-3" />
+                                                </Button>
+                                                <Button size="sm" variant="outline" @click="openDeleteModal(expense)" class="cursor-pointer">
+                                                    <Trash2 class="h-3 w-3" />
+                                                </Button>
+                                            </div>
+                                        </TableCell>
                                     </TableRow>
                                 </TableBody>
                             </Table>
                         </CardContent>
                     </Card>
                     </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Create Expense Modal -->
+        <div v-if="showCreateModal" class="fixed inset-0 z-50 flex items-center justify-center">
+            <!-- Overlay -->
+            <div class="fixed inset-0 bg-black/50" @click="showCreateModal = false"></div>
+
+            <!-- Modal Content -->
+            <div class="relative mx-4 w-full max-w-md rounded-lg bg-white p-6 shadow-xl dark:bg-gray-900">
+                <!-- Header -->
+                <div class="mb-4 flex items-center justify-between">
+                    <h2 class="text-lg font-semibold">Tambah Pengeluaran Baru</h2>
+                    <button @click="showCreateModal = false" class="cursor-pointer text-gray-500 hover:text-gray-700">
+                        <X class="h-4 w-4" />
+                    </button>
+                </div>
+                <form @submit.prevent="submitCreate" class="space-y-4">
+                    <div>
+                        <Label for="name">Nama Pengeluaran</Label>
+                        <Input
+                            id="name"
+                            v-model="createForm.name"
+                            type="text"
+                            placeholder="Nama layanan atau pengeluaran"
+                            required
+                        />
+                        <span v-if="createForm.errors.name" class="text-sm text-red-500">{{ createForm.errors.name }}</span>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <Label for="amount">Jumlah</Label>
+                            <Input
+                                id="amount"
+                                v-model="createForm.amount"
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                placeholder="0.00"
+                                required
+                            />
+                            <span v-if="createForm.errors.amount" class="text-sm text-red-500">{{ createForm.errors.amount }}</span>
+                        </div>
+                        <div>
+                            <Label for="currency">Mata Uang</Label>
+                            <select
+                                id="currency"
+                                v-model="createForm.currency"
+                                class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                required
+                            >
+                                <option value="IDR">IDR (Rupiah)</option>
+                                <option value="USD">USD (Dollar)</option>
+                            </select>
+                            <span v-if="createForm.errors.currency" class="text-sm text-red-500">{{ createForm.errors.currency }}</span>
+                        </div>
+                    </div>
+
+                    <div>
+                        <Label for="provider">Provider</Label>
+                        <Input
+                            id="provider"
+                            v-model="createForm.provider"
+                            type="text"
+                            placeholder="Nama penyedia layanan"
+                            required
+                        />
+                        <span v-if="createForm.errors.provider" class="text-sm text-red-500">{{ createForm.errors.provider }}</span>
+                    </div>
+
+                    <div>
+                        <Label for="category">Kategori (Opsional)</Label>
+                        <Input
+                            id="category"
+                            v-model="createForm.category"
+                            type="text"
+                            placeholder="Kategori pengeluaran (opsional)"
+                        />
+                        <span v-if="createForm.errors.category" class="text-sm text-red-500">{{ createForm.errors.category }}</span>
+                    </div>
+
+                    <div>
+                        <Label for="type">Tipe Pengeluaran</Label>
+                        <select
+                            id="type"
+                            v-model="createForm.type"
+                            class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                            required
+                        >
+                            <option value="monthly">Bulanan</option>
+                            <option value="yearly">Tahunan</option>
+                            <option value="one-time">Sekali Bayar</option>
+                        </select>
+                        <span v-if="createForm.errors.type" class="text-sm text-red-500">{{ createForm.errors.type }}</span>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <Label for="next_billing">Billing Berikutnya</Label>
+                            <DatePicker
+                                v-model="createForm.next_billing"
+                                placeholder="Pilih tanggal billing"
+                            />
+                            <span v-if="createForm.errors.next_billing" class="text-sm text-red-500">{{ createForm.errors.next_billing }}</span>
+                        </div>
+                        <div>
+                            <Label for="paid_date">Tanggal Pembayaran</Label>
+                            <DatePicker
+                                v-model="createForm.paid_date"
+                                placeholder="Pilih tanggal pembayaran"
+                            />
+                            <span v-if="createForm.errors.paid_date" class="text-sm text-red-500">{{ createForm.errors.paid_date }}</span>
+                        </div>
+                    </div>
+
+                    <div>
+                        <Label for="status">Status</Label>
+                        <select
+                            id="status"
+                            v-model="createForm.status"
+                            class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                            required
+                        >
+                            <option value="active">Aktif</option>
+                            <option value="inactive">Tidak Aktif</option>
+                            <option value="pending">Pending</option>
+                            <option value="paid">Dibayar</option>
+                            <option value="cancelled">Dibatalkan</option>
+                        </select>
+                        <span v-if="createForm.errors.status" class="text-sm text-red-500">{{ createForm.errors.status }}</span>
+                    </div>
+
+                    <div>
+                        <Label for="description">Deskripsi (Opsional)</Label>
+                        <Input
+                            id="description"
+                            v-model="createForm.description"
+                            type="text"
+                            placeholder="Deskripsi tambahan"
+                        />
+                        <span v-if="createForm.errors.description" class="text-sm text-red-500">{{ createForm.errors.description }}</span>
+                    </div>
+
+                    <!-- Footer -->
+                    <div class="mt-6 flex justify-end gap-2">
+                        <Button type="button" variant="outline" @click="showCreateModal = false" class="cursor-pointer"> Batal </Button>
+                        <Button type="submit" :disabled="createForm.processing">
+                            {{ createForm.processing ? 'Membuat...' : 'Buat Pengeluaran' }}
+                        </Button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Edit Expense Modal -->
+        <div v-if="showEditModal" class="fixed inset-0 z-50 flex items-center justify-center">
+            <!-- Overlay -->
+            <div class="fixed inset-0 bg-black/50" @click="showEditModal = false"></div>
+
+            <!-- Modal Content -->
+            <div class="relative mx-4 w-full max-w-md rounded-lg bg-white p-6 shadow-xl dark:bg-gray-900">
+                <!-- Header -->
+                <div class="mb-4 flex items-center justify-between">
+                    <h2 class="text-lg font-semibold">Edit Pengeluaran</h2>
+                    <button @click="showEditModal = false" class="cursor-pointer text-gray-500 hover:text-gray-700">
+                        <X class="h-4 w-4" />
+                    </button>
+                </div>
+                <form @submit.prevent="submitEdit" class="space-y-4">
+                    <div>
+                        <Label for="edit_name">Nama Pengeluaran</Label>
+                        <Input
+                            id="edit_name"
+                            v-model="editForm.name"
+                            type="text"
+                            placeholder="Nama layanan atau pengeluaran"
+                            required
+                        />
+                        <span v-if="editForm.errors.name" class="text-sm text-red-500">{{ editForm.errors.name }}</span>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <Label for="edit_amount">Jumlah</Label>
+                            <Input
+                                id="edit_amount"
+                                v-model="editForm.amount"
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                placeholder="0.00"
+                                required
+                            />
+                            <span v-if="editForm.errors.amount" class="text-sm text-red-500">{{ editForm.errors.amount }}</span>
+                        </div>
+                        <div>
+                            <Label for="edit_currency">Mata Uang</Label>
+                            <select
+                                id="edit_currency"
+                                v-model="editForm.currency"
+                                class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                required
+                            >
+                                <option value="IDR">IDR (Rupiah)</option>
+                                <option value="USD">USD (Dollar)</option>
+                            </select>
+                            <span v-if="editForm.errors.currency" class="text-sm text-red-500">{{ editForm.errors.currency }}</span>
+                        </div>
+                    </div>
+
+                    <div>
+                        <Label for="edit_provider">Provider</Label>
+                        <Input
+                            id="edit_provider"
+                            v-model="editForm.provider"
+                            type="text"
+                            placeholder="Nama penyedia layanan"
+                            required
+                        />
+                        <span v-if="editForm.errors.provider" class="text-sm text-red-500">{{ editForm.errors.provider }}</span>
+                    </div>
+
+                    <div>
+                        <Label for="edit_category">Kategori (Opsional)</Label>
+                        <Input
+                            id="edit_category"
+                            v-model="editForm.category"
+                            type="text"
+                            placeholder="Kategori pengeluaran (opsional)"
+                        />
+                        <span v-if="editForm.errors.category" class="text-sm text-red-500">{{ editForm.errors.category }}</span>
+                    </div>
+
+                    <div>
+                        <Label for="edit_type">Tipe Pengeluaran</Label>
+                        <select
+                            id="edit_type"
+                            v-model="editForm.type"
+                            class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                            required
+                        >
+                            <option value="monthly">Bulanan</option>
+                            <option value="yearly">Tahunan</option>
+                            <option value="one-time">Sekali Bayar</option>
+                        </select>
+                        <span v-if="editForm.errors.type" class="text-sm text-red-500">{{ editForm.errors.type }}</span>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <Label for="edit_next_billing">Billing Berikutnya</Label>
+                            <DatePicker
+                                v-model="editForm.next_billing"
+                                placeholder="Pilih tanggal billing"
+                            />
+                            <span v-if="editForm.errors.next_billing" class="text-sm text-red-500">{{ editForm.errors.next_billing }}</span>
+                        </div>
+                        <div>
+                            <Label for="edit_paid_date">Tanggal Pembayaran</Label>
+                            <DatePicker
+                                v-model="editForm.paid_date"
+                                placeholder="Pilih tanggal pembayaran"
+                            />
+                            <span v-if="editForm.errors.paid_date" class="text-sm text-red-500">{{ editForm.errors.paid_date }}</span>
+                        </div>
+                    </div>
+
+                    <div>
+                        <Label for="edit_status">Status</Label>
+                        <select
+                            id="edit_status"
+                            v-model="editForm.status"
+                            class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                            required
+                        >
+                            <option value="active">Aktif</option>
+                            <option value="inactive">Tidak Aktif</option>
+                            <option value="pending">Pending</option>
+                            <option value="paid">Dibayar</option>
+                            <option value="cancelled">Dibatalkan</option>
+                        </select>
+                        <span v-if="editForm.errors.status" class="text-sm text-red-500">{{ editForm.errors.status }}</span>
+                    </div>
+
+                    <div>
+                        <Label for="edit_description">Deskripsi (Opsional)</Label>
+                        <Input
+                            id="edit_description"
+                            v-model="editForm.description"
+                            type="text"
+                            placeholder="Deskripsi tambahan"
+                        />
+                        <span v-if="editForm.errors.description" class="text-sm text-red-500">{{ editForm.errors.description }}</span>
+                    </div>
+
+                    <!-- Footer -->
+                    <div class="mt-6 flex justify-end gap-2">
+                        <Button type="button" variant="outline" @click="showEditModal = false" class="cursor-pointer"> Batal </Button>
+                        <Button type="submit" :disabled="editForm.processing">
+                            {{ editForm.processing ? 'Memperbarui...' : 'Perbarui Pengeluaran' }}
+                        </Button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Delete Expense Modal -->
+        <div v-if="showDeleteModal" class="fixed inset-0 z-50 flex items-center justify-center">
+            <!-- Overlay -->
+            <div class="fixed inset-0 bg-black/50" @click="showDeleteModal = false"></div>
+
+            <!-- Modal Content -->
+            <div class="relative mx-4 w-full max-w-md rounded-lg bg-white p-6 shadow-xl dark:bg-gray-900">
+                <!-- Header -->
+                <div class="mb-4 flex items-center justify-between">
+                    <h2 class="text-lg font-semibold text-red-600">Konfirmasi Penghapusan</h2>
+                    <button @click="showDeleteModal = false" class="cursor-pointer text-gray-500 hover:text-gray-700">
+                        <X class="h-4 w-4" />
+                    </button>
+                </div>
+
+                <div class="space-y-4">
+                    <p class="text-sm text-muted-foreground">
+                        Apakah Anda yakin ingin menghapus pengeluaran ini?
+                    </p>
+
+                    <div v-if="expenseToDelete" class="rounded-lg border p-4">
+                        <div class="space-y-2">
+                            <div class="flex justify-between">
+                                <span class="font-medium">Nama:</span>
+                                <span>{{ expenseToDelete.name }}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="font-medium">Provider:</span>
+                                <span>{{ expenseToDelete.provider }}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="font-medium">Biaya:</span>
+                                <span>{{ formatPrice(expenseToDelete.amount, expenseToDelete.currency) }}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="rounded-lg bg-red-50 p-4 dark:bg-red-900/20">
+                        <div class="flex">
+                            <div class="ml-3">
+                                <h3 class="text-sm font-medium text-red-800 dark:text-red-400">
+                                    Peringatan
+                                </h3>
+                                <div class="mt-2 text-sm text-red-700 dark:text-red-300">
+                                    <p>
+                                        Tindakan ini tidak dapat dibatalkan. Data pengeluaran akan dihapus secara permanen.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Footer -->
+                <div class="mt-6 flex justify-end gap-2">
+                    <Button type="button" variant="outline" @click="showDeleteModal = false" class="cursor-pointer"> Batal </Button>
+                    <Button type="button" class="cursor-pointer bg-red-600 text-white hover:bg-red-700" @click="confirmDelete">
+                        Ya, Hapus Pengeluaran
+                    </Button>
                 </div>
             </div>
         </div>

@@ -3,56 +3,56 @@
  * Laravel Installer - Package Style
  * Simple installation system untuk kemudahan deployment
  */
-
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 ini_set('log_errors', 1);
-ini_set('error_log', __DIR__ . '/../storage/logs/installer.log');
+ini_set('error_log', __DIR__.'/../storage/logs/installer.log');
 
 // Helper function to parse Laravel .env file safely
-function parseEnvFile($path) {
+function parseEnvFile($path)
+{
     $env = [];
-    if (!file_exists($path)) {
+    if (! file_exists($path)) {
         return $env;
     }
-    
+
     $lines = file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
     foreach ($lines as $line) {
         $line = trim($line);
-        
+
         // Skip comments
         if (strpos($line, '#') === 0) {
             continue;
         }
-        
+
         // Parse KEY=VALUE
         if (strpos($line, '=') !== false) {
-            list($key, $value) = explode('=', $line, 2);
+            [$key, $value] = explode('=', $line, 2);
             $key = trim($key);
             $value = trim($value);
-            
+
             // Remove quotes if present
             if ((substr($value, 0, 1) === '"' && substr($value, -1) === '"') ||
                 (substr($value, 0, 1) === "'" && substr($value, -1) === "'")) {
                 $value = substr($value, 1, -1);
             }
-            
+
             $env[$key] = $value;
         }
     }
-    
+
     return $env;
 }
 
 // Check if already installed
-if (file_exists(__DIR__ . '/../.env') && !file_exists(__DIR__ . '/../storage/installer.lock')) {
+if (file_exists(__DIR__.'/../.env') && ! file_exists(__DIR__.'/../storage/installer.lock')) {
     // Check if database connection works
     try {
-        $env = parseEnvFile(__DIR__ . '/../.env');
+        $env = parseEnvFile(__DIR__.'/../.env');
         if (isset($env['DB_CONNECTION']) && $env['DB_CONNECTION'] === 'sqlite') {
-            $dbPath = __DIR__ . '/../database/database.sqlite';
+            $dbPath = __DIR__.'/../database/database.sqlite';
             if (file_exists($dbPath)) {
-                $pdo = new PDO('sqlite:' . $dbPath);
+                $pdo = new PDO('sqlite:'.$dbPath);
                 $result = $pdo->query("SELECT name FROM sqlite_master WHERE type='table' AND name='users' LIMIT 1");
                 if ($result && $result->fetch()) {
                     header('Location: /');
@@ -73,9 +73,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             handleTestConnection();
             exit;
         }
-        
+
         $step = $_POST['step'] ?? 1;
-        
+
         switch ($step) {
             case 2:
                 handleEnvironmentSetup();
@@ -89,10 +89,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     } catch (Exception $e) {
         // Handle any uncaught exceptions during POST processing
-        showStep(1, '🚨 Installer Error: ' . $e->getMessage() . '<br><br><strong>File:</strong> ' . $e->getFile() . '<br><strong>Line:</strong> ' . $e->getLine(), true);
+        showStep(1, '🚨 Installer Error: '.$e->getMessage().'<br><br><strong>File:</strong> '.$e->getFile().'<br><strong>Line:</strong> '.$e->getLine(), true);
     } catch (Error $e) {
         // Handle fatal errors during POST processing
-        showStep(1, '💥 Fatal Error: ' . $e->getMessage() . '<br><br><strong>File:</strong> ' . $e->getFile() . '<br><strong>Line:</strong> ' . $e->getLine(), true);
+        showStep(1, '💥 Fatal Error: '.$e->getMessage().'<br><br><strong>File:</strong> '.$e->getFile().'<br><strong>Line:</strong> '.$e->getLine(), true);
     }
 } else {
     // GET request - show current step
@@ -100,31 +100,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     showStep($step);
 }
 
-function handleTestConnection() {
+function handleTestConnection()
+{
     $dbHost = trim($_POST['db_host'] ?? 'localhost');
     $dbPort = trim($_POST['db_port'] ?? '3306');
     $dbDatabase = trim($_POST['db_database'] ?? '');
     $dbUsername = trim($_POST['db_username'] ?? '');
     $dbPassword = $_POST['db_password'] ?? '';
-    
+
     // Debug output
-    echo "Koneksi test dimulai...<br>";
-    echo "Host: " . htmlspecialchars($dbHost) . "<br>";
-    echo "Port: " . htmlspecialchars($dbPort) . "<br>";
-    echo "Database: " . htmlspecialchars($dbDatabase) . "<br>";
-    echo "Username: " . htmlspecialchars($dbUsername) . "<br>";
-    echo "Password: " . (empty($dbPassword) ? '(kosong)' : '***ada***') . "<br><br>";
-    
+    echo 'Koneksi test dimulai...<br>';
+    echo 'Host: '.htmlspecialchars($dbHost).'<br>';
+    echo 'Port: '.htmlspecialchars($dbPort).'<br>';
+    echo 'Database: '.htmlspecialchars($dbDatabase).'<br>';
+    echo 'Username: '.htmlspecialchars($dbUsername).'<br>';
+    echo 'Password: '.(empty($dbPassword) ? '(kosong)' : '***ada***').'<br><br>';
+
     if (empty($dbUsername)) {
-        echo "❌ Error: Database Username tidak boleh kosong!";
+        echo '❌ Error: Database Username tidak boleh kosong!';
+
         return;
     }
-    
+
     if (empty($dbDatabase)) {
-        echo "❌ Error: Database Name tidak boleh kosong!";
+        echo '❌ Error: Database Name tidak boleh kosong!';
+
         return;
     }
-    
+
     try {
         $dsn = "mysql:host=$dbHost;port=$dbPort;dbname=$dbDatabase;charset=utf8mb4";
         $pdo = new PDO($dsn, $dbUsername, $dbPassword, [
@@ -132,40 +135,41 @@ function handleTestConnection() {
             PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
             PDO::ATTR_TIMEOUT => 5, // 5 second timeout
         ]);
-        
+
         // Test with a simple query
-        $stmt = $pdo->query("SELECT 1 as test");
+        $stmt = $pdo->query('SELECT 1 as test');
         $result = $stmt->fetch();
-        
+
         if ($result && $result['test'] == 1) {
-            echo "✅ Koneksi berhasil! Database dapat diakses dengan baik.";
+            echo '✅ Koneksi berhasil! Database dapat diakses dengan baik.';
         } else {
-            echo "❌ Koneksi berhasil tapi ada masalah dengan query test.";
+            echo '❌ Koneksi berhasil tapi ada masalah dengan query test.';
         }
     } catch (PDOException $e) {
-        echo "❌ Koneksi database gagal: " . htmlspecialchars($e->getMessage());
-        echo "<br><br>Debug Info:<br>";
-        echo "DSN: " . htmlspecialchars($dsn) . "<br>";
-        echo "Username: " . htmlspecialchars($dbUsername) . "<br>";
-        
+        echo '❌ Koneksi database gagal: '.htmlspecialchars($e->getMessage());
+        echo '<br><br>Debug Info:<br>';
+        echo 'DSN: '.htmlspecialchars($dsn).'<br>';
+        echo 'Username: '.htmlspecialchars($dbUsername).'<br>';
+
         // Common error solutions
         if (strpos($e->getMessage(), 'Access denied') !== false) {
-            echo "<br>💡 Kemungkinan penyebab:<br>";
-            echo "1. Username atau password salah<br>";
-            echo "2. User tidak memiliki akses ke database tersebut<br>";
-            echo "3. Host tidak diizinkan untuk user tersebut<br>";
+            echo '<br>💡 Kemungkinan penyebab:<br>';
+            echo '1. Username atau password salah<br>';
+            echo '2. User tidak memiliki akses ke database tersebut<br>';
+            echo '3. Host tidak diizinkan untuk user tersebut<br>';
         } elseif (strpos($e->getMessage(), 'Unknown database') !== false) {
-            echo "<br>💡 Database tidak ditemukan. Pastikan database sudah dibuat.";
+            echo '<br>💡 Database tidak ditemukan. Pastikan database sudah dibuat.';
         } elseif (strpos($e->getMessage(), 'Connection refused') !== false) {
-            echo "<br>💡 Server MySQL tidak dapat diakses. Periksa host dan port.";
+            echo '<br>💡 Server MySQL tidak dapat diakses. Periksa host dan port.';
         }
     }
 }
 
-function handleEnvironmentSetup() {
+function handleEnvironmentSetup()
+{
     // Debug: Log received POST data
-    error_log("POST data received: " . print_r($_POST, true));
-    
+    error_log('POST data received: '.print_r($_POST, true));
+
     $appName = trim($_POST['app_name'] ?? 'WSCRM');
     $appUrl = trim($_POST['app_url'] ?? 'http://localhost');
     $dbHost = trim($_POST['db_host'] ?? 'localhost');
@@ -174,36 +178,39 @@ function handleEnvironmentSetup() {
     $dbUsername = trim($_POST['db_username'] ?? '');
     $dbPassword = $_POST['db_password'] ?? ''; // Don't trim password, might have spaces
     $skipPermissions = isset($_POST['skip_permissions']) && $_POST['skip_permissions'] === '1';
-    
+
     // Debug: Show what we got
-    error_log("Extracted values - Host: '$dbHost', Port: '$dbPort', Database: '$dbDatabase', Username: '$dbUsername', Password: '" . (empty($dbPassword) ? 'EMPTY' : '***SET***') . "'");
-    
+    error_log("Extracted values - Host: '$dbHost', Port: '$dbPort', Database: '$dbDatabase', Username: '$dbUsername', Password: '".(empty($dbPassword) ? 'EMPTY' : '***SET***')."'");
+
     // Only validate if user actually submitted the form (not first visit to step 2)
     if (isset($_POST['step']) && $_POST['step'] == 2) {
         // Validate required fields
         if (empty($dbUsername)) {
             showStep(2, 'Error: Database Username tidak boleh kosong!', true);
+
             return;
         }
-        
+
         if (empty($dbDatabase)) {
             showStep(2, 'Error: Database Name tidak boleh kosong!', true);
+
             return;
         }
-        
+
         if (empty($dbHost)) {
             showStep(2, 'Error: Database Host tidak boleh kosong!', true);
+
             return;
         }
     }
-    
+
     // Try to get .env.example, create default if not exists
-    $envExamplePath = __DIR__ . '/../.env.example';
+    $envExamplePath = __DIR__.'/../.env.example';
     if (file_exists($envExamplePath)) {
         $envTemplate = file_get_contents($envExamplePath);
     } else {
         // Create default .env template if .env.example is missing
-        $envTemplate = "APP_NAME=WSCRM
+        $envTemplate = 'APP_NAME=WSCRM
 APP_ENV=production
 APP_KEY=
 APP_DEBUG=false
@@ -257,8 +264,8 @@ MAIL_PORT=2525
 MAIL_USERNAME=null
 MAIL_PASSWORD=null
 MAIL_ENCRYPTION=null
-MAIL_FROM_ADDRESS=\"hello@example.com\"
-MAIL_FROM_NAME=\"\${APP_NAME}\"
+MAIL_FROM_ADDRESS="hello@example.com"
+MAIL_FROM_NAME="${APP_NAME}"
 
 AWS_ACCESS_KEY_ID=
 AWS_SECRET_ACCESS_KEY=
@@ -266,27 +273,27 @@ AWS_DEFAULT_REGION=us-east-1
 AWS_BUCKET=
 AWS_USE_PATH_STYLE_ENDPOINT=false
 
-VITE_APP_NAME=\"\${APP_NAME}\"
-";
+VITE_APP_NAME="${APP_NAME}"
+';
     }
-    
+
     // More flexible replacement to handle different .env formats including commented lines
     $replacements = [
         '/^APP_NAME=.*$/m' => "APP_NAME=\"$appName\"",
         '/^APP_URL=.*$/m' => "APP_URL=$appUrl",
-        '/^DB_CONNECTION=.*$/m' => "DB_CONNECTION=mysql",
+        '/^DB_CONNECTION=.*$/m' => 'DB_CONNECTION=mysql',
         '/^#?\s*DB_HOST=.*$/m' => "DB_HOST=$dbHost",
         '/^#?\s*DB_PORT=.*$/m' => "DB_PORT=$dbPort",
         '/^#?\s*DB_DATABASE=.*$/m' => "DB_DATABASE=$dbDatabase",
         '/^#?\s*DB_USERNAME=.*$/m' => "DB_USERNAME=$dbUsername",
         '/^#?\s*DB_PASSWORD=.*$/m' => "DB_PASSWORD=$dbPassword",
     ];
-    
+
     $envContent = $envTemplate;
     foreach ($replacements as $pattern => $replacement) {
         $originalContent = $envContent;
         $envContent = preg_replace($pattern, $replacement, $envContent);
-        
+
         // Log each replacement attempt
         if ($envContent !== $originalContent) {
             error_log("Successfully replaced pattern: $pattern with: $replacement");
@@ -298,10 +305,10 @@ VITE_APP_NAME=\"\${APP_NAME}\"
             }
         }
     }
-    
+
     // Final safety check - if DB_USERNAME still not found, append it
     if (strpos($envContent, "DB_USERNAME=$dbUsername") === false) {
-        error_log("CRITICAL: DB_USERNAME not found in final content, appending manually");
+        error_log('CRITICAL: DB_USERNAME not found in final content, appending manually');
         // Find DB_PASSWORD line and insert DB_USERNAME before it
         if (strpos($envContent, 'DB_PASSWORD=') !== false) {
             $envContent = str_replace('DB_PASSWORD=', "DB_USERNAME=$dbUsername\nDB_PASSWORD=", $envContent);
@@ -310,54 +317,55 @@ VITE_APP_NAME=\"\${APP_NAME}\"
             $envContent .= "\nDB_USERNAME=$dbUsername\n";
         }
     }
-    
+
     // Debug: Show what will be written to .env
-    error_log("Final .env content preview (first 500 chars): " . substr($envContent, 0, 500));
-    
+    error_log('Final .env content preview (first 500 chars): '.substr($envContent, 0, 500));
+
     // Generate app key
-    $appKey = 'base64:' . base64_encode(random_bytes(32));
+    $appKey = 'base64:'.base64_encode(random_bytes(32));
     $envContent = preg_replace('/^APP_KEY=.*$/m', "APP_KEY=$appKey", $envContent);
-    
+
     // Debug: Final check before writing
-    error_log("About to write .env file. Content length: " . strlen($envContent));
-    error_log("DB_USERNAME in final content: " . (strpos($envContent, "DB_USERNAME=$dbUsername") !== false ? 'FOUND' : 'NOT FOUND'));
-    
-    $envPath = __DIR__ . '/../.env';
+    error_log('About to write .env file. Content length: '.strlen($envContent));
+    error_log('DB_USERNAME in final content: '.(strpos($envContent, "DB_USERNAME=$dbUsername") !== false ? 'FOUND' : 'NOT FOUND'));
+
+    $envPath = __DIR__.'/../.env';
     $writeResult = file_put_contents($envPath, $envContent);
-    
+
     if ($writeResult === false) {
         error_log("ERROR: Failed to write .env file to $envPath");
         showStep(2, 'Error: Tidak dapat menulis file .env. Periksa permissions folder.', true);
+
         return;
     } else {
         error_log("SUCCESS: Wrote $writeResult bytes to .env file");
-        
+
         // Verify the file was written correctly
         if (file_exists($envPath)) {
             $writtenContent = file_get_contents($envPath);
-            error_log("Verification: .env file exists, size: " . strlen($writtenContent));
-            error_log("Verification: DB_USERNAME in written file: " . (strpos($writtenContent, "DB_USERNAME=$dbUsername") !== false ? 'FOUND' : 'NOT FOUND'));
+            error_log('Verification: .env file exists, size: '.strlen($writtenContent));
+            error_log('Verification: DB_USERNAME in written file: '.(strpos($writtenContent, "DB_USERNAME=$dbUsername") !== false ? 'FOUND' : 'NOT FOUND'));
         } else {
-            error_log("ERROR: .env file does not exist after write attempt");
+            error_log('ERROR: .env file does not exist after write attempt');
         }
     }
-    
+
     // Try to create essential directories if they don't exist
     $essentialDirs = [
-        __DIR__ . '/../storage/app/public',
-        __DIR__ . '/../storage/framework/cache',
-        __DIR__ . '/../storage/framework/sessions',
-        __DIR__ . '/../storage/framework/views',
-        __DIR__ . '/../storage/logs',
-        __DIR__ . '/../bootstrap/cache'
+        __DIR__.'/../storage/app/public',
+        __DIR__.'/../storage/framework/cache',
+        __DIR__.'/../storage/framework/sessions',
+        __DIR__.'/../storage/framework/views',
+        __DIR__.'/../storage/logs',
+        __DIR__.'/../bootstrap/cache',
     ];
-    
+
     foreach ($essentialDirs as $dir) {
-        if (!file_exists($dir)) {
+        if (! file_exists($dir)) {
             @mkdir($dir, 0755, true);
         }
     }
-    
+
     // Only test database connection if form was submitted
     if (isset($_POST['step']) && $_POST['step'] == 2) {
         // Test database connection only after validation passes
@@ -369,40 +377,41 @@ VITE_APP_NAME=\"\${APP_NAME}\"
             ]);
             // Connection successful
         } catch (PDOException $e) {
-        $errorMsg = 'Error koneksi database: ' . $e->getMessage();
-        $errorMsg .= "<br><br><strong>Debug Info:</strong>";
-        $errorMsg .= "<br>- Host: " . htmlspecialchars($dbHost);
-        $errorMsg .= "<br>- Port: " . htmlspecialchars($dbPort);
-        $errorMsg .= "<br>- Database: " . htmlspecialchars($dbDatabase);
-        $errorMsg .= "<br>- Username: " . htmlspecialchars($dbUsername);
-        $errorMsg .= "<br>- Password: " . (empty($dbPassword) ? '(kosong)' : '***ada***');
-        $errorMsg .= "<br>- DSN: " . htmlspecialchars("mysql:host=$dbHost;port=$dbPort;dbname=$dbDatabase;charset=utf8mb4");
-        
-        // Common error solutions
-        if (strpos($e->getMessage(), 'Access denied') !== false) {
-            $errorMsg .= "<br><br>💡 <strong>Solusi untuk 'Access denied':</strong>";
-            $errorMsg .= "<br>1. Periksa username dan password database";
-            $errorMsg .= "<br>2. Pastikan user memiliki akses ke database '$dbDatabase'";
-            $errorMsg .= "<br>3. Gunakan tombol 'Test Koneksi' untuk debug lebih lanjut";
-            $errorMsg .= "<br>4. Hubungi hosting provider untuk memastikan kredensial benar";
-        }
-        
-        if (strpos($e->getMessage(), 'Unknown database') !== false) {
-            $errorMsg .= "<br><br>💡 <strong>Solusi untuk 'Unknown database':</strong>";
-            $errorMsg .= "<br>1. Buat database '$dbDatabase' terlebih dahulu di cPanel/hosting panel";
-            $errorMsg .= "<br>2. Atau gunakan nama database yang sudah ada";
-        }
-        
-        if (strpos($e->getMessage(), 'Connection refused') !== false || strpos($e->getMessage(), 'Can\'t connect') !== false) {
-            $errorMsg .= "<br><br>💡 <strong>Server MySQL tidak dapat diakses:</strong>";
-            $errorMsg .= "<br>1. Periksa host dan port (biasanya localhost:3306)";
-            $errorMsg .= "<br>2. Pastikan MySQL server berjalan";
-        }
-        
+            $errorMsg = 'Error koneksi database: '.$e->getMessage();
+            $errorMsg .= '<br><br><strong>Debug Info:</strong>';
+            $errorMsg .= '<br>- Host: '.htmlspecialchars($dbHost);
+            $errorMsg .= '<br>- Port: '.htmlspecialchars($dbPort);
+            $errorMsg .= '<br>- Database: '.htmlspecialchars($dbDatabase);
+            $errorMsg .= '<br>- Username: '.htmlspecialchars($dbUsername);
+            $errorMsg .= '<br>- Password: '.(empty($dbPassword) ? '(kosong)' : '***ada***');
+            $errorMsg .= '<br>- DSN: '.htmlspecialchars("mysql:host=$dbHost;port=$dbPort;dbname=$dbDatabase;charset=utf8mb4");
+
+            // Common error solutions
+            if (strpos($e->getMessage(), 'Access denied') !== false) {
+                $errorMsg .= "<br><br>💡 <strong>Solusi untuk 'Access denied':</strong>";
+                $errorMsg .= '<br>1. Periksa username dan password database';
+                $errorMsg .= "<br>2. Pastikan user memiliki akses ke database '$dbDatabase'";
+                $errorMsg .= "<br>3. Gunakan tombol 'Test Koneksi' untuk debug lebih lanjut";
+                $errorMsg .= '<br>4. Hubungi hosting provider untuk memastikan kredensial benar';
+            }
+
+            if (strpos($e->getMessage(), 'Unknown database') !== false) {
+                $errorMsg .= "<br><br>💡 <strong>Solusi untuk 'Unknown database':</strong>";
+                $errorMsg .= "<br>1. Buat database '$dbDatabase' terlebih dahulu di cPanel/hosting panel";
+                $errorMsg .= '<br>2. Atau gunakan nama database yang sudah ada';
+            }
+
+            if (strpos($e->getMessage(), 'Connection refused') !== false || strpos($e->getMessage(), 'Can\'t connect') !== false) {
+                $errorMsg .= '<br><br>💡 <strong>Server MySQL tidak dapat diakses:</strong>';
+                $errorMsg .= '<br>1. Periksa host dan port (biasanya localhost:3306)';
+                $errorMsg .= '<br>2. Pastikan MySQL server berjalan';
+            }
+
             showStep(2, $errorMsg, true);
+
             return;
         }
-        
+
         // If we reach here, connection was successful
         $message = 'Environment berhasil dikonfigurasi';
         if ($skipPermissions) {
@@ -415,42 +424,44 @@ VITE_APP_NAME=\"\${APP_NAME}\"
     }
 }
 
-function handleDatabaseSetup() {
+function handleDatabaseSetup()
+{
     try {
         // Get database configuration from .env
-        $env = parseEnvFile(__DIR__ . '/../.env');
+        $env = parseEnvFile(__DIR__.'/../.env');
         $dbHost = $env['DB_HOST'] ?? 'localhost';
         $dbPort = $env['DB_PORT'] ?? '3306';
         $dbDatabase = $env['DB_DATABASE'] ?? 'wscrm_db';
         $dbUsername = $env['DB_USERNAME'] ?? '';
         $dbPassword = $env['DB_PASSWORD'] ?? '';
-        
+
         // Debug: Show what we read from .env
-        error_log("Read from .env - Host: '$dbHost', Port: '$dbPort', Database: '$dbDatabase', Username: '$dbUsername', Password: '" . (empty($dbPassword) ? 'EMPTY' : '***SET***') . "'");
-        error_log("Full .env data: " . print_r($env, true));
-        
+        error_log("Read from .env - Host: '$dbHost', Port: '$dbPort', Database: '$dbDatabase', Username: '$dbUsername', Password: '".(empty($dbPassword) ? 'EMPTY' : '***SET***')."'");
+        error_log('Full .env data: '.print_r($env, true));
+
         // Connect to MySQL database
         $dsn = "mysql:host=$dbHost;port=$dbPort;dbname=$dbDatabase;charset=utf8mb4";
         $pdo = new PDO($dsn, $dbUsername, $dbPassword, [
             PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
             PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
         ]);
-        
+
         // Run basic migrations manually for essential tables
         runBasicMigrations($pdo);
-        
+
         // Create basic admin data if needed
         createBasicData($pdo);
-        
+
         showStep(4, 'Database berhasil disetup');
     } catch (Exception $e) {
-        showStep(3, 'Error saat setup database: ' . $e->getMessage(), true);
+        showStep(3, 'Error saat setup database: '.$e->getMessage(), true);
     }
 }
 
-function runBasicMigrations($pdo) {
+function runBasicMigrations($pdo)
+{
     // Create users table
-    $pdo->exec("
+    $pdo->exec('
         CREATE TABLE IF NOT EXISTS users (
             id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
             name VARCHAR(255) NOT NULL,
@@ -461,19 +472,19 @@ function runBasicMigrations($pdo) {
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-    ");
-    
+    ');
+
     // Create password_reset_tokens table
-    $pdo->exec("
+    $pdo->exec('
         CREATE TABLE IF NOT EXISTS password_reset_tokens (
             email VARCHAR(255) PRIMARY KEY,
             token VARCHAR(255) NOT NULL,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-    ");
-    
+    ');
+
     // Create sessions table
-    $pdo->exec("
+    $pdo->exec('
         CREATE TABLE IF NOT EXISTS sessions (
             id VARCHAR(255) PRIMARY KEY,
             user_id BIGINT UNSIGNED NULL,
@@ -484,28 +495,28 @@ function runBasicMigrations($pdo) {
             INDEX sessions_user_id_index (user_id),
             INDEX sessions_last_activity_index (last_activity)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-    ");
-    
+    ');
+
     // Create cache table
-    $pdo->exec("
+    $pdo->exec('
         CREATE TABLE IF NOT EXISTS cache (
             `key` VARCHAR(255) PRIMARY KEY,
             value LONGTEXT NOT NULL,
             expiration INT NOT NULL
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-    ");
-    
+    ');
+
     // Create cache_locks table
-    $pdo->exec("
+    $pdo->exec('
         CREATE TABLE IF NOT EXISTS cache_locks (
             `key` VARCHAR(255) PRIMARY KEY,
             owner VARCHAR(255) NOT NULL,
             expiration INT NOT NULL
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-    ");
-    
+    ');
+
     // Create jobs table for queue
-    $pdo->exec("
+    $pdo->exec('
         CREATE TABLE IF NOT EXISTS jobs (
             id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
             queue VARCHAR(255) NOT NULL,
@@ -516,10 +527,10 @@ function runBasicMigrations($pdo) {
             created_at INT UNSIGNED NOT NULL,
             INDEX jobs_queue_index (queue)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-    ");
-    
+    ');
+
     // Create failed_jobs table
-    $pdo->exec("
+    $pdo->exec('
         CREATE TABLE IF NOT EXISTS failed_jobs (
             id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
             uuid VARCHAR(255) NOT NULL UNIQUE,
@@ -529,55 +540,57 @@ function runBasicMigrations($pdo) {
             exception LONGTEXT NOT NULL,
             failed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-    ");
+    ');
 }
 
-function createBasicData($pdo) {
+function createBasicData($pdo)
+{
     // Check if users table has any data
-    $stmt = $pdo->query("SELECT COUNT(*) as count FROM users");
+    $stmt = $pdo->query('SELECT COUNT(*) as count FROM users');
     $result = $stmt->fetch(PDO::FETCH_ASSOC);
-    
+
     if ($result['count'] == 0) {
         // Create a default admin user
         $defaultPassword = password_hash('admin123', PASSWORD_DEFAULT);
-        $stmt = $pdo->prepare("
+        $stmt = $pdo->prepare('
             INSERT INTO users (name, email, email_verified_at, password, created_at, updated_at) 
             VALUES (?, ?, ?, ?, NOW(), NOW())
-        ");
+        ');
         $stmt->execute(['Administrator', 'admin@wscrm.local', date('Y-m-d H:i:s'), $defaultPassword]);
     }
 }
 
-function handleFinalSetup() {
+function handleFinalSetup()
+{
     try {
         // Clear cache directories manually
         clearCacheDirectories();
-        
+
         // Create lock file
-        file_put_contents(__DIR__ . '/../storage/installer.lock', date('Y-m-d H:i:s'));
-        
+        file_put_contents(__DIR__.'/../storage/installer.lock', date('Y-m-d H:i:s'));
+
         // Create admin user if requested or needed
         $adminEmail = $_POST['admin_email'] ?? '';
         $adminPassword = $_POST['admin_password'] ?? '';
-        
+
         // Check if any users exist first
-        $env = parseEnvFile(__DIR__ . '/../.env');
+        $env = parseEnvFile(__DIR__.'/../.env');
         $dbHost = $env['DB_HOST'] ?? 'localhost';
         $dbPort = $env['DB_PORT'] ?? '3306';
         $dbDatabase = $env['DB_DATABASE'] ?? 'wscrm_db';
         $dbUsername = $env['DB_USERNAME'] ?? '';
         $dbPassword = $env['DB_PASSWORD'] ?? '';
-        
+
         $dsn = "mysql:host=$dbHost;port=$dbPort;dbname=$dbDatabase;charset=utf8mb4";
         $pdo = new PDO($dsn, $dbUsername, $dbPassword, [
             PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
             PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
         ]);
-        
-        $stmt = $pdo->query("SELECT COUNT(*) as count FROM users");
+
+        $stmt = $pdo->query('SELECT COUNT(*) as count FROM users');
         $result = $stmt->fetch(PDO::FETCH_ASSOC);
         $userCount = $result['count'] ?? 0;
-        
+
         if ($adminEmail && $adminPassword) {
             // Create custom admin user
             createAdminUser($adminEmail, $adminPassword);
@@ -585,47 +598,48 @@ function handleFinalSetup() {
             // Create default admin only if no users exist
             createAdminUser('admin@wscrm.local', 'admin123');
         }
-        
+
         // Fix permissions for web access
         fixWebPermissions();
-        
+
         showSuccess();
     } catch (Exception $e) {
-        showStep(4, 'Error saat finalisasi: ' . $e->getMessage(), true);
+        showStep(4, 'Error saat finalisasi: '.$e->getMessage(), true);
     }
 }
 
-function fixWebPermissions() {
-    $baseDir = __DIR__ . '/..';
-    
+function fixWebPermissions()
+{
+    $baseDir = __DIR__.'/..';
+
     // Set proper permissions for key files and directories
     $permissionFixes = [
         // Files that need to be readable by web server
-        $baseDir . '/index.php' => 0644,
-        $baseDir . '/.htaccess' => 0644,
-        $baseDir . '/.env' => 0600, // Secure but readable by app
-        
+        $baseDir.'/index.php' => 0644,
+        $baseDir.'/.htaccess' => 0644,
+        $baseDir.'/.env' => 0600, // Secure but readable by app
+
         // Directories that need proper access
-        $baseDir . '/storage' => 0755,
-        $baseDir . '/bootstrap/cache' => 0755,
-        $baseDir . '/public' => 0755,
+        $baseDir.'/storage' => 0755,
+        $baseDir.'/bootstrap/cache' => 0755,
+        $baseDir.'/public' => 0755,
     ];
-    
+
     foreach ($permissionFixes as $path => $perm) {
         if (file_exists($path)) {
             @chmod($path, $perm);
         }
     }
-    
+
     // Recursively fix storage permissions
-    $storageDir = $baseDir . '/storage';
+    $storageDir = $baseDir.'/storage';
     if (is_dir($storageDir)) {
         try {
             $iterator = new RecursiveIteratorIterator(
                 new RecursiveDirectoryIterator($storageDir, RecursiveDirectoryIterator::SKIP_DOTS),
                 RecursiveIteratorIterator::SELF_FIRST
             );
-            
+
             foreach ($iterator as $item) {
                 if ($item->isDir()) {
                     @chmod($item->getRealPath(), 0755);
@@ -636,15 +650,15 @@ function fixWebPermissions() {
         } catch (Exception $e) {
             // Fallback manual method
             $dirs = [
-                $storageDir . '/app',
-                $storageDir . '/app/public',
-                $storageDir . '/framework',
-                $storageDir . '/framework/cache',
-                $storageDir . '/framework/sessions',
-                $storageDir . '/framework/views',
-                $storageDir . '/logs'
+                $storageDir.'/app',
+                $storageDir.'/app/public',
+                $storageDir.'/framework',
+                $storageDir.'/framework/cache',
+                $storageDir.'/framework/sessions',
+                $storageDir.'/framework/views',
+                $storageDir.'/logs',
             ];
-            
+
             foreach ($dirs as $dir) {
                 if (is_dir($dir)) {
                     @chmod($dir, 0755);
@@ -652,10 +666,10 @@ function fixWebPermissions() {
             }
         }
     }
-    
+
     // Create proper .htaccess for flat Laravel deployment
-    $rootHtaccess = $baseDir . '/.htaccess';
-    
+    $rootHtaccess = $baseDir.'/.htaccess';
+
     // Always create/update .htaccess for flat Laravel deployment
     if (true) { // Always overwrite to ensure correct configuration
         $htaccessContent = "# Laravel .htaccess - Simple version for shared hosting\n";
@@ -676,17 +690,18 @@ function fixWebPermissions() {
     }
 }
 
-function clearCacheDirectories() {
+function clearCacheDirectories()
+{
     $cacheDirs = [
-        __DIR__ . '/../bootstrap/cache',
-        __DIR__ . '/../storage/framework/cache',
-        __DIR__ . '/../storage/framework/views',
-        __DIR__ . '/../storage/framework/sessions'
+        __DIR__.'/../bootstrap/cache',
+        __DIR__.'/../storage/framework/cache',
+        __DIR__.'/../storage/framework/views',
+        __DIR__.'/../storage/framework/sessions',
     ];
-    
+
     foreach ($cacheDirs as $dir) {
         if (file_exists($dir)) {
-            $files = glob($dir . '/*');
+            $files = glob($dir.'/*');
             foreach ($files as $file) {
                 if (is_file($file) && basename($file) !== '.gitignore') {
                     @unlink($file);
@@ -696,37 +711,39 @@ function clearCacheDirectories() {
     }
 }
 
-function createAdminUser($email, $password) {
-    $env = parseEnvFile(__DIR__ . '/../.env');
+function createAdminUser($email, $password)
+{
+    $env = parseEnvFile(__DIR__.'/../.env');
     $dbHost = $env['DB_HOST'] ?? 'localhost';
     $dbPort = $env['DB_PORT'] ?? '3306';
     $dbDatabase = $env['DB_DATABASE'] ?? 'wscrm_db';
     $dbUsername = $env['DB_USERNAME'] ?? '';
     $dbPassword = $env['DB_PASSWORD'] ?? '';
-    
+
     $dsn = "mysql:host=$dbHost;port=$dbPort;dbname=$dbDatabase;charset=utf8mb4";
     $pdo = new PDO($dsn, $dbUsername, $dbPassword, [
         PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
     ]);
-    
+
     // Check if user already exists
-    $stmt = $pdo->prepare("SELECT COUNT(*) as count FROM users WHERE email = ?");
+    $stmt = $pdo->prepare('SELECT COUNT(*) as count FROM users WHERE email = ?');
     $stmt->execute([$email]);
     $result = $stmt->fetch(PDO::FETCH_ASSOC);
-    
+
     if ($result['count'] == 0) {
         // Create the admin user
         $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
-        $stmt = $pdo->prepare("
+        $stmt = $pdo->prepare('
             INSERT INTO users (name, email, email_verified_at, password, created_at, updated_at) 
             VALUES (?, ?, ?, ?, NOW(), NOW())
-        ");
+        ');
         $stmt->execute(['Administrator', $email, date('Y-m-d H:i:s'), $hashedPassword]);
     }
 }
 
-function showStep($step, $message = '', $error = false) {
+function showStep($step, $message = '', $error = false)
+{
     ?>
     <!DOCTYPE html>
     <html lang="id">
@@ -796,11 +813,11 @@ function showStep($step, $message = '', $error = false) {
                 <div class="step <?php echo $step >= 4 ? 'active' : ''; ?>">4</div>
             </div>
 
-            <?php if ($message): ?>
+            <?php if ($message) { ?>
                 <div class="message <?php echo $error ? 'error' : 'success'; ?>">
                     <?php echo $message; ?>
                 </div>
-            <?php endif; ?>
+            <?php } ?>
 
             <?php
             switch ($step) {
@@ -817,43 +834,44 @@ function showStep($step, $message = '', $error = false) {
                     showFinalForm();
                     break;
             }
-            ?>
+    ?>
         </div>
     </body>
     </html>
     <?php
 }
 
-function showRequirements() {
-    $storageDir = __DIR__ . '/../storage';
-    $bootstrapDir = __DIR__ . '/../bootstrap/cache';
-    
+function showRequirements()
+{
+    $storageDir = __DIR__.'/../storage';
+    $bootstrapDir = __DIR__.'/../bootstrap/cache';
+
     // Get detailed directory info
     $storageInfo = [];
     $bootstrapInfo = [];
-    
+
     if (file_exists($storageDir)) {
         $storageInfo = [
             'exists' => true,
             'permissions' => substr(sprintf('%o', fileperms($storageDir)), -4),
-            'owner' => function_exists('posix_getpwuid') && function_exists('fileowner') ? 
+            'owner' => function_exists('posix_getpwuid') && function_exists('fileowner') ?
                       (posix_getpwuid(fileowner($storageDir))['name'] ?? 'unknown') : 'unknown',
             'writable' => is_writable($storageDir),
             'readable' => is_readable($storageDir),
         ];
     }
-    
+
     if (file_exists($bootstrapDir)) {
         $bootstrapInfo = [
             'exists' => true,
             'permissions' => substr(sprintf('%o', fileperms($bootstrapDir)), -4),
-            'owner' => function_exists('posix_getpwuid') && function_exists('fileowner') ? 
+            'owner' => function_exists('posix_getpwuid') && function_exists('fileowner') ?
                       (posix_getpwuid(fileowner($bootstrapDir))['name'] ?? 'unknown') : 'unknown',
             'writable' => is_writable($bootstrapDir),
             'readable' => is_readable($bootstrapDir),
         ];
     }
-    
+
     $requirements = [
         'PHP >= 8.2' => version_compare(PHP_VERSION, '8.2.0', '>='),
         'Extension: PDO' => extension_loaded('pdo'),
@@ -867,29 +885,29 @@ function showRequirements() {
         'Directory Writable: storage' => is_writable($storageDir),
         'Directory Writable: bootstrap/cache' => is_writable($bootstrapDir),
     ];
-    
+
     // Try to fix writable permissions automatically
     $permissionsFixed = false;
     $manualFixNeeded = [];
-    
-    if (!is_writable($storageDir)) {
+
+    if (! is_writable($storageDir)) {
         // Try multiple permission levels
         $success = @chmod($storageDir, 0755) ||
                   @chmod($storageDir, 0775) ||
                   @chmod($storageDir, 0777);
-        
+
         if ($success) {
             // Also fix subdirectories
-            @chmod($storageDir . '/app', 0755);
-            @chmod($storageDir . '/framework', 0755);
-            @chmod($storageDir . '/framework/cache', 0755);
-            @chmod($storageDir . '/framework/sessions', 0755);
-            @chmod($storageDir . '/framework/views', 0755);
-            @chmod($storageDir . '/logs', 0755);
+            @chmod($storageDir.'/app', 0755);
+            @chmod($storageDir.'/framework', 0755);
+            @chmod($storageDir.'/framework/cache', 0755);
+            @chmod($storageDir.'/framework/sessions', 0755);
+            @chmod($storageDir.'/framework/views', 0755);
+            @chmod($storageDir.'/logs', 0755);
         }
-        
+
         // Test actual write capability
-        $testFile = $storageDir . '/write-test-' . time() . '.tmp';
+        $testFile = $storageDir.'/write-test-'.time().'.tmp';
         $canWrite = @file_put_contents($testFile, 'test') !== false;
         if ($canWrite) {
             @unlink($testFile);
@@ -900,14 +918,14 @@ function showRequirements() {
             $manualFixNeeded[] = 'storage/';
         }
     }
-    
-    if (!is_writable($bootstrapDir)) {
+
+    if (! is_writable($bootstrapDir)) {
         $success = @chmod($bootstrapDir, 0755) ||
                   @chmod($bootstrapDir, 0775) ||
                   @chmod($bootstrapDir, 0777);
-        
+
         // Test actual write capability
-        $testFile = $bootstrapDir . '/write-test-' . time() . '.tmp';
+        $testFile = $bootstrapDir.'/write-test-'.time().'.tmp';
         $canWrite = @file_put_contents($testFile, 'test') !== false;
         if ($canWrite) {
             @unlink($testFile);
@@ -918,54 +936,56 @@ function showRequirements() {
             $manualFixNeeded[] = 'bootstrap/cache/';
         }
     }
-    
+
     $allOk = true;
     foreach ($requirements as $req => $status) {
-        if (!$status) $allOk = false;
+        if (! $status) {
+            $allOk = false;
+        }
     }
     ?>
     
     <h2>Pemeriksaan Sistem</h2>
     
-    <?php if ($permissionsFixed): ?>
+    <?php if ($permissionsFixed) { ?>
         <div class="permissions-notice">
             <strong>✨ Permissions telah diperbaiki otomatis!</strong> Beberapa direktori telah disesuaikan permission-nya.
         </div>
-    <?php endif; ?>
+    <?php } ?>
     
-    <?php if (!empty($manualFixNeeded)): ?>
+    <?php if (! empty($manualFixNeeded)) { ?>
         <div class="message error">
             <strong>🔧 Perbaikan Manual Diperlukan</strong>
             <p>Sistem tidak dapat memperbaiki permissions secara otomatis. Detail diagnostik:</p>
             
             <div style="background: hsl(var(--muted)); padding: 1rem; border-radius: calc(var(--radius) - 2px); margin: 1rem 0; font-family: monospace; font-size: 0.75rem; overflow-x: auto;">
-                <?php if (in_array('storage/', $manualFixNeeded) && !empty($storageInfo)): ?>
+                <?php if (in_array('storage/', $manualFixNeeded) && ! empty($storageInfo)) { ?>
                     <strong>📁 storage/ directory:</strong><br>
                     - Permissions: <?php echo $storageInfo['permissions']; ?><br>
                     - Owner: <?php echo $storageInfo['owner']; ?><br>
                     - PHP User: <?php echo function_exists('posix_getpwuid') ? (posix_getpwuid(posix_geteuid())['name'] ?? 'unknown') : 'unknown'; ?><br>
                     - Writable: <?php echo $storageInfo['writable'] ? 'Yes' : 'No'; ?><br><br>
-                <?php endif; ?>
+                <?php } ?>
                 
-                <?php if (in_array('bootstrap/cache/', $manualFixNeeded) && !empty($bootstrapInfo)): ?>
+                <?php if (in_array('bootstrap/cache/', $manualFixNeeded) && ! empty($bootstrapInfo)) { ?>
                     <strong>📁 bootstrap/cache/ directory:</strong><br>
                     - Permissions: <?php echo $bootstrapInfo['permissions']; ?><br>
                     - Owner: <?php echo $bootstrapInfo['owner']; ?><br>
                     - PHP User: <?php echo function_exists('posix_getpwuid') ? (posix_getpwuid(posix_geteuid())['name'] ?? 'unknown') : 'unknown'; ?><br>
                     - Writable: <?php echo $bootstrapInfo['writable'] ? 'Yes' : 'No'; ?><br><br>
-                <?php endif; ?>
+                <?php } ?>
             </div>
             
             <p><strong>📝 Solusi Manual:</strong></p>
             <div style="background: hsl(var(--muted)); padding: 1rem; border-radius: calc(var(--radius) - 2px); margin: 1rem 0; font-family: monospace; font-size: 0.8rem; overflow-x: auto;">
-                <?php foreach ($manualFixNeeded as $dir): ?>
+                <?php foreach ($manualFixNeeded as $dir) { ?>
                     <div style="margin-bottom: 0.5rem;">
                         <strong>Via SSH/Terminal:</strong><br>
                         <code>chmod -R 775 <?php echo $dir; ?></code><br>
                         <code>chown -R www-data:www-data <?php echo $dir; ?></code><br>
                         <small style="color: hsl(var(--muted-foreground));">atau gunakan user yang sesuai dengan server Anda</small>
                     </div>
-                <?php endforeach; ?>
+                <?php } ?>
             </div>
             
             <p><strong>Via cPanel File Manager:</strong></p>
@@ -986,58 +1006,59 @@ function showRequirements() {
                 <li>Directory tidak ada atau path salah</li>
             </ul>
         </div>
-    <?php endif; ?>
+    <?php } ?>
     
     <div class="requirements">
-        <?php foreach ($requirements as $req => $status): ?>
+        <?php foreach ($requirements as $req => $status) { ?>
             <div class="req-item">
                 <span class="req-status <?php echo $status ? 'req-ok' : 'req-fail'; ?>">
                     <?php echo $status ? '✓' : '✗'; ?>
                 </span>
                 <span class="req-text"><?php echo $req; ?></span>
             </div>
-        <?php endforeach; ?>
+        <?php } ?>
     </div>
 
-    <?php if ($allOk): ?>
+    <?php if ($allOk) { ?>
         <form method="POST">
             <input type="hidden" name="step" value="2">
             <button type="submit" class="btn">Lanjutkan Instalasi</button>
         </form>
-    <?php else: ?>
+    <?php } else { ?>
         <div class="message error">
             <strong>Persyaratan belum terpenuhi!</strong> Harap perbaiki masalah di atas sebelum melanjutkan instalasi.
             <br><br>
             <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
                 <button type="button" onclick="window.location.reload()" class="btn btn-secondary" style="flex: 1;">🔄 Periksa Ulang</button>
                 
-                <?php 
+                <?php
                 // Check if only permission issues remain
                 $onlyPermissionIssues = true;
-                foreach ($requirements as $req => $status) {
-                    if (!$status && !str_contains($req, 'Directory Writable')) {
-                        $onlyPermissionIssues = false;
-                        break;
-                    }
-                }
-                ?>
+        foreach ($requirements as $req => $status) {
+            if (! $status && ! str_contains($req, 'Directory Writable')) {
+                $onlyPermissionIssues = false;
+                break;
+            }
+        }
+        ?>
                 
-                <?php if ($onlyPermissionIssues): ?>
+                <?php if ($onlyPermissionIssues) { ?>
                     <form method="POST" style="flex: 1;">
                         <input type="hidden" name="step" value="2">
                         <input type="hidden" name="skip_permissions" value="1">
                         <button type="submit" class="btn btn-destructive" onclick="return confirm('⚠️ PERINGATAN: Anda akan melanjutkan tanpa permissions yang tepat.\n\nIni mungkin menyebabkan:\n- Error saat menyimpan file\n- Gagal generate cache\n- Masalah log aplikasi\n\nYakin tetap lanjutkan?')" style="width: 100%;">⚠️ Lewati & Lanjutkan</button>
                     </form>
-                <?php endif; ?>
+                <?php } ?>
             </div>
         </div>
-    <?php endif;
-}
+    <?php }
+    }
 
-function showEnvironmentForm() {
+function showEnvironmentForm()
+{
     // Preserve values from previous POST if available
     $appName = $_POST['app_name'] ?? 'WSCRM';
-    $appUrl = $_POST['app_url'] ?? ('http' . (isset($_SERVER['HTTPS']) ? 's' : '') . '://' . $_SERVER['HTTP_HOST'] . dirname(dirname($_SERVER['REQUEST_URI'])));
+    $appUrl = $_POST['app_url'] ?? ('http'.(isset($_SERVER['HTTPS']) ? 's' : '').'://'.$_SERVER['HTTP_HOST'].dirname(dirname($_SERVER['REQUEST_URI'])));
     $dbHost = $_POST['db_host'] ?? 'localhost';
     $dbPort = $_POST['db_port'] ?? '3306';
     $dbDatabase = $_POST['db_database'] ?? '';
@@ -1132,7 +1153,8 @@ function showEnvironmentForm() {
     <?php
 }
 
-function showDatabaseForm() {
+function showDatabaseForm()
+{
     ?>
     <h2>Setup Database</h2>
     
@@ -1145,37 +1167,38 @@ function showDatabaseForm() {
     <?php
 }
 
-function showFinalForm() {
+function showFinalForm()
+{
     // Check if admin users already exist
     $hasAdmin = false;
     $adminCount = 0;
-    
+
     try {
-        $env = parseEnvFile(__DIR__ . '/../.env');
+        $env = parseEnvFile(__DIR__.'/../.env');
         $dbHost = $env['DB_HOST'] ?? 'localhost';
         $dbPort = $env['DB_PORT'] ?? '3306';
         $dbDatabase = $env['DB_DATABASE'] ?? 'wscrm_db';
         $dbUsername = $env['DB_USERNAME'] ?? '';
         $dbPassword = $env['DB_PASSWORD'] ?? '';
-        
+
         $dsn = "mysql:host=$dbHost;port=$dbPort;dbname=$dbDatabase;charset=utf8mb4";
         $pdo = new PDO($dsn, $dbUsername, $dbPassword, [
             PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
             PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
         ]);
-        
-        $stmt = $pdo->query("SELECT COUNT(*) as count FROM users");
+
+        $stmt = $pdo->query('SELECT COUNT(*) as count FROM users');
         $result = $stmt->fetch(PDO::FETCH_ASSOC);
         $adminCount = $result['count'] ?? 0;
         $hasAdmin = $adminCount > 0;
     } catch (Exception $e) {
         // If we can't check, assume no admin exists
     }
-    
+
     ?>
     <h2>Finalisasi</h2>
     
-    <?php if ($hasAdmin): ?>
+    <?php if ($hasAdmin) { ?>
         <div class="message success">
             <strong>✅ Admin Account Detected</strong><br>
             Ditemukan <?php echo $adminCount; ?> user admin yang sudah ada di database.<br>
@@ -1183,7 +1206,7 @@ function showFinalForm() {
         </div>
         
         <p>Atau buat akun administrator tambahan (opsional):</p>
-    <?php else: ?>
+    <?php } else { ?>
         <div class="message" style="background: hsl(46 93% 50% / 0.1); border: 1px solid hsl(46 93% 50% / 0.3); color: hsl(46 100% 20%);">
             <strong>ℹ️ Admin Account Required</strong><br>
             Tidak ditemukan user admin di database. Sistem akan membuat akun admin default atau Anda dapat membuat custom admin.
@@ -1198,7 +1221,7 @@ function showFinalForm() {
         </div>
         
         <p>Atau buat akun administrator custom:</p>
-    <?php endif; ?>
+    <?php } ?>
     
     <form method="POST">
         <input type="hidden" name="step" value="4">
@@ -1218,18 +1241,19 @@ function showFinalForm() {
         </button>
     </form>
     
-    <?php if ($hasAdmin): ?>
+    <?php if ($hasAdmin) { ?>
         <div style="text-align: center; margin-top: 1rem;">
             <small style="color: hsl(var(--muted-foreground));">
                 💡 Tip: Anda dapat langsung klik "Selesaikan Instalasi" tanpa mengisi form admin tambahan
             </small>
         </div>
-    <?php endif; ?>
+    <?php } ?>
     
     <?php
 }
 
-function showSuccess() {
+function showSuccess()
+{
     ?>
     <!DOCTYPE html>
     <html lang="id">

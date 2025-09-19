@@ -3,7 +3,10 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
+use App\Http\Requests\StoreExpenseRequest;
+use App\Http\Requests\UpdateExpenseRequest;
+use App\Models\Expense;
+use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -15,67 +18,42 @@ class ExpenseController extends Controller
     public function index(): Response
     {
         return Inertia::render('Admin/Expenses/Index', [
-            'monthlyExpenses' => [
-                [
-                    'id' => 1,
-                    'name' => 'Lisensi Claude Pro',
-                    'amount' => 20,
-                    'currency' => 'USD',
-                    'provider' => 'Anthropic',
-                    'category' => 'Software',
-                    'next_billing' => '2025-01-19',
-                    'status' => 'active',
-                    'type' => 'monthly'
-                ],
-                [
-                    'id' => 2,
-                    'name' => 'cPanel Guard',
-                    'amount' => 15,
-                    'currency' => 'USD',
-                    'provider' => 'cPanel',
-                    'category' => 'Security',
-                    'next_billing' => '2025-01-15',
-                    'status' => 'active',
-                    'type' => 'monthly'
-                ]
-            ],
-            'yearlyExpenses' => [
-                [
-                    'id' => 3,
-                    'name' => 'Domain License',
-                    'amount' => 150,
-                    'currency' => 'USD',
-                    'provider' => 'Registrar',
-                    'category' => 'Domain',
-                    'next_billing' => '2025-12-01',
-                    'status' => 'active',
-                    'type' => 'yearly'
-                ]
-            ],
-            'oneTimeExpenses' => [
-                [
-                    'id' => 4,
-                    'name' => 'Deposit Domain .id',
-                    'amount' => 500000,
-                    'currency' => 'IDR',
-                    'provider' => 'PANDI',
-                    'category' => 'Domain Deposit',
-                    'paid_date' => '2024-12-01',
-                    'status' => 'paid',
-                    'type' => 'one-time'
-                ],
-                [
-                    'id' => 5,
-                    'name' => 'Setup Server',
-                    'amount' => 100,
-                    'currency' => 'USD',
-                    'provider' => 'Digital Ocean',
-                    'category' => 'Infrastructure',
-                    'paid_date' => '2024-11-15',
-                    'status' => 'paid',
-                    'type' => 'one-time'
-                ]
-            ]
+            'monthlyExpenses' => Expense::monthly()->orderBy('next_billing')->get(),
+            'yearlyExpenses' => Expense::yearly()->orderBy('next_billing')->get(),
+            'oneTimeExpenses' => Expense::oneTime()->orderBy('paid_date', 'desc')->get(),
         ]);
+    }
+
+    /**
+     * Store a newly created expense in storage.
+     */
+    public function store(StoreExpenseRequest $request): RedirectResponse
+    {
+        Expense::create($request->validated());
+
+        return redirect()->route('admin.expenses.index')
+            ->with('success', 'Pengeluaran berhasil ditambahkan.');
+    }
+
+    /**
+     * Update the specified expense in storage.
+     */
+    public function update(UpdateExpenseRequest $request, Expense $expense): RedirectResponse
+    {
+        $expense->update($request->validated());
+
+        return redirect()->route('admin.expenses.index')
+            ->with('success', 'Pengeluaran berhasil diperbarui.');
+    }
+
+    /**
+     * Remove the specified expense from storage.
+     */
+    public function destroy(Expense $expense): RedirectResponse
+    {
+        $expense->delete();
+
+        return redirect()->route('admin.expenses.index')
+            ->with('success', 'Pengeluaran berhasil dihapus.');
     }
 }

@@ -1,29 +1,30 @@
 <?php
+
 /**
  * Cleanup installer files after successful installation
  */
-
-function deleteDirectory($dir) {
-    if (!is_dir($dir)) {
+function deleteDirectory($dir)
+{
+    if (! is_dir($dir)) {
         return false;
     }
-    
-    $files = array_diff(scandir($dir), array('.', '..'));
-    
+
+    $files = array_diff(scandir($dir), ['.', '..']);
+
     foreach ($files as $file) {
-        $path = $dir . DIRECTORY_SEPARATOR . $file;
+        $path = $dir.DIRECTORY_SEPARATOR.$file;
         if (is_dir($path)) {
             deleteDirectory($path);
         } else {
             unlink($path);
         }
     }
-    
+
     return rmdir($dir);
 }
 
 // Check if installation is completed
-if (!file_exists(__DIR__ . '/../../storage/installer.lock')) {
+if (! file_exists(__DIR__.'/../../storage/installer.lock')) {
     http_response_code(403);
     exit('Installation not completed');
 }
@@ -35,4 +36,3 @@ if (deleteDirectory($installerDir)) {
 } else {
     echo json_encode(['success' => false, 'message' => 'Failed to cleanup installer']);
 }
-?>

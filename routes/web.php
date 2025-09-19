@@ -18,7 +18,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/services/{servicePlan}', [App\Http\Controllers\ServicePlanController::class, 'show'])->name('service-plans.show');
 });
 
-
 // API endpoints
 Route::post('/api/domains/availability', [App\Http\Controllers\DomainPriceController::class, 'checkAvailability'])
     ->name('api.domains.availability');

@@ -7,19 +7,19 @@ define('LARAVEL_START', microtime(true));
 
 // Check if installer exists and installation is not completed (skip in development)
 $skipInstaller = false;
-if (file_exists(__DIR__ . '/../.env')) {
-    $envContent = file_get_contents(__DIR__ . '/../.env');
+if (file_exists(__DIR__.'/../.env')) {
+    $envContent = file_get_contents(__DIR__.'/../.env');
     $skipInstaller = strpos($envContent, 'APP_ENV=local') !== false;
 }
 
-if (is_dir(__DIR__ . '/install') && !$skipInstaller) {
+if (is_dir(__DIR__.'/install') && ! $skipInstaller) {
     // For flat deployment, check wscrm folder for installer.lock
     $installerLockPaths = [
-        __DIR__ . '/wscrm/storage/installer.lock',      // wscrm in same directory
-        __DIR__ . '/../wscrm/storage/installer.lock',   // wscrm moved outside web root
-        __DIR__ . '/../storage/installer.lock'          // standard Laravel structure
+        __DIR__.'/wscrm/storage/installer.lock',      // wscrm in same directory
+        __DIR__.'/../wscrm/storage/installer.lock',   // wscrm moved outside web root
+        __DIR__.'/../storage/installer.lock',          // standard Laravel structure
     ];
-    
+
     $installCompleted = false;
     foreach ($installerLockPaths as $lockPath) {
         if (file_exists($lockPath)) {
@@ -27,8 +27,8 @@ if (is_dir(__DIR__ . '/install') && !$skipInstaller) {
             break;
         }
     }
-    
-    if (!$installCompleted) {
+
+    if (! $installCompleted) {
         // Redirect to installer for non-install URLs
         $requestUri = $_SERVER['REQUEST_URI'];
         if (strpos($requestUri, '/install') !== 0) {
@@ -42,19 +42,19 @@ if (is_dir(__DIR__ . '/install') && !$skipInstaller) {
 $laravel_root = __DIR__;
 
 // Check priority: wscrm folder (flat deployment after installer)
-if (file_exists(__DIR__ . '/../wscrm/vendor/autoload.php')) {
-    $laravel_root = __DIR__ . '/../wscrm';  // wscrm moved outside web root
+if (file_exists(__DIR__.'/../wscrm/vendor/autoload.php')) {
+    $laravel_root = __DIR__.'/../wscrm';  // wscrm moved outside web root
 }
-// Check if we're in flat deployment (wscrm in same directory)  
-elseif (file_exists(__DIR__ . '/wscrm/vendor/autoload.php')) {
-    $laravel_root = __DIR__ . '/wscrm';
+// Check if we're in flat deployment (wscrm in same directory)
+elseif (file_exists(__DIR__.'/wscrm/vendor/autoload.php')) {
+    $laravel_root = __DIR__.'/wscrm';
 }
 // Check if we're in standard Laravel structure (public folder)
-elseif (file_exists(__DIR__ . '/../vendor/autoload.php')) {
-    $laravel_root = __DIR__ . '/..';
-} 
-// Check if Laravel is in parent directory 
-elseif (file_exists(dirname(__DIR__) . '/vendor/autoload.php')) {
+elseif (file_exists(__DIR__.'/../vendor/autoload.php')) {
+    $laravel_root = __DIR__.'/..';
+}
+// Check if Laravel is in parent directory
+elseif (file_exists(dirname(__DIR__).'/vendor/autoload.php')) {
     $laravel_root = dirname(__DIR__);
 }
 

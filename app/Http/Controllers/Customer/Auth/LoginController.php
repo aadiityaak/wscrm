@@ -69,7 +69,7 @@ class LoginController extends Controller
         \Log::info('Customer login redirect debug', [
             'intended_url' => session('url.intended'),
             'is_authenticated' => Auth::guard('customer')->check(),
-            'customer_id' => Auth::guard('customer')->id()
+            'customer_id' => Auth::guard('customer')->id(),
         ]);
 
         return redirect('/customer/dashboard');

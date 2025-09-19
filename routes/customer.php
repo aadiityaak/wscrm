@@ -59,7 +59,7 @@ Route::prefix('customer')->name('customer.')->group(function () {
             Route::patch('/profile', [SettingsController::class, 'updateProfile'])->name('update-profile');
             Route::patch('/password', [SettingsController::class, 'updatePassword'])->name('update-password');
         });
-        
+
         // Stop Impersonation (available in customer area)
         Route::post('/stop-impersonation', [ImpersonateController::class, 'stopImpersonation'])->name('stop-impersonation');
     });

@@ -249,7 +249,6 @@ class OrderController extends Controller
         }
     }
 
-
     public function destroy(Order $order)
     {
         if ($order->isService() && $order->status === 'active') {

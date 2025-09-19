@@ -39,7 +39,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'verified'])->group(
     Route::patch('banks/{bank}/toggle-status', [BankController::class, 'toggleStatus'])->name('banks.toggle-status');
 
     // Expense Management
-    Route::get('expenses', [ExpenseController::class, 'index'])->name('expenses.index');
+    Route::resource('expenses', ExpenseController::class)->only(['index', 'store', 'update', 'destroy']);
 
     // Customer Impersonation
     Route::post('impersonate/{customer}', [ImpersonateController::class, 'impersonate'])->name('impersonate');
