@@ -26,10 +26,21 @@ interface Expense {
     type: 'monthly' | 'yearly' | 'one-time';
 }
 
+interface RevenueData {
+    monthly: number;
+    yearly: number;
+    oneTime: number;
+    totalMonthly: number;
+    totalYearly: number;
+    currentMonth: string;
+    currentYear: number;
+}
+
 interface Props {
     monthlyExpenses: Expense[];
     yearlyExpenses: Expense[];
     oneTimeExpenses: Expense[];
+    revenueData?: RevenueData;
 }
 
 const props = defineProps<Props>();
@@ -164,6 +175,15 @@ const thisYearOneTimeTotal = computed(() => {
     }, 0);
 });
 
+// Revenue calculations (convert from backend which is in IDR)
+const monthlyRevenue = computed(() => props.revenueData?.totalMonthly || 0);
+const yearlyRevenue = computed(() => props.revenueData?.totalYearly || 0);
+
+// Profit/Loss calculations
+const monthlyProfit = computed(() => monthlyRevenue.value - totalMonthly.value);
+const yearlyProfit = computed(() => yearlyRevenue.value - (totalYearly.value + totalMonthly.value * 12));
+const overallProfit = computed(() => monthlyRevenue.value + yearlyRevenue.value - grandTotal.value);
+
 // CRUD functions
 const openCreateModal = (type: 'monthly' | 'yearly' | 'one-time') => {
     createForm.reset();
@@ -242,56 +262,158 @@ const confirmDelete = () => {
 
     <AppLayout :breadcrumbs="breadcrumbs">
         <div class="space-y-6">
-            <!-- Header -->
-            <div class="flex items-center justify-between">
-                <div>
-                    <h1 class="text-2xl font-bold tracking-tight">Data Pengeluaran</h1>
-                    <p class="text-muted-foreground">Kelola semua pengeluaran bisnis terorganisir berdasarkan jenis pembayaran</p>
+            <!-- Modern Dashboard Header -->
+            <div class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-slate-900 via-purple-900 to-slate-900 p-8 text-white mb-8">
+                <div class="absolute inset-0 bg-gradient-to-r from-purple-600/20 to-blue-600/20"></div>
+                <div class="relative z-10 flex items-center justify-between">
+                    <div class="space-y-3">
+                        <div class="flex items-center space-x-3">
+                            <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm">
+                                <DollarSign class="h-6 w-6" />
+                            </div>
+                            <div>
+                                <h1 class="text-3xl font-bold">Dashboard Keuangan</h1>
+                                <p class="text-white/80">Kelola dan pantau semua pengeluaran bisnis dengan mudah</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-6 text-sm">
+                            <div class="flex items-center space-x-2">
+                                <div class="h-2 w-2 rounded-full bg-green-400"></div>
+                                <span class="text-white/90">{{ props.monthlyExpenses.filter(e => e.status === 'active').length + props.yearlyExpenses.filter(e => e.status === 'active').length }} Layanan Aktif</span>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <div class="h-2 w-2 rounded-full bg-blue-400"></div>
+                                <span class="text-white/90">{{ props.revenueData?.currentMonth || 'September 2025' }}</span>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <div class="h-2 w-2 rounded-full bg-purple-400"></div>
+                                <span class="text-white/90">Real-time Updates</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex space-x-3">
+                        <Button @click="openCreateModal(activeTab as 'monthly' | 'yearly' | 'one-time')" class="bg-white/20 hover:bg-white/30 text-white border-white/30 backdrop-blur-sm">
+                            <Plus class="mr-2 h-4 w-4" />
+                            Tambah Pengeluaran
+                        </Button>
+                    </div>
                 </div>
-                <Button @click="openCreateModal(activeTab as 'monthly' | 'yearly' | 'one-time')" class="cursor-pointer">
-                    <Plus class="mr-2 h-4 w-4" />
-                    Tambah Pengeluaran
-                </Button>
+                <!-- Decorative elements -->
+                <div class="absolute -top-4 -right-4 h-24 w-24 rounded-full bg-gradient-to-r from-purple-400 to-blue-400 opacity-20 blur-xl"></div>
+                <div class="absolute -bottom-4 -left-4 h-32 w-32 rounded-full bg-gradient-to-r from-blue-400 to-purple-400 opacity-20 blur-xl"></div>
             </div>
 
-            <!-- Summary Cards -->
-            <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                <Card>
-                    <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle class="text-sm font-medium">Total Keseluruhan</CardTitle>
-                        <DollarSign class="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                        <div class="text-2xl font-bold">{{ formatPrice(grandTotal, 'IDR') }}</div>
-                        <p class="text-xs text-muted-foreground">
-                            Bulanan + Tahunan + One-time
-                        </p>
+            <!-- Modern Dashboard Summary -->
+            <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+                <!-- Monthly Profit Card -->
+                <Card class="relative overflow-hidden border-0 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white">
+                    <CardContent class="p-6">
+                        <div class="flex items-center justify-between">
+                            <div class="space-y-2">
+                                <p class="text-emerald-100 text-sm font-medium">Keuntungan Bulan Ini</p>
+                                <div class="text-3xl font-bold">
+                                    {{ formatPrice(Math.abs(monthlyProfit), 'IDR') }}
+                                </div>
+                                <div class="flex items-center space-x-2 text-emerald-100 text-sm">
+                                    <DollarSign class="h-4 w-4" />
+                                    <span>{{ props.revenueData?.currentMonth || 'September 2025' }}</span>
+                                </div>
+                            </div>
+                            <div class="h-12 w-12 rounded-full bg-white/20 flex items-center justify-center">
+                                <DollarSign class="h-6 w-6" />
+                            </div>
+                        </div>
+                        <div class="mt-4 pt-4 border-t border-emerald-400/30">
+                            <div class="flex justify-between text-sm text-emerald-100">
+                                <span>Pemasukan: {{ formatPrice(monthlyRevenue, 'IDR') }}</span>
+                            </div>
+                            <div class="flex justify-between text-sm text-emerald-100">
+                                <span>Pengeluaran: {{ formatPrice(totalMonthly, 'IDR') }}</span>
+                            </div>
+                        </div>
                     </CardContent>
                 </Card>
 
-                <Card>
-                    <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle class="text-sm font-medium">Pengeluaran Bulanan</CardTitle>
-                        <Repeat class="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                        <div class="text-2xl font-bold">{{ formatPrice(totalMonthly, 'IDR') }}</div>
-                        <p class="text-xs text-muted-foreground">
-                            {{ props.monthlyExpenses.filter(e => e.status === 'active').length }} layanan aktif
-                        </p>
+                <!-- Yearly Profit Card -->
+                <Card class="relative overflow-hidden border-0 bg-gradient-to-r from-blue-500 to-blue-600 text-white">
+                    <CardContent class="p-6">
+                        <div class="flex items-center justify-between">
+                            <div class="space-y-2">
+                                <p class="text-blue-100 text-sm font-medium">Keuntungan Tahun Ini</p>
+                                <div class="text-3xl font-bold">
+                                    {{ formatPrice(Math.abs(yearlyProfit), 'IDR') }}
+                                </div>
+                                <div class="flex items-center space-x-2 text-blue-100 text-sm">
+                                    <Clock class="h-4 w-4" />
+                                    <span>{{ props.revenueData?.currentYear || '2025' }}</span>
+                                </div>
+                            </div>
+                            <div class="h-12 w-12 rounded-full bg-white/20 flex items-center justify-center">
+                                <Clock class="h-6 w-6" />
+                            </div>
+                        </div>
+                        <div class="mt-4 pt-4 border-t border-blue-400/30">
+                            <div class="flex justify-between text-sm text-blue-100">
+                                <span>Pemasukan: {{ formatPrice(yearlyRevenue, 'IDR') }}</span>
+                            </div>
+                            <div class="flex justify-between text-sm text-blue-100">
+                                <span>Pengeluaran: {{ formatPrice(totalYearly, 'IDR') }}</span>
+                            </div>
+                        </div>
                     </CardContent>
                 </Card>
 
-                <Card>
-                    <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle class="text-sm font-medium">Pengeluaran Tahunan</CardTitle>
-                        <Clock class="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                        <div class="text-2xl font-bold">{{ formatPrice(totalYearly, 'IDR') }}</div>
-                        <p class="text-xs text-muted-foreground">
-                            {{ props.yearlyExpenses.filter(e => e.status === 'active').length }} layanan aktif
-                        </p>
+                <!-- Monthly Expenses -->
+                <Card class="hover:shadow-lg transition-shadow">
+                    <CardContent class="p-6">
+                        <div class="flex items-center justify-between">
+                            <div class="space-y-2">
+                                <p class="text-muted-foreground text-sm font-medium">Pengeluaran Bulanan</p>
+                                <div class="text-2xl font-bold text-red-600">
+                                    {{ formatPrice(totalMonthly, 'IDR') }}
+                                </div>
+                                <div class="flex items-center space-x-2 text-muted-foreground text-sm">
+                                    <CheckCircle class="h-4 w-4" />
+                                    <span>{{ props.monthlyExpenses.filter(e => e.status === 'active').length }} layanan aktif</span>
+                                </div>
+                            </div>
+                            <div class="h-12 w-12 rounded-full bg-red-100 flex items-center justify-center">
+                                <Repeat class="h-6 w-6 text-red-600" />
+                            </div>
+                        </div>
+                        <div class="mt-4">
+                            <div class="w-full bg-gray-200 rounded-full h-2">
+                                <div class="bg-red-500 h-2 rounded-full" :style="{ width: '75%' }"></div>
+                            </div>
+                            <p class="text-xs text-muted-foreground mt-2">Berulang setiap bulan</p>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <!-- Yearly Expenses -->
+                <Card class="hover:shadow-lg transition-shadow">
+                    <CardContent class="p-6">
+                        <div class="flex items-center justify-between">
+                            <div class="space-y-2">
+                                <p class="text-muted-foreground text-sm font-medium">Pengeluaran Tahunan</p>
+                                <div class="text-2xl font-bold text-orange-600">
+                                    {{ formatPrice(totalYearly, 'IDR') }}
+                                </div>
+                                <div class="flex items-center space-x-2 text-muted-foreground text-sm">
+                                    <CheckCircle class="h-4 w-4" />
+                                    <span>{{ props.yearlyExpenses.filter(e => e.status === 'active').length }} layanan aktif</span>
+                                </div>
+                            </div>
+                            <div class="h-12 w-12 rounded-full bg-orange-100 flex items-center justify-center">
+                                <Clock class="h-6 w-6 text-orange-600" />
+                            </div>
+                        </div>
+                        <div class="mt-4">
+                            <div class="w-full bg-gray-200 rounded-full h-2">
+                                <div class="bg-orange-500 h-2 rounded-full" :style="{ width: '60%' }"></div>
+                            </div>
+                            <p class="text-xs text-muted-foreground mt-2">Pembayaran tahunan</p>
+                        </div>
                     </CardContent>
                 </Card>
 
@@ -312,19 +434,22 @@ const confirmDelete = () => {
             <!-- Custom Tabs for Different Types -->
             <div class="w-full">
                 <!-- Tab Navigation -->
-                <div class="border-b border-border">
-                    <nav class="-mb-px flex space-x-8">
+                <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-1 mb-8">
+                    <div class="flex space-x-1">
                         <button
                             @click="activeTab = 'monthly'"
                             :class="[
-                                'whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm',
+                                'flex items-center px-4 py-2.5 rounded-lg font-medium text-sm transition-all duration-200',
                                 activeTab === 'monthly'
-                                    ? 'border-primary text-primary'
-                                    : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border'
+                                    ? 'bg-white dark:bg-gray-800 text-red-600 shadow-sm'
+                                    : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-gray-800/50'
                             ]"
                         >
-                            <Repeat class="h-4 w-4 mr-2 inline" />
-                            Bulanan
+                            <Repeat class="h-4 w-4 mr-2" />
+                            Pengeluaran Bulanan
+                            <Badge class="ml-2 text-xs" :class="activeTab === 'monthly' ? 'bg-red-100 text-red-700' : 'bg-gray-200 text-gray-600'">
+                                {{ props.monthlyExpenses.filter(e => e.status === 'active').length }}
+                            </Badge>
                         </button>
                         <button
                             @click="activeTab = 'yearly'"
@@ -335,8 +460,11 @@ const confirmDelete = () => {
                                     : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border'
                             ]"
                         >
-                            <Clock class="h-4 w-4 mr-2 inline" />
-                            Tahunan
+                            <Clock class="h-4 w-4 mr-2" />
+                            Pengeluaran Tahunan
+                            <Badge class="ml-2 text-xs" :class="activeTab === 'yearly' ? 'bg-orange-100 text-orange-700' : 'bg-gray-200 text-gray-600'">
+                                {{ props.yearlyExpenses.filter(e => e.status === 'active').length }}
+                            </Badge>
                         </button>
                         <button
                             @click="activeTab = 'one-time'"
@@ -350,7 +478,7 @@ const confirmDelete = () => {
                             <CreditCard class="h-4 w-4 mr-2 inline" />
                             Sekali Bayar
                         </button>
-                    </nav>
+                    </div>
                 </div>
 
                 <!-- Tab Content -->

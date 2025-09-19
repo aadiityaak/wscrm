@@ -28,6 +28,9 @@ import AppLogoIcon from './AppLogoIcon.vue';
 const $page = usePage();
 const { isMinimized } = useSidebar();
 
+// Get current user for role-based access
+const user = $page.props.auth.user;
+
 // Track expanded state for menu groups with persistence
 const expandedGroups = ref(new Set<string>());
 
@@ -43,6 +46,38 @@ onMounted(() => {
         }
     }
 });
+
+// Define financial children based on user role
+const getFinancialChildren = () => {
+    const baseChildren = [
+        {
+            title: 'Invoices',
+            href: '/admin/invoices',
+            icon: FileText,
+        },
+        {
+            title: 'Domain Prices',
+            href: '/admin/domain-prices',
+            icon: Globe,
+        },
+        {
+            title: 'Bank Management',
+            href: '/admin/banks',
+            icon: Building,
+        },
+    ];
+
+    // Only add expenses for super_admin
+    if (user.role === 'super_admin') {
+        baseChildren.push({
+            title: 'Data Pengeluaran',
+            href: '/admin/expenses',
+            icon: CreditCard,
+        });
+    }
+
+    return baseChildren;
+};
 
 const mainNavItems: NavItem[] = [
     {
@@ -93,28 +128,7 @@ const mainNavItems: NavItem[] = [
         title: 'Financial',
         href: '#',
         icon: DollarSign,
-        children: [
-            {
-                title: 'Invoices',
-                href: '/admin/invoices',
-                icon: FileText,
-            },
-            {
-                title: 'Domain Prices',
-                href: '/admin/domain-prices',
-                icon: Globe,
-            },
-            {
-                title: 'Bank Management',
-                href: '/admin/banks',
-                icon: Building,
-            },
-            {
-                title: 'Data Pengeluaran',
-                href: '/admin/expenses',
-                icon: CreditCard,
-            },
-        ],
+        children: getFinancialChildren(),
     },
 ];
 

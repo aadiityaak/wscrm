@@ -38,8 +38,8 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'verified'])->group(
     Route::resource('banks', BankController::class);
     Route::patch('banks/{bank}/toggle-status', [BankController::class, 'toggleStatus'])->name('banks.toggle-status');
 
-    // Expense Management
-    Route::resource('expenses', ExpenseController::class)->only(['index', 'store', 'update', 'destroy']);
+    // Expense Management - Restricted to Super Admin only
+    Route::resource('expenses', ExpenseController::class)->only(['index', 'store', 'update', 'destroy'])->middleware('super_admin');
 
     // Customer Impersonation
     Route::post('impersonate/{customer}', [ImpersonateController::class, 'impersonate'])->name('impersonate');
