@@ -254,76 +254,93 @@ const removeFeature = (form: any, featureName: string) => {
                         <Button @click="handleSearch" class="cursor-pointer">Cari</Button>
                     </div>
 
-                    <div class="space-y-4">
-                        <div v-if="servicePlans.data.length === 0" class="py-8 text-center text-muted-foreground">Paket layanan tidak ditemukan.</div>
+                    <!-- Service Plans Table -->
+                    <div v-if="servicePlans.data.length === 0" class="py-8 text-center text-muted-foreground">Paket layanan tidak ditemukan.</div>
 
-                        <div v-else class="space-y-4">
-                            <div
-                                v-for="plan in servicePlans.data"
-                                :key="plan.id"
-                                class="flex items-center justify-between rounded-lg border p-4 hover:bg-muted/30"
-                            >
-                                <div class="flex-1">
-                                    <div class="mb-2 flex items-center gap-3">
-                                        <h3 class="font-semibold">{{ plan.name }}</h3>
+                    <div v-else class="overflow-x-auto">
+                        <table class="w-full border-collapse">
+                            <thead>
+                                <tr class="border-b border-border">
+                                    <th class="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">ID</th>
+                                    <th class="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Nama</th>
+                                    <th class="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Kategori</th>
+                                    <th class="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Harga</th>
+                                    <th class="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Deskripsi</th>
+                                    <th class="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Fitur</th>
+                                    <th class="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Status</th>
+                                    <th class="px-3 py-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr
+                                    v-for="plan in servicePlans.data"
+                                    :key="plan.id"
+                                    class="border-b border-border hover:bg-muted/30 transition-colors"
+                                >
+                                    <td class="px-3 py-4 text-sm text-foreground font-medium">#{{ plan.id }}</td>
+                                    <td class="px-3 py-4 text-sm text-foreground font-medium">{{ plan.name }}</td>
+                                    <td class="px-3 py-4">
                                         <Badge :class="getCategoryColor(plan.category)" class="text-xs">
                                             {{ categories[plan.category] || plan.category }}
                                         </Badge>
+                                    </td>
+                                    <td class="px-3 py-4 text-sm text-foreground font-medium">{{ formatPrice(plan.price) }}</td>
+                                    <td class="px-3 py-4 text-sm text-muted-foreground max-w-xs truncate" :title="plan.description">
+                                        {{ plan.description || '-' }}
+                                    </td>
+                                    <td class="px-3 py-4 text-sm text-muted-foreground max-w-xs truncate">
+                                        <span v-if="plan.features && Object.keys(plan.features).length > 0" :title="Object.keys(plan.features).join(', ')">
+                                            {{ Object.keys(plan.features).join(', ') }}
+                                        </span>
+                                        <span v-else>-</span>
+                                    </td>
+                                    <td class="px-3 py-4">
                                         <span class="flex items-center gap-1 text-xs">
                                             <CheckCircle v-if="plan.is_active" class="h-3 w-3 text-green-500" />
                                             <XCircle v-else class="h-3 w-3 text-red-500" />
                                             {{ plan.is_active ? 'Aktif' : 'Nonaktif' }}
                                         </span>
-                                    </div>
-                                    <div class="space-y-1 text-sm text-muted-foreground">
-                                        <div><strong>Harga:</strong> {{ formatPrice(plan.price) }}</div>
-                                        <div v-if="plan.description"><strong>Deskripsi:</strong> {{ plan.description }}</div>
-                                        <div v-if="plan.features && Object.keys(plan.features).length > 0">
-                                            <strong>Fitur:</strong> {{ Object.keys(plan.features).join(', ') }}
+                                    </td>
+                                    <td class="px-3 py-4">
+                                        <div class="flex items-center justify-center gap-1">
+                                            <Button variant="outline" size="sm" asChild>
+                                                <Link :href="`/admin/service-plans/${plan.id}`" title="Lihat Detail">
+                                                    <Eye class="h-3 w-3" />
+                                                </Link>
+                                            </Button>
+                                            <Button size="sm" variant="outline" @click="openEditModal(plan)" class="cursor-pointer" title="Edit">
+                                                <Edit class="h-3 w-3" />
+                                            </Button>
+                                            <Button size="sm" variant="outline" @click="openDeleteModal(plan)" class="cursor-pointer" title="Hapus">
+                                                <Trash2 class="h-3 w-3" />
+                                            </Button>
                                         </div>
-                                    </div>
-                                </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
 
-                                <div class="flex items-center gap-2">
-                                    <Button variant="outline" size="sm" asChild>
-                                        <Link :href="`/admin/service-plans/${plan.id}`">
-                                            <Eye class="mr-1 h-3 w-3" />
-                                            Lihat
-                                        </Link>
-                                    </Button>
-                                    <Button size="sm" variant="outline" @click="openEditModal(plan)" class="cursor-pointer">
-                                        <Edit class="mr-1 h-3 w-3" />
-                                        Edit
-                                    </Button>
-                                    <Button size="sm" variant="outline" @click="openDeleteModal(plan)" class="cursor-pointer">
-                                        <Trash2 class="mr-1 h-3 w-3" />
-                                        Hapus
-                                    </Button>
-                                </div>
-                            </div>
+                    <!-- Pagination -->
+                    <div v-if="servicePlans.links && servicePlans.links.length > 3" class="flex items-center justify-between border-t pt-6">
+                        <div class="text-sm text-muted-foreground">
+                            Showing {{ (servicePlans.current_page - 1) * servicePlans.per_page + 1 || 0 }} to
+                            {{ Math.min(servicePlans.current_page * servicePlans.per_page, servicePlans.total) || 0 }} of
+                            {{ servicePlans.total || 0 }} results
                         </div>
-
-                        <!-- Pagination -->
-                        <div v-if="servicePlans.links && servicePlans.links.length > 3" class="flex items-center justify-between border-t pt-6">
-                            <div class="text-sm text-muted-foreground">
-                                Showing {{ (servicePlans.current_page - 1) * servicePlans.per_page + 1 || 0 }} to
-                                {{ Math.min(servicePlans.current_page * servicePlans.per_page, servicePlans.total) || 0 }} of
-                                {{ servicePlans.total || 0 }} results
-                            </div>
-                            <div class="flex items-center gap-1">
-                                <template v-for="link in servicePlans.links" :key="link.label">
-                                    <Button
-                                        v-if="link.url"
-                                        variant="outline"
-                                        size="sm"
-                                        :disabled="!link.url"
-                                        :class="link.active ? 'cursor-pointer bg-primary text-primary-foreground' : 'cursor-pointer'"
-                                        @click="router.visit(link.url)"
-                                        v-html="link.label"
-                                    />
-                                    <span v-else class="px-3 py-2 text-sm text-muted-foreground" v-html="link.label" />
-                                </template>
-                            </div>
+                        <div class="flex items-center gap-1">
+                            <template v-for="link in servicePlans.links" :key="link.label">
+                                <Button
+                                    v-if="link.url"
+                                    variant="outline"
+                                    size="sm"
+                                    :disabled="!link.url"
+                                    :class="link.active ? 'cursor-pointer bg-primary text-primary-foreground' : 'cursor-pointer'"
+                                    @click="router.visit(link.url)"
+                                    v-html="link.label"
+                                />
+                                <span v-else class="px-3 py-2 text-sm text-muted-foreground" v-html="link.label" />
+                            </template>
                         </div>
                     </div>
                 </CardContent>

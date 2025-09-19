@@ -347,80 +347,89 @@ const markAsPaid = (invoice: Invoice) => {
                         <Button @click="handleSearch" class="cursor-pointer">Search</Button>
                     </div>
 
-                    <!-- Invoice Cards -->
+                    <!-- Invoices Table -->
                     <div v-if="!invoices?.data || invoices.data.length === 0" class="py-12 text-center text-muted-foreground">
                         <FileText class="mx-auto h-12 w-12 text-muted-foreground/40" />
                         <h3 class="mt-2 text-sm font-semibold text-gray-900 dark:text-gray-100">No invoices found</h3>
                         <p class="mt-1 text-sm text-muted-foreground">Try adjusting your search criteria.</p>
                     </div>
 
-                    <div v-else class="space-y-4">
-                        <div
-                            v-for="invoice in invoices.data"
-                            :key="invoice.id"
-                            class="flex items-center justify-between rounded-lg border p-4 transition-colors hover:bg-muted/30"
-                        >
-                            <div class="min-w-0 flex-1">
-                                <div class="mb-2 flex items-center gap-3">
-                                    <h3 class="truncate text-sm font-semibold text-foreground">{{ invoice.invoice_number }}</h3>
-                                    <Badge :class="getStatusColor(invoice.status)">
-                                        {{ invoice.status }}
-                                    </Badge>
-                                    <Badge :class="getTypeColor(invoice.invoice_type)">
-                                        {{ invoice.invoice_type }}
-                                    </Badge>
-                                </div>
-                                <div class="space-y-1 text-xs text-muted-foreground">
-                                    <div class="flex items-center gap-4">
-                                        <span>{{ invoice.customer.name }}</span>
-                                        <span>{{ invoice.customer.email }}</span>
-                                    </div>
-                                    <div class="flex items-center gap-4">
-                                        <span v-if="invoice.order_id">Order #{{ invoice.order_id }}</span>
-                                        <span v-if="invoice.order?.domain_name">Domain: {{ invoice.order.domain_name }}</span>
-                                        <span v-else-if="invoice.service">Service: {{ invoice.service.domain_name }}</span>
-                                        <span>Cycle: {{ invoice.billing_cycle.replace('_', ' ') }}</span>
-                                        <span>Due: {{ formatDate(invoice.due_date) }}</span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="ml-4 flex items-center gap-6">
-                                <!-- Amount -->
-                                <div class="hidden flex-col text-right md:flex">
-                                    <div class="text-sm font-medium text-foreground">
-                                        {{ formatPrice(invoice.amount - (invoice.discount || 0)) }}
-                                    </div>
-                                    <div class="text-xs text-muted-foreground">
-                                        {{ invoice.discount && invoice.discount > 0 ? 'Final Amount' : 'Amount' }}
-                                    </div>
-                                    <div v-if="invoice.discount && invoice.discount > 0" class="text-xs text-red-500">
-                                        Potongan: {{ formatPrice(invoice.discount) }}
-                                    </div>
-                                </div>
-
-                                <!-- Actions -->
-                                <div class="flex items-center gap-2">
-                                    <Button size="sm" variant="outline" asChild>
-                                        <Link :href="`/admin/invoices/${invoice.id}`" class="cursor-pointer">
-                                            <Eye class="h-3 w-3" />
-                                        </Link>
-                                    </Button>
-                                    <Button size="sm" variant="outline" @click="openEditModal(invoice)" class="cursor-pointer">
-                                        <Edit class="h-3 w-3" />
-                                    </Button>
-                                    <Button
-                                        v-if="invoice.status !== 'paid'"
-                                        size="sm"
-                                        @click="markAsPaid(invoice)"
-                                        class="bg-green-600 hover:bg-green-700 text-white border-green-600"
-                                        title="Tandai sebagai dibayar"
-                                    >
-                                        <CheckCircle class="h-3 w-3" />
-                                    </Button>
-                                </div>
-                            </div>
-                        </div>
+                    <div v-else class="overflow-x-auto">
+                        <table class="w-full border-collapse">
+                            <thead>
+                                <tr class="border-b border-border">
+                                    <th class="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">No. Invoice</th>
+                                    <th class="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Pelanggan</th>
+                                    <th class="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Layanan</th>
+                                    <th class="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Tipe</th>
+                                    <th class="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Jumlah</th>
+                                    <th class="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Siklus</th>
+                                    <th class="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Jatuh Tempo</th>
+                                    <th class="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Status</th>
+                                    <th class="px-3 py-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr
+                                    v-for="invoice in invoices.data"
+                                    :key="invoice.id"
+                                    class="border-b border-border hover:bg-muted/30 transition-colors"
+                                >
+                                    <td class="px-3 py-4 text-sm text-foreground font-medium">{{ invoice.invoice_number }}</td>
+                                    <td class="px-3 py-4 text-sm">
+                                        <div class="font-medium text-foreground">{{ invoice.customer.name }}</div>
+                                        <div class="text-xs text-muted-foreground">{{ invoice.customer.email }}</div>
+                                    </td>
+                                    <td class="px-3 py-4 text-sm text-muted-foreground">
+                                        <div v-if="invoice.order?.domain_name">{{ invoice.order.domain_name }}</div>
+                                        <div v-else-if="invoice.service">{{ invoice.service.domain_name }}</div>
+                                        <div v-else>-</div>
+                                        <div v-if="invoice.order_id" class="text-xs text-muted-foreground">Order #{{ invoice.order_id }}</div>
+                                    </td>
+                                    <td class="px-3 py-4">
+                                        <Badge :class="getTypeColor(invoice.invoice_type)">
+                                            {{ invoice.invoice_type }}
+                                        </Badge>
+                                    </td>
+                                    <td class="px-3 py-4 text-sm">
+                                        <div class="font-medium text-foreground">
+                                            {{ formatPrice(invoice.amount - (invoice.discount || 0)) }}
+                                        </div>
+                                        <div v-if="invoice.discount && invoice.discount > 0" class="text-xs text-red-500">
+                                            Potongan: {{ formatPrice(invoice.discount) }}
+                                        </div>
+                                    </td>
+                                    <td class="px-3 py-4 text-sm text-muted-foreground">{{ invoice.billing_cycle.replace('_', ' ') }}</td>
+                                    <td class="px-3 py-4 text-sm text-muted-foreground">{{ formatDate(invoice.due_date) }}</td>
+                                    <td class="px-3 py-4">
+                                        <Badge :class="getStatusColor(invoice.status)">
+                                            {{ invoice.status }}
+                                        </Badge>
+                                    </td>
+                                    <td class="px-3 py-4">
+                                        <div class="flex items-center justify-center gap-1">
+                                            <Button size="sm" variant="outline" asChild>
+                                                <Link :href="`/admin/invoices/${invoice.id}`" class="cursor-pointer" title="Lihat Detail">
+                                                    <Eye class="h-3 w-3" />
+                                                </Link>
+                                            </Button>
+                                            <Button size="sm" variant="outline" @click="openEditModal(invoice)" class="cursor-pointer" title="Edit">
+                                                <Edit class="h-3 w-3" />
+                                            </Button>
+                                            <Button
+                                                v-if="invoice.status !== 'paid'"
+                                                size="sm"
+                                                @click="markAsPaid(invoice)"
+                                                class="bg-green-600 hover:bg-green-700 text-white border-green-600"
+                                                title="Tandai sebagai dibayar"
+                                            >
+                                                <CheckCircle class="h-3 w-3" />
+                                            </Button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
 
                     <!-- Pagination -->

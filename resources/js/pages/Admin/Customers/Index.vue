@@ -337,71 +337,69 @@ const impersonateCustomer = (customer: Customer) => {
                         <Button @click="handleSearch" class="cursor-pointer">Cari</Button>
                     </div>
 
-                    <!-- Customer Cards -->
+                    <!-- Customer Table -->
                     <div v-if="!customers?.data || customers.data.length === 0" class="py-12 text-center text-muted-foreground">
                         <Users class="mx-auto h-12 w-12 text-muted-foreground/40" />
                         <h3 class="mt-2 text-sm font-semibold text-gray-900 dark:text-gray-100">Pelanggan tidak ditemukan</h3>
                         <p class="mt-1 text-sm text-muted-foreground">Coba sesuaikan kriteria pencarian Anda.</p>
                     </div>
 
-                    <div v-else class="space-y-4">
-                        <div
-                            v-for="customer in customers.data"
-                            :key="customer.id"
-                            class="flex items-center justify-between rounded-lg border p-4 transition-colors hover:bg-muted/30"
-                        >
-                            <div class="min-w-0 flex-1">
-                                <div class="mb-2 flex items-center gap-3">
-                                    <h3 class="truncate text-sm font-semibold text-foreground">{{ customer.name }}</h3>
-                                    <span
-                                        :class="`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${getStatusClass(customer.status)}`"
-                                    >
-                                        {{ customer.status }}
-                                    </span>
-                                </div>
-                                <div class="space-y-1 text-xs text-muted-foreground">
-                                    <div class="flex items-center gap-4">
-                                        <span>{{ customer.email }}</span>
-                                        <span v-if="customer.phone">{{ customer.phone }}</span>
-                                    </div>
-                                    <div class="flex items-center gap-4">
-                                        <span>ID: #{{ customer.id }}</span>
-                                        <span>Joined: {{ formatDate(customer.created_at) }}</span>
-                                        <span v-if="customer.city">{{ customer.city }}</span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="ml-4 flex items-center gap-6">
-                                <!-- Statistics -->
-                                <div class="hidden items-center gap-4 text-xs text-muted-foreground md:flex">
-                                    <div class="text-center">
-                                        <div class="text-sm font-medium text-foreground">{{ customer.orders_count }}</div>
-                                        <div>Pesanan</div>
-                                    </div>
-                                    <div class="text-center">
-                                        <div class="text-sm font-medium text-foreground">{{ customer.services_count }}</div>
-                                        <div>Layanan</div>
-                                    </div>
-                                </div>
-
-                                <!-- Actions -->
-                                <div class="flex items-center gap-2">
-                                    <Button size="sm" variant="outline" asChild>
-                                        <Link :href="`/admin/customers/${customer.id}`"> Lihat Detail </Link>
-                                    </Button>
-                                    <Button size="sm" variant="secondary" @click="impersonateCustomer(customer)" class="cursor-pointer" :title="`Login sebagai ${customer.name}`">
-                                        <LogIn class="h-3 w-3" />
-                                    </Button>
-                                    <Button size="sm" variant="outline" @click="openEditModal(customer)" class="cursor-pointer">
-                                        <Edit class="h-3 w-3" />
-                                    </Button>
-                                    <Button size="sm" variant="outline" @click="openDeleteModal(customer)" class="cursor-pointer">
-                                        <Trash2 class="h-3 w-3" />
-                                    </Button>
-                                </div>
-                            </div>
-                        </div>
+                    <div v-else class="overflow-x-auto">
+                        <table class="w-full border-collapse">
+                            <thead>
+                                <tr class="border-b border-border">
+                                    <th class="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">ID</th>
+                                    <th class="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Nama</th>
+                                    <th class="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Email</th>
+                                    <th class="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Telepon</th>
+                                    <th class="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Kota</th>
+                                    <th class="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Status</th>
+                                    <th class="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Pesanan</th>
+                                    <th class="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Layanan</th>
+                                    <th class="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Bergabung</th>
+                                    <th class="px-3 py-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr
+                                    v-for="customer in customers.data"
+                                    :key="customer.id"
+                                    class="border-b border-border hover:bg-muted/30 transition-colors"
+                                >
+                                    <td class="px-3 py-4 text-sm text-foreground font-medium">#{{ customer.id }}</td>
+                                    <td class="px-3 py-4 text-sm text-foreground font-medium">{{ customer.name }}</td>
+                                    <td class="px-3 py-4 text-sm text-muted-foreground">{{ customer.email }}</td>
+                                    <td class="px-3 py-4 text-sm text-muted-foreground">{{ customer.phone || '-' }}</td>
+                                    <td class="px-3 py-4 text-sm text-muted-foreground">{{ customer.city || '-' }}</td>
+                                    <td class="px-3 py-4">
+                                        <span :class="`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${getStatusClass(customer.status)}`">
+                                            {{ customer.status }}
+                                        </span>
+                                    </td>
+                                    <td class="px-3 py-4 text-sm text-center font-medium text-foreground">{{ customer.orders_count }}</td>
+                                    <td class="px-3 py-4 text-sm text-center font-medium text-foreground">{{ customer.services_count }}</td>
+                                    <td class="px-3 py-4 text-sm text-muted-foreground">{{ formatDate(customer.created_at) }}</td>
+                                    <td class="px-3 py-4">
+                                        <div class="flex items-center justify-center gap-1">
+                                            <Button size="sm" variant="outline" asChild>
+                                                <Link :href="`/admin/customers/${customer.id}`" title="Lihat Detail">
+                                                    <Users class="h-3 w-3" />
+                                                </Link>
+                                            </Button>
+                                            <Button size="sm" variant="secondary" @click="impersonateCustomer(customer)" class="cursor-pointer" :title="`Login sebagai ${customer.name}`">
+                                                <LogIn class="h-3 w-3" />
+                                            </Button>
+                                            <Button size="sm" variant="outline" @click="openEditModal(customer)" class="cursor-pointer" title="Edit">
+                                                <Edit class="h-3 w-3" />
+                                            </Button>
+                                            <Button size="sm" variant="outline" @click="openDeleteModal(customer)" class="cursor-pointer" title="Hapus">
+                                                <Trash2 class="h-3 w-3" />
+                                            </Button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
 
                     <!-- Pagination -->
