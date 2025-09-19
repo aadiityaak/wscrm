@@ -7,7 +7,7 @@ import customer from '@/routes/customer';
 import { type NavItem } from '@/types';
 import { Link, router, usePage } from '@inertiajs/vue3';
 import { BookOpen, Folder, LayoutGrid, Receipt, Settings, ShoppingCart } from 'lucide-vue-next';
-import AppLogo from './AppLogo.vue';
+import AppSidebarLogo from './AppSidebarLogo.vue';
 
 const page = usePage();
 const customerBadges = page.props.customerBadges || {};
@@ -66,7 +66,7 @@ const footerNavItems: NavItem[] = [
                 <SidebarMenuItem>
                     <SidebarMenuButton size="lg" as-child>
                         <Link :href="customer.dashboard().url">
-                            <AppLogo />
+                            <AppSidebarLogo />
                         </Link>
                     </SidebarMenuButton>
                 </SidebarMenuItem>

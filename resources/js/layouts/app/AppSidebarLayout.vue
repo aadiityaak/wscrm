@@ -12,14 +12,14 @@ withDefaults(defineProps<Props>(), {
     breadcrumbs: () => [],
 });
 
-const { isMinimized } = useSidebar();
+const { isMinimized, toggleSidebar } = useSidebar();
 </script>
 
 <template>
     <div class="flex min-h-screen">
         <AppSidebar />
         <div :class="['flex flex-1 flex-col transition-all duration-300', isMinimized ? 'ml-16' : 'ml-64']">
-            <AppSidebarHeader :breadcrumbs="breadcrumbs" />
+            <AppSidebarHeader :breadcrumbs="breadcrumbs" @toggle-sidebar="toggleSidebar" />
             <main class="flex-1 p-6">
                 <slot />
             </main>

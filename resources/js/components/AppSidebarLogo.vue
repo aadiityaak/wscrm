@@ -1,13 +1,8 @@
 <script setup lang="ts">
 import AppLogoIcon from '@/components/AppLogoIcon.vue';
+import { useSidebar } from '@/components/ui/sidebar';
 
-interface Props {
-    showText?: boolean;
-}
-
-const props = withDefaults(defineProps<Props>(), {
-    showText: true,
-});
+const { state } = useSidebar();
 </script>
 
 <template>
@@ -15,7 +10,7 @@ const props = withDefaults(defineProps<Props>(), {
         <div class="flex aspect-square size-8 items-center justify-center rounded-md">
             <AppLogoIcon class="size-8 h-8 w-8" />
         </div>
-        <div v-if="showText" class="ml-2 grid flex-1 text-left text-sm transition-all duration-200">
+        <div v-show="state === 'expanded'" class="ml-2 grid flex-1 text-left text-sm transition-all duration-200">
             <span class="mb-0.5 truncate leading-tight font-semibold">WebSweetStudio</span>
         </div>
     </div>

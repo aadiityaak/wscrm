@@ -10,12 +10,15 @@ import {
     Calculator,
     ChevronDown,
     ChevronRight,
+    Clock,
+    CreditCard,
     DollarSign,
     FileText,
     Folder,
     Globe,
     LayoutGrid,
     Package,
+    Repeat,
     Server,
     ShoppingCart,
     Users,
@@ -108,6 +111,28 @@ const mainNavItems: NavItem[] = [
                 href: '/admin/banks',
                 icon: Building,
             },
+            {
+                title: 'Data Pengeluaran',
+                href: '#',
+                icon: CreditCard,
+                children: [
+                    {
+                        title: 'Bulanan',
+                        href: '/admin/expenses/monthly',
+                        icon: Repeat,
+                    },
+                    {
+                        title: 'Tahunan',
+                        href: '/admin/expenses/yearly',
+                        icon: Clock,
+                    },
+                    {
+                        title: 'Sekali Bayar',
+                        href: '/admin/expenses/one-time',
+                        icon: CreditCard,
+                    },
+                ],
+            },
         ],
     },
 ];
@@ -144,7 +169,7 @@ const footerNavItems: NavItem[] = [
         <!-- Header -->
         <div class="border-b border-border p-4">
             <Link v-if="!isMinimized" :href="dashboard()" class="flex cursor-pointer items-center gap-2">
-                <AppLogo />
+                <AppLogo :show-text="!isMinimized" />
             </Link>
             <Link v-else :href="dashboard()" class="flex cursor-pointer items-center justify-center">
                 <div class="flex aspect-square size-8 items-center justify-center rounded-md">
