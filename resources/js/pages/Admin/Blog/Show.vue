@@ -249,7 +249,7 @@ const sharePost = () => {
                         </CardHeader>
                         <CardContent>
                             <div class="prose prose-gray dark:prose-invert max-w-none">
-                                <div v-html="post.content.replace(/\n/g, '<br>')"></div>
+                                <div v-html="post.content"></div>
                             </div>
                         </CardContent>
                     </Card>

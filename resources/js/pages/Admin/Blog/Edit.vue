@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
+import RichTextEditor from '@/components/RichTextEditor.vue';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
 import { Head, router, useForm } from '@inertiajs/vue3';
@@ -241,19 +242,19 @@ const formatDate = (dateString: string) => {
                         <CardContent>
                             <div>
                                 <Label for="content">Konten *</Label>
-                                <Textarea
-                                    id="content"
-                                    v-model="form.content"
-                                    placeholder="Tulis konten artikel di sini..."
-                                    rows="15"
-                                    required
-                                    :class="{ 'border-red-500': form.errors.content }"
-                                />
+                                <div class="mt-2">
+                                    <RichTextEditor
+                                        v-model="form.content"
+                                        placeholder="Tulis konten artikel di sini..."
+                                        :height="400"
+                                        :class="{ 'border-red-500': form.errors.content }"
+                                    />
+                                </div>
                                 <div v-if="form.errors.content" class="text-red-500 text-sm mt-1">
                                     {{ form.errors.content }}
                                 </div>
                                 <p class="text-sm text-muted-foreground mt-1">
-                                    Rich text editor akan ditambahkan pada update selanjutnya
+                                    Gunakan toolbar untuk memformat teks, menambahkan link, dan styling lainnya
                                 </p>
                             </div>
                         </CardContent>

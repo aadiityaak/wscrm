@@ -24,10 +24,10 @@ const handleLogout = () => {
         <div class="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:py-8">
         <div class="flex items-center justify-between">
             <!-- Logo -->
-            <div class="flex items-center space-x-2">
+            <Link href="/" class="flex items-center space-x-2 hover:opacity-80 transition-opacity">
                 <img src="/1.png" alt="WebSweetStudio" class="h-8 w-8 object-contain" />
                 <span class="text-lg font-bold text-gray-900 sm:text-xl dark:text-white">WebsweetStudio.com</span>
-            </div>
+            </Link>
 
             <!-- Desktop Navigation -->
             <div class="hidden items-center space-x-2 md:flex">
@@ -36,6 +36,9 @@ const handleLogout = () => {
                 </Button>
                 <Button variant="ghost" size="sm" asChild>
                     <Link href="/domains">Domain</Link>
+                </Button>
+                <Button variant="ghost" size="sm" asChild>
+                    <Link href="/blog">Blog</Link>
                 </Button>
                 <template v-if="isAdmin">
                     <Button variant="outline" size="sm" asChild>
@@ -124,6 +127,9 @@ const handleLogout = () => {
                         </Button>
                         <Button variant="ghost" class="w-full justify-start" asChild>
                             <Link href="/domains" @click="mobileMenuOpen = false">Domain</Link>
+                        </Button>
+                        <Button variant="ghost" class="w-full justify-start" asChild>
+                            <Link href="/blog" @click="mobileMenuOpen = false">Blog</Link>
                         </Button>
                         <template v-if="isAdmin">
                             <Button variant="outline" class="w-full justify-start" asChild>
