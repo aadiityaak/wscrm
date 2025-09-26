@@ -97,14 +97,22 @@ class OrderController extends Controller
     {
         $order->load([
             'customer',
-            'orderItems',
+            'orderItems' => function ($query) {
+                $query->with('hostingPlan');
+            },
             'hostingPlan',
             'pendingPlan',
             'invoices',
         ]);
 
+        // Get current hosting plan to exclude from available plans
+        $currentPlan = $this->getCurrentHostingPlan($order);
+        $currentPlanId = $currentPlan ? $currentPlan->id : $order->plan_id;
+
         $availablePlans = HostingPlan::active()
-            ->where('id', '!=', $order->plan_id)
+            ->when($currentPlanId, function ($query, $currentPlanId) {
+                $query->where('id', '!=', $currentPlanId);
+            })
             ->get();
 
         return Inertia::render('Admin/Orders/Show', [
@@ -305,11 +313,17 @@ class OrderController extends Controller
 
     public function simulateUpgradeDowngrade(Order $order, Request $request)
     {
+        // Get current hosting plan from either direct relationship or order items
+        $currentPlan = $this->getCurrentHostingPlan($order);
+
+        if (!$currentPlan) {
+            return response()->json(['error' => 'No hosting plan found for this order'], 400);
+        }
+
         $request->validate([
-            'new_plan_id' => 'required|exists:hosting_plans,id|different:' . $order->plan_id,
+            'new_plan_id' => 'required|exists:hosting_plans,id|different:' . $currentPlan->id,
         ]);
 
-        $currentPlan = $order->hostingPlan;
         $newPlan = HostingPlan::findOrFail($request->new_plan_id);
 
         $remainingDays = $order->getRemainingDays();
@@ -346,8 +360,15 @@ class OrderController extends Controller
 
     public function processUpgradeDowngrade(Order $order, Request $request)
     {
+        // Get current hosting plan from either direct relationship or order items
+        $currentPlan = $this->getCurrentHostingPlan($order);
+
+        if (!$currentPlan) {
+            return redirect()->back()->with('error', 'No hosting plan found for this order');
+        }
+
         $request->validate([
-            'new_plan_id' => 'required|exists:hosting_plans,id|different:' . $order->plan_id,
+            'new_plan_id' => 'required|exists:hosting_plans,id|different:' . $currentPlan->id,
         ]);
 
         if ($order->hasPendingChange()) {
@@ -358,7 +379,6 @@ class OrderController extends Controller
             return redirect()->back()->with('error', 'Hanya layanan aktif yang dapat di-upgrade/downgrade.');
         }
 
-        $currentPlan = $order->hostingPlan;
         $newPlan = HostingPlan::findOrFail($request->new_plan_id);
 
         $remainingDays = $order->getRemainingDays();
@@ -404,5 +424,26 @@ class OrderController extends Controller
             : 'Downgrade berhasil dijadwalkan. Layanan akan berubah pada periode billing berikutnya.';
 
         return redirect()->back()->with('success', $message);
+    }
+
+    /**
+     * Get current hosting plan from order - supports both direct relationship and order items
+     */
+    private function getCurrentHostingPlan(Order $order): ?HostingPlan
+    {
+        // First try direct relationship (legacy structure)
+        if ($order->hostingPlan) {
+            return $order->hostingPlan;
+        }
+
+        // Then check order items for hosting type
+        if ($order->orderItems) {
+            $hostingItem = $order->orderItems->where('item_type', 'hosting')->first();
+            if ($hostingItem && $hostingItem->item_id) {
+                return HostingPlan::find($hostingItem->item_id);
+            }
+        }
+
+        return null;
     }
 }

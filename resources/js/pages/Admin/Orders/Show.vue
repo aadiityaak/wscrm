@@ -179,9 +179,28 @@ const getBillingCycleText = (cycle: string) => {
 const totalItemsAmount = props.order.order_items.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
 // Upgrade/Downgrade Functions
+const currentHostingPlan = computed(() => {
+    // First try direct relationship
+    if (props.order.hosting_plan) {
+        return props.order.hosting_plan;
+    }
+
+    // Then check order items for hosting type
+    if (props.order.order_items) {
+        const hostingItem = props.order.order_items.find(item => item.item_type === 'hosting');
+        if (hostingItem && hostingItem.hosting_plan) {
+            return hostingItem.hosting_plan;
+        }
+    }
+
+    return null;
+});
+
 const canUpgradeDowngrade = computed(() => {
+    const hasHostingPlan = currentHostingPlan.value !== null;
+
     return props.order.status === 'active' &&
-           props.order.hosting_plan &&
+           hasHostingPlan &&
            props.order.change_status !== 'pending' &&
            props.order.expires_at &&
            getDaysUntilExpiry(props.order.expires_at) > 0;
@@ -521,26 +540,26 @@ const processUpgradeDowngrade = () => {
                         </div>
 
                         <!-- Current Plan Info -->
-                        <div v-if="order.hosting_plan" class="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg mb-6">
+                        <div v-if="currentHostingPlan" class="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg mb-6">
                             <h3 class="font-medium mb-3">Plan Saat Ini</h3>
                             <div class="space-y-2">
                                 <div class="flex justify-between items-center">
-                                    <span class="font-semibold text-lg">{{ order.hosting_plan.plan_name }}</span>
-                                    <span class="font-bold text-blue-600 dark:text-blue-400">{{ formatPrice(order.hosting_plan.selling_price) }}/bulan</span>
+                                    <span class="font-semibold text-lg">{{ currentHostingPlan.plan_name }}</span>
+                                    <span class="font-bold text-blue-600 dark:text-blue-400">{{ formatPrice(currentHostingPlan.selling_price) }}/bulan</span>
                                 </div>
 
                                 <!-- Plan Specifications -->
                                 <div class="grid grid-cols-3 gap-4 py-3 text-sm">
                                     <div class="text-center">
-                                        <div class="font-medium text-gray-900 dark:text-gray-100">{{ order.hosting_plan.storage_gb }}GB</div>
+                                        <div class="font-medium text-gray-900 dark:text-gray-100">{{ currentHostingPlan.storage_gb }}GB</div>
                                         <div class="text-gray-500 text-xs">Storage</div>
                                     </div>
                                     <div class="text-center">
-                                        <div class="font-medium text-gray-900 dark:text-gray-100">{{ order.hosting_plan.cpu_cores }} Core</div>
+                                        <div class="font-medium text-gray-900 dark:text-gray-100">{{ currentHostingPlan.cpu_cores }} Core</div>
                                         <div class="text-gray-500 text-xs">CPU</div>
                                     </div>
                                     <div class="text-center">
-                                        <div class="font-medium text-gray-900 dark:text-gray-100">{{ order.hosting_plan.ram_gb }}GB</div>
+                                        <div class="font-medium text-gray-900 dark:text-gray-100">{{ currentHostingPlan.ram_gb }}GB</div>
                                         <div class="text-gray-500 text-xs">RAM</div>
                                     </div>
                                 </div>

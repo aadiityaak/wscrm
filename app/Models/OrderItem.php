@@ -39,11 +39,11 @@ class OrderItem extends Model
 
     public function hostingPlan(): BelongsTo
     {
-        return $this->belongsTo(HostingPlan::class, 'item_id')->where('item_type', 'hosting');
+        return $this->belongsTo(HostingPlan::class, 'item_id');
     }
 
     public function domainPrice(): BelongsTo
     {
-        return $this->belongsTo(DomainPrice::class, 'item_id')->where('item_type', 'domain');
+        return $this->belongsTo(DomainPrice::class, 'item_id');
     }
 }
