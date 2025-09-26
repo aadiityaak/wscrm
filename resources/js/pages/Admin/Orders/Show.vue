@@ -5,8 +5,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
-import { Head, Link } from '@inertiajs/vue3';
-import { AlertTriangle, Calendar, FileText, Mail, MapPin, Package, Phone, ShoppingCart } from 'lucide-vue-next';
+import { Head, Link, router } from '@inertiajs/vue3';
+import { ref, computed } from 'vue';
+import axios from 'axios';
+import { AlertTriangle, Calendar, FileText, Mail, MapPin, Package, Phone, ShoppingCart, ArrowUpDown, Loader2 } from 'lucide-vue-next';
 
 interface Customer {
     id: number;
@@ -35,6 +37,16 @@ interface Invoice {
     created_at: string;
 }
 
+interface HostingPlan {
+    id: number;
+    plan_name: string;
+    storage_gb: number;
+    cpu_cores: number;
+    ram_gb: number;
+    selling_price: number;
+    features?: string[];
+}
+
 interface Order {
     id: number;
     total_amount: number;
@@ -46,16 +58,28 @@ interface Order {
     discount_amount?: number;
     created_at: string;
     updated_at: string;
+    change_status?: 'none' | 'pending' | 'completed';
+    pending_plan_id?: number;
     customer: Customer;
     order_items: OrderItem[];
+    hosting_plan?: HostingPlan;
+    pending_plan?: HostingPlan;
     invoice?: Invoice;
 }
 
 interface Props {
     order: Order;
+    availablePlans: HostingPlan[];
 }
 
 const props = defineProps<Props>();
+
+// Upgrade/Downgrade Modal State
+const showUpgradeModal = ref(false);
+const selectedPlanId = ref<number | null>(null);
+const simulation = ref<any>(null);
+const isSimulating = ref(false);
+const isProcessing = ref(false);
 
 const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Dashboard', href: '/dashboard' },
@@ -153,6 +177,59 @@ const getBillingCycleText = (cycle: string) => {
 };
 
 const totalItemsAmount = props.order.order_items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+
+// Upgrade/Downgrade Functions
+const canUpgradeDowngrade = computed(() => {
+    return props.order.status === 'active' &&
+           props.order.hosting_plan &&
+           props.order.change_status !== 'pending' &&
+           props.order.expires_at &&
+           getDaysUntilExpiry(props.order.expires_at) > 0;
+});
+
+const openUpgradeModal = () => {
+    showUpgradeModal.value = true;
+    selectedPlanId.value = null;
+    simulation.value = null;
+};
+
+const closeUpgradeModal = () => {
+    showUpgradeModal.value = false;
+    selectedPlanId.value = null;
+    simulation.value = null;
+    isSimulating.value = false;
+    isProcessing.value = false;
+};
+
+const simulateUpgradeDowngrade = async () => {
+    if (!selectedPlanId.value) return;
+
+    isSimulating.value = true;
+    try {
+        const response = await axios.post(`/admin/orders/${props.order.id}/simulate-upgrade-downgrade`, {
+            new_plan_id: selectedPlanId.value
+        });
+        simulation.value = response.data;
+    } catch (error) {
+        console.error('Simulation error:', error);
+    } finally {
+        isSimulating.value = false;
+    }
+};
+
+const processUpgradeDowngrade = () => {
+    if (!selectedPlanId.value) return;
+
+    isProcessing.value = true;
+    router.post(`/admin/orders/${props.order.id}/process-upgrade-downgrade`, {
+        new_plan_id: selectedPlanId.value
+    }, {
+        onFinish: () => {
+            isProcessing.value = false;
+            closeUpgradeModal();
+        }
+    });
+};
 </script>
 
 <template>
@@ -165,9 +242,20 @@ const totalItemsAmount = props.order.order_items.reduce((sum, item) => sum + ite
                     <h1 class="text-3xl font-bold tracking-tight">{{ order.domain_name || `Order #${order.id}` }}</h1>
                     <p class="text-muted-foreground">Order details and customer information</p>
                 </div>
-                <Button variant="outline" asChild>
-                    <Link href="/admin/orders" class="cursor-pointer"> Back to Orders </Link>
-                </Button>
+                <div class="flex gap-3">
+                    <Button
+                        v-if="canUpgradeDowngrade"
+                        variant="outline"
+                        @click="openUpgradeModal"
+                        class="flex items-center gap-2"
+                    >
+                        <ArrowUpDown class="h-4 w-4" />
+                        Upgrade/Downgrade
+                    </Button>
+                    <Button variant="outline" asChild>
+                        <Link href="/admin/orders" class="cursor-pointer"> Back to Orders </Link>
+                    </Button>
+                </div>
             </div>
 
             <!-- Expiry Warning for Services -->
@@ -416,6 +504,118 @@ const totalItemsAmount = props.order.order_items.reduce((sum, item) => sum + ite
                     </div>
                 </CardContent>
             </Card>
+
+            <!-- Upgrade/Downgrade Modal -->
+            <div v-if="showUpgradeModal" class="fixed inset-0 z-50 flex items-center justify-center">
+                <!-- Backdrop -->
+                <div class="fixed inset-0 bg-black/50" @click="closeUpgradeModal"></div>
+
+                <!-- Modal Content -->
+                <div class="relative bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 dark:bg-gray-900">
+                    <div class="p-6">
+                        <div class="flex items-center justify-between mb-6">
+                            <h2 class="text-xl font-semibold">Upgrade/Downgrade Layanan</h2>
+                            <Button variant="ghost" size="sm" @click="closeUpgradeModal">
+                                ×
+                            </Button>
+                        </div>
+
+                        <!-- Current Plan Info -->
+                        <div v-if="order.hosting_plan" class="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg mb-6">
+                            <h3 class="font-medium mb-2">Plan Saat Ini</h3>
+                            <div class="space-y-1 text-sm">
+                                <p><strong>{{ order.hosting_plan.plan_name }}</strong> - {{ formatPrice(order.hosting_plan.selling_price) }}/bulan</p>
+                                <p class="text-gray-600 dark:text-gray-400">
+                                    Berakhir: {{ order.expires_at ? formatDate(order.expires_at) : '-' }}
+                                </p>
+                                <p class="text-gray-600 dark:text-gray-400">
+                                    Sisa: {{ order.expires_at ? getDaysUntilExpiry(order.expires_at) : 0 }} hari
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- New Plan Selection -->
+                        <div class="mb-6">
+                            <label class="block text-sm font-medium mb-2">Pilih Plan Baru:</label>
+                            <select
+                                v-model="selectedPlanId"
+                                @change="simulateUpgradeDowngrade"
+                                class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            >
+                                <option value="">Pilih plan baru...</option>
+                                <option
+                                    v-for="plan in availablePlans"
+                                    :key="plan.id"
+                                    :value="plan.id"
+                                >
+                                    {{ plan.plan_name }} - {{ formatPrice(plan.selling_price) }}/bulan
+                                    ({{ plan.storage_gb }}GB, {{ plan.cpu_cores }} CPU, {{ plan.ram_gb }}GB RAM)
+                                </option>
+                            </select>
+                        </div>
+
+                        <!-- Cost Simulation -->
+                        <div v-if="isSimulating" class="flex items-center justify-center py-8">
+                            <Loader2 class="h-6 w-6 animate-spin" />
+                            <span class="ml-2">Menghitung biaya...</span>
+                        </div>
+
+                        <div v-else-if="simulation" class="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg mb-6">
+                            <h4 class="font-medium mb-3">Simulasi Biaya:</h4>
+                            <div class="space-y-2 text-sm">
+                                <div class="flex justify-between">
+                                    <span>{{ simulation.current_plan.name }} ({{ simulation.calculation.remaining_days }} hari):</span>
+                                    <span>{{ formatPrice(simulation.current_plan.prorated_amount) }}</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span>{{ simulation.new_plan.name }} ({{ simulation.calculation.remaining_days }} hari):</span>
+                                    <span>{{ formatPrice(simulation.new_plan.prorated_amount) }}</span>
+                                </div>
+                                <hr class="my-2">
+                                <div class="flex justify-between font-bold">
+                                    <span v-if="simulation.calculation.is_upgrade">Total Tambahan:</span>
+                                    <span v-else-if="simulation.calculation.is_downgrade">Total Penghematan:</span>
+                                    <span v-else>Tidak ada perubahan biaya</span>
+
+                                    <span :class="simulation.calculation.is_upgrade ? 'text-red-600' : simulation.calculation.is_downgrade ? 'text-green-600' : ''">
+                                        {{ simulation.calculation.cost_difference > 0 ? '+' : '' }}{{ formatPrice(simulation.calculation.cost_difference) }}
+                                    </span>
+                                </div>
+                            </div>
+
+                            <!-- Warning for Downgrade -->
+                            <div v-if="simulation.calculation.is_downgrade" class="mt-3 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded-lg">
+                                <p class="text-sm text-yellow-800 dark:text-yellow-200">
+                                    ⚠️ <strong>Perhatian:</strong> Downgrade tidak ada refund. Penghematan akan diterapkan pada billing period berikutnya.
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Actions -->
+                        <div class="flex gap-3">
+                            <Button
+                                @click="processUpgradeDowngrade"
+                                :disabled="!selectedPlanId || isProcessing"
+                                class="flex-1"
+                            >
+                                <Loader2 v-if="isProcessing" class="h-4 w-4 animate-spin mr-2" />
+                                <template v-if="simulation?.calculation.is_upgrade">
+                                    Buat Invoice Upgrade
+                                </template>
+                                <template v-else-if="simulation?.calculation.is_downgrade">
+                                    Proses Downgrade
+                                </template>
+                                <template v-else>
+                                    Proses Perubahan
+                                </template>
+                            </Button>
+                            <Button variant="outline" @click="closeUpgradeModal" :disabled="isProcessing">
+                                Batal
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </AppLayout>
 </template>

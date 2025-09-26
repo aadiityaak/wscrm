@@ -16,10 +16,13 @@ class Order extends Model
         'customer_id',
         'service_type',
         'plan_id',
+        'pending_plan_id',
         'domain_name',
         'total_amount',
         'discount_amount',
         'status',
+        'change_status',
+        'change_requested_at',
         'billing_cycle',
         'expires_at',
         'auto_renew',
@@ -34,6 +37,7 @@ class Order extends Model
             'discount_amount' => 'decimal:2',
             'expires_at' => 'date',
             'next_billing_date' => 'date',
+            'change_requested_at' => 'datetime',
             'auto_renew' => 'boolean',
             'metadata' => 'array',
         ];
@@ -47,6 +51,11 @@ class Order extends Model
     public function hostingPlan(): BelongsTo
     {
         return $this->belongsTo(HostingPlan::class, 'plan_id');
+    }
+
+    public function pendingPlan(): BelongsTo
+    {
+        return $this->belongsTo(HostingPlan::class, 'pending_plan_id');
     }
 
     public function orderItems(): HasMany
@@ -120,5 +129,42 @@ class Order extends Model
     public function isRecurring(): bool
     {
         return $this->billing_cycle !== 'onetime';
+    }
+
+    // Upgrade/Downgrade helpers
+    public function hasPendingChange(): bool
+    {
+        return $this->change_status === 'pending' && $this->pending_plan_id !== null;
+    }
+
+    public function getRemainingDays(): int
+    {
+        if (!$this->expires_at) {
+            return 0;
+        }
+        return max(0, $this->expires_at->diffInDays(Carbon::now()));
+    }
+
+    public function getTotalBillingDays(): int
+    {
+        return match($this->billing_cycle) {
+            'monthly' => 30,
+            'quarterly' => 90,
+            'semi_annually' => 180,
+            'annually' => 365,
+            default => 30
+        };
+    }
+
+    public function calculateProRatedAmount(float $planPrice): float
+    {
+        $remainingDays = $this->getRemainingDays();
+        $totalDays = $this->getTotalBillingDays();
+
+        if ($totalDays <= 0) {
+            return 0;
+        }
+
+        return ($remainingDays / $totalDays) * $planPrice;
     }
 }

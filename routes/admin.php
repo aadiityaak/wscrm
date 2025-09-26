@@ -16,6 +16,8 @@ use Illuminate\Support\Facades\Route;
 Route::prefix('admin')->name('admin.')->middleware(['auth', 'verified'])->group(function () {
     Route::resource('customers', CustomerController::class)->only(['index', 'show', 'store', 'update', 'destroy']);
     Route::resource('orders', OrderController::class)->only(['index', 'show', 'store', 'update', 'destroy']);
+    Route::post('orders/{order}/simulate-upgrade-downgrade', [OrderController::class, 'simulateUpgradeDowngrade'])->name('orders.simulate-upgrade-downgrade');
+    Route::post('orders/{order}/process-upgrade-downgrade', [OrderController::class, 'processUpgradeDowngrade'])->name('orders.process-upgrade-downgrade');
 
     // Legacy service routes redirect to orders with services view
     Route::get('services', function () {

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Customer;
 use App\Models\DomainPrice;
 use App\Models\HostingPlan;
+use App\Models\Invoice;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\ServicePlan;
@@ -98,11 +99,17 @@ class OrderController extends Controller
             'customer',
             'orderItems',
             'hostingPlan',
+            'pendingPlan',
             'invoices',
         ]);
 
+        $availablePlans = HostingPlan::active()
+            ->where('id', '!=', $order->plan_id)
+            ->get();
+
         return Inertia::render('Admin/Orders/Show', [
             'order' => $order,
+            'availablePlans' => $availablePlans,
         ]);
     }
 
@@ -292,6 +299,109 @@ class OrderController extends Controller
         });
 
         $message = $order->isOrder() ? 'Pesanan berhasil dihapus!' : 'Layanan berhasil dihapus!';
+
+        return redirect()->back()->with('success', $message);
+    }
+
+    public function simulateUpgradeDowngrade(Order $order, Request $request)
+    {
+        $request->validate([
+            'new_plan_id' => 'required|exists:hosting_plans,id|different:' . $order->plan_id,
+        ]);
+
+        $currentPlan = $order->hostingPlan;
+        $newPlan = HostingPlan::findOrFail($request->new_plan_id);
+
+        $remainingDays = $order->getRemainingDays();
+        $totalDays = $order->getTotalBillingDays();
+
+        if ($totalDays <= 0) {
+            return response()->json(['error' => 'Invalid billing cycle'], 400);
+        }
+
+        $currentPlanProrated = $order->calculateProRatedAmount($currentPlan->selling_price);
+        $newPlanProrated = $order->calculateProRatedAmount($newPlan->selling_price);
+        $costDifference = $newPlanProrated - $currentPlanProrated;
+
+        return response()->json([
+            'current_plan' => [
+                'name' => $currentPlan->plan_name,
+                'price' => $currentPlan->selling_price,
+                'prorated_amount' => round($currentPlanProrated, 2),
+            ],
+            'new_plan' => [
+                'name' => $newPlan->plan_name,
+                'price' => $newPlan->selling_price,
+                'prorated_amount' => round($newPlanProrated, 2),
+            ],
+            'calculation' => [
+                'remaining_days' => $remainingDays,
+                'total_days' => $totalDays,
+                'cost_difference' => round($costDifference, 2),
+                'is_upgrade' => $costDifference > 0,
+                'is_downgrade' => $costDifference < 0,
+            ],
+        ]);
+    }
+
+    public function processUpgradeDowngrade(Order $order, Request $request)
+    {
+        $request->validate([
+            'new_plan_id' => 'required|exists:hosting_plans,id|different:' . $order->plan_id,
+        ]);
+
+        if ($order->hasPendingChange()) {
+            return redirect()->back()->with('error', 'Order ini sudah memiliki perubahan pending.');
+        }
+
+        if (!$order->isService() || $order->status !== 'active') {
+            return redirect()->back()->with('error', 'Hanya layanan aktif yang dapat di-upgrade/downgrade.');
+        }
+
+        $currentPlan = $order->hostingPlan;
+        $newPlan = HostingPlan::findOrFail($request->new_plan_id);
+
+        $remainingDays = $order->getRemainingDays();
+        if ($remainingDays <= 0) {
+            return redirect()->back()->with('error', 'Tidak dapat melakukan perubahan pada layanan yang sudah habis masa berlakunya.');
+        }
+
+        $currentPlanProrated = $order->calculateProRatedAmount($currentPlan->selling_price);
+        $newPlanProrated = $order->calculateProRatedAmount($newPlan->selling_price);
+        $costDifference = $newPlanProrated - $currentPlanProrated;
+
+        DB::transaction(function () use ($order, $request, $costDifference, $currentPlan, $newPlan, $remainingDays) {
+            // Update order with pending change
+            $order->update([
+                'pending_plan_id' => $request->new_plan_id,
+                'change_status' => 'pending',
+                'change_requested_at' => now(),
+            ]);
+
+            // Only generate invoice for upgrades (costDifference > 0)
+            if ($costDifference > 0) {
+                // Generate upgrade invoice
+                $invoiceNumber = 'INV-UPG-' . now()->format('Ymd') . '-' . str_pad($order->id, 4, '0', STR_PAD_LEFT);
+
+                Invoice::create([
+                    'customer_id' => $order->customer_id,
+                    'order_id' => $order->id,
+                    'invoice_number' => $invoiceNumber,
+                    'invoice_type' => 'upgrade',
+                    'amount' => round($costDifference, 2),
+                    'discount' => 0,
+                    'issue_date' => now()->toDateString(),
+                    'due_date' => now()->addDays(7)->toDateString(),
+                    'status' => 'pending',
+                    'billing_cycle' => $order->billing_cycle,
+                    'notes' => "Upgrade dari {$currentPlan->plan_name} ke {$newPlan->plan_name} - Sisa {$remainingDays} hari",
+                ]);
+            }
+        });
+
+        $message = $costDifference > 0
+            ? 'Invoice upgrade berhasil dibuat. Layanan akan berubah setelah pembayaran.'
+            : 'Downgrade berhasil dijadwalkan. Layanan akan berubah pada periode billing berikutnya.';
 
         return redirect()->back()->with('success', $message);
     }
