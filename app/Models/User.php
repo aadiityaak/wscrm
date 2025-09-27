@@ -3,10 +3,14 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Mail\UserCredentialMail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Str;
 
 class User extends Authenticatable
 {
@@ -99,5 +103,32 @@ class User extends Authenticatable
         return static::where('email', $login)
             ->orWhere('username', $login)
             ->first();
+    }
+
+    /**
+     * Send user credentials via email.
+     */
+    public function sendCredentials(string $newPassword = null): bool
+    {
+        try {
+            // Generate temporary password if not provided
+            $temporaryPassword = $newPassword ?? Str::random(12);
+
+            // Update user password
+            $this->update([
+                'password' => Hash::make($temporaryPassword)
+            ]);
+
+            // Send email with credentials
+            Mail::to($this->email)->send(new UserCredentialMail($this, $temporaryPassword));
+
+            return true;
+        } catch (\Exception $e) {
+            \Log::error('Failed to send user credentials', [
+                'user_id' => $this->id,
+                'error' => $e->getMessage()
+            ]);
+            return false;
+        }
     }
 }
