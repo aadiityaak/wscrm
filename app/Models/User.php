@@ -21,6 +21,7 @@ class User extends Authenticatable
     protected $fillable = [
         'name',
         'email',
+        'username',
         'password',
         'role',
     ];
@@ -80,5 +81,23 @@ class User extends Authenticatable
     public function isAdmin(): bool
     {
         return in_array($this->role, ['admin', 'super_admin']);
+    }
+
+    /**
+     * Get the name of the unique identifier for the user.
+     */
+    public function getAuthIdentifierName(): string
+    {
+        return 'email';
+    }
+
+    /**
+     * Find user by username or email for authentication.
+     */
+    public static function findByUsernameOrEmail(string $login): ?User
+    {
+        return static::where('email', $login)
+            ->orWhere('username', $login)
+            ->first();
     }
 }
