@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Hash;
 
 class SuperAdminSeeder extends Seeder
 {
@@ -15,7 +16,7 @@ class SuperAdminSeeder extends Seeder
         \App\Models\User::create([
             'name' => 'Super Admin',
             'email' => 'superadmin@example.com',
-            'password' => 'password',
+            'password' => Hash::make('password'),
             'role' => 'super_admin',
             'email_verified_at' => now(),
         ]);
