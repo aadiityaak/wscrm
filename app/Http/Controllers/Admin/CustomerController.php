@@ -152,7 +152,7 @@ class CustomerController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:customers,email,'.$customer->id,
-            'username' => 'nullable|string|max:255|unique:customers,username,'.$customer->id,
+            'username' => 'nullable|string|min:5|max:255|regex:/^[a-zA-Z0-9_]+$/|unique:customers,username,'.$customer->id,
             'phone' => 'nullable|string|max:20',
             'address' => 'nullable|string|max:500',
             'city' => 'nullable|string|max:100',

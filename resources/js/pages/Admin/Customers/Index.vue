@@ -8,7 +8,7 @@ import { dashboard } from '@/routes';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import { Clock, Edit, LogIn, Plus, Search, Trash2, UserCheck, Users, UserX, X, ChevronUp, ChevronDown } from 'lucide-vue-next';
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
 
 interface Customer {
     id: number;
@@ -52,6 +52,11 @@ const showEditModal = ref(false);
 const showDeleteModal = ref(false);
 const selectedCustomer = ref<Customer | null>(null);
 const customerToDelete = ref<Customer | null>(null);
+
+// Username checking state
+const usernameStatus = ref<'idle' | 'checking' | 'available' | 'unavailable'>('idle');
+const usernameMessage = ref('');
+let usernameDebounceTimer: number;
 
 const createForm = useForm({
     name: '',
@@ -169,8 +174,53 @@ const openEditModal = (customer: Customer) => {
     // Clear password fields explicitly when editing
     editForm.password = '';
     editForm.password_confirmation = '';
+    // Reset username status
+    usernameStatus.value = 'idle';
+    usernameMessage.value = '';
     showEditModal.value = true;
 };
+
+// Username availability checking
+const checkUsernameAvailability = async (username: string, excludeId?: number) => {
+    if (!username || username.length < 3) {
+        usernameStatus.value = 'idle';
+        usernameMessage.value = '';
+        return;
+    }
+
+    usernameStatus.value = 'checking';
+    usernameMessage.value = 'Mengecek ketersediaan...';
+
+    try {
+        const params = new URLSearchParams({ username });
+        if (excludeId) {
+            params.append('exclude_id', excludeId.toString());
+        }
+
+        const response = await fetch(`/api/customer/username/check?${params}`);
+        const data = await response.json();
+
+        usernameStatus.value = data.available ? 'available' : 'unavailable';
+        usernameMessage.value = data.message;
+    } catch (error) {
+        console.error('Error checking username availability:', error);
+        usernameStatus.value = 'idle';
+        usernameMessage.value = '';
+    }
+};
+
+// Watch for username changes in edit form
+watch(() => editForm.username, (newValue) => {
+    clearTimeout(usernameDebounceTimer);
+    if (newValue && newValue.length >= 3) {
+        usernameDebounceTimer = setTimeout(() => {
+            checkUsernameAvailability(newValue, selectedCustomer.value?.id);
+        }, 500);
+    } else {
+        usernameStatus.value = 'idle';
+        usernameMessage.value = '';
+    }
+});
 
 const submitEdit = () => {
     if (!selectedCustomer.value) return;
@@ -413,6 +463,19 @@ const getSortIcon = (field: string) => {
                                             <component
                                                 :is="getSortIcon('email')"
                                                 v-if="getSortIcon('email')"
+                                                class="h-3 w-3"
+                                            />
+                                        </button>
+                                    </th>
+                                    <th class="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                                        <button
+                                            @click="sortBy('username')"
+                                            class="flex items-center space-x-1 hover:text-primary cursor-pointer"
+                                        >
+                                            <span>Username</span>
+                                            <component
+                                                :is="getSortIcon('username')"
+                                                v-if="getSortIcon('username')"
                                                 class="h-3 w-3"
                                             />
                                         </button>
@@ -708,16 +771,40 @@ const getSortIcon = (field: string) => {
                     </div>
                     <div class="grid grid-cols-2 gap-4">
                         <div>
-                            <Label for="edit-username">Username</Label>
-                            <Input
-                                id="edit-username"
-                                type="text"
-                                autocomplete="username"
-                                v-model="editForm.username"
-                                :class="{ 'border-red-500': editForm.errors.username }"
-                                placeholder="Username (opsional)"
-                            />
+                            <Label for="edit-username">Username (minimal 5 karakter)</Label>
+                            <div class="relative">
+                                <Input
+                                    id="edit-username"
+                                    type="text"
+                                    autocomplete="username"
+                                    v-model="editForm.username"
+                                    :class="{
+                                        'border-red-500': editForm.errors.username || usernameStatus === 'unavailable',
+                                        'border-green-500': usernameStatus === 'available',
+                                        'border-yellow-500': usernameStatus === 'checking'
+                                    }"
+                                    placeholder="Username (opsional, minimal 5 karakter)"
+                                />
+                                <div v-if="usernameStatus === 'checking'" class="absolute right-3 top-1/2 transform -translate-y-1/2">
+                                    <div class="animate-spin h-4 w-4 border-2 border-blue-600 border-t-transparent rounded-full"></div>
+                                </div>
+                                <div v-else-if="usernameStatus === 'available'" class="absolute right-3 top-1/2 transform -translate-y-1/2">
+                                    <svg class="h-4 w-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                                    </svg>
+                                </div>
+                                <div v-else-if="usernameStatus === 'unavailable'" class="absolute right-3 top-1/2 transform -translate-y-1/2">
+                                    <svg class="h-4 w-4 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                    </svg>
+                                </div>
+                            </div>
                             <p v-if="editForm.errors.username" class="mt-1 text-xs text-red-500">{{ editForm.errors.username }}</p>
+                            <p v-else-if="usernameMessage" class="mt-1 text-xs" :class="{
+                                'text-green-600': usernameStatus === 'available',
+                                'text-red-600': usernameStatus === 'unavailable',
+                                'text-blue-600': usernameStatus === 'checking'
+                            }">{{ usernameMessage }}</p>
                         </div>
                         <div>
                             <!-- Kosong untuk spacing -->

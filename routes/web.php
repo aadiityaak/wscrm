@@ -30,6 +30,9 @@ Route::post('/api/domains/availability', [App\Http\Controllers\DomainPriceContro
 Route::get('/api/username/check', [App\Http\Controllers\Api\UsernameController::class, 'checkAvailability'])
     ->name('api.username.check');
 
+Route::get('/api/customer/username/check', [App\Http\Controllers\Api\CustomerUsernameController::class, 'checkAvailability'])
+    ->name('api.customer.username.check');
+
 Route::get('dashboard', [App\Http\Controllers\DashboardController::class, 'index'])
     ->middleware(['auth'])
     ->name('dashboard');
