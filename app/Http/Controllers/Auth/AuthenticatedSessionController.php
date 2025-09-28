@@ -43,8 +43,7 @@ class AuthenticatedSessionController extends Controller
 
         \Log::info('Login successful, akan redirect');
 
-        // Temporary: jangan regenerate session dulu untuk debug
-        // $request->session()->regenerate();
+        $request->session()->regenerate();
 
         return redirect()->route('dashboard');
     }

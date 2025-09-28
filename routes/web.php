@@ -31,7 +31,7 @@ Route::get('/api/username/check', [App\Http\Controllers\Api\UsernameController::
     ->name('api.username.check');
 
 Route::get('dashboard', [App\Http\Controllers\DashboardController::class, 'index'])
-    ->middleware(['auth', 'verified'])
+    ->middleware(['auth'])
     ->name('dashboard');
 
 Route::get('admin', function () {

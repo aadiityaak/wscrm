@@ -45,18 +45,31 @@ class LoginRequest extends FormRequest
         $login = $this->input('login');
         $password = $this->input('password');
 
-        $user = User::findByUsernameOrEmail($login);
+        // Try to authenticate with email first
+        $credentials = [
+            'email' => $login,
+            'password' => $password,
+        ];
 
-        if (! $user || ! Hash::check($password, $user->password)) {
-            RateLimiter::hit($this->throttleKey());
-
-            throw ValidationException::withMessages([
-                'login' => 'Email/Username atau password salah.',
-            ]);
+        if (Auth::attempt($credentials, $this->boolean('remember'))) {
+            RateLimiter::clear($this->throttleKey());
+            return;
         }
 
-        Auth::login($user, $this->boolean('remember'));
-        RateLimiter::clear($this->throttleKey());
+        // If email auth fails, try with username
+        $user = User::where('username', $login)->first();
+
+        if ($user && Hash::check($password, $user->password)) {
+            Auth::login($user, $this->boolean('remember'));
+            RateLimiter::clear($this->throttleKey());
+            return;
+        }
+
+        RateLimiter::hit($this->throttleKey());
+
+        throw ValidationException::withMessages([
+            'login' => 'Email/Username atau password salah.',
+        ]);
     }
 
     /**

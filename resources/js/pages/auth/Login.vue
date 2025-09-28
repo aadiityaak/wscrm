@@ -15,9 +15,18 @@ import { computed } from 'vue';
 defineProps<{
     status?: string;
     canResetPassword: boolean;
+    csrf_token?: string;
 }>();
 
 const page = usePage();
+
+const csrfToken = computed(() => {
+    // Get CSRF token from Inertia props
+    if (page.props.csrf_token) {
+        return page.props.csrf_token;
+    }
+    return '';
+});
 </script>
 
 <template>
@@ -35,6 +44,8 @@ const page = usePage();
             v-slot="{ errors, processing }"
             class="flex flex-col gap-6"
         >
+            <!-- CSRF Token -->
+            <input type="hidden" name="_token" :value="csrfToken" />
 
             <div class="grid gap-6">
                 <div class="grid gap-2">

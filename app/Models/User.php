@@ -87,13 +87,6 @@ class User extends Authenticatable
         return in_array($this->role, ['admin', 'super_admin']);
     }
 
-    /**
-     * Get the name of the unique identifier for the user.
-     */
-    public function getAuthIdentifierName(): string
-    {
-        return 'email';
-    }
 
     /**
      * Find user by username or email for authentication.
