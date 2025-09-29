@@ -153,7 +153,10 @@
       "WebFetch(domain:app.websweetstudio.com)",
       "Bash(python:*)",
       "mcp__laravel-boost__read-log-entries",
-      "Bash(/dev/null)"
+      "Bash(/dev/null)",
+      "Bash(netstat:*)",
+      "Bash(findstr:*)",
+      "Bash(taskkill:*)"
     ],
     "deny": [],
     "ask": []

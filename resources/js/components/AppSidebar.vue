@@ -17,6 +17,7 @@ import {
     Globe,
     LayoutGrid,
     Package,
+    Palette,
     PenTool,
     Server,
     ShoppingCart,
@@ -158,6 +159,11 @@ const mainNavItems: NavItem[] = [
         href: '#',
         icon: DollarSign,
         children: getFinancialChildren(),
+    },
+    {
+        title: 'Branding',
+        href: '/admin/branding',
+        icon: Palette,
     },
 ];
 

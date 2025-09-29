@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\BankController;
 use App\Http\Controllers\Admin\BlogController;
+use App\Http\Controllers\Admin\BrandingController;
 use App\Http\Controllers\Admin\BulkPricingController;
 use App\Http\Controllers\Admin\CustomerController;
 use App\Http\Controllers\Admin\DomainPriceController;
@@ -57,4 +58,10 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'verified'])->group(
 
     // User Credential Management
     Route::post('users/{user}/send-credentials', [UserCredentialController::class, 'sendCredentials'])->name('users.send-credentials');
+
+    // Branding Settings
+    Route::get('branding', [BrandingController::class, 'index'])->name('branding.index');
+    Route::patch('branding', [BrandingController::class, 'update'])->name('branding.update');
+    Route::post('branding/upload-image', [BrandingController::class, 'uploadImage'])->name('branding.upload-image');
+    Route::delete('branding/delete-image', [BrandingController::class, 'deleteImage'])->name('branding.delete-image');
 });
