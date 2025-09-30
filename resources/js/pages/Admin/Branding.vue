@@ -59,19 +59,31 @@
                   </label>
                   <p class="text-sm text-gray-500">{{ setting.description }}</p>
 
-                  <!-- Current Image Preview (dari database) -->
-                  <div v-if="setting.value && !imagePreviews[setting.key]" class="space-y-3">
-                    <div class="relative w-32 h-32 border-2 border-gray-200 rounded-lg overflow-hidden">
+                  <!-- Current Image Preview (dari database atau placeholder) -->
+                  <div v-if="!imagePreviews[setting.key]" class="space-y-3">
+                    <div class="relative w-32 h-32 border-2 border-gray-200 rounded-lg overflow-hidden bg-gray-50">
+                      <!-- Image yang tersimpan di database -->
                       <img
+                        v-if="setting.value"
                         :src="setting.value"
                         :alt="getSettingLabel(setting.key)"
                         class="w-full h-full object-contain"
                       />
+                      <!-- Placeholder jika belum ada image -->
+                      <div v-else class="w-full h-full flex items-center justify-center">
+                        <div class="text-center">
+                          <svg class="w-8 h-8 text-gray-400 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                          </svg>
+                          <p class="text-xs text-gray-500">Belum ada gambar</p>
+                        </div>
+                      </div>
                     </div>
                     <div class="text-xs text-gray-600">
-                      Gambar saat ini
+                      {{ setting.value ? 'Gambar saat ini' : 'Preview akan tampil di sini' }}
                     </div>
                     <button
+                      v-if="setting.value"
                       type="button"
                       @click="deleteImage(setting.key)"
                       :disabled="form.processing"
@@ -274,8 +286,18 @@ const submitSettings = () => {
     settings: settingsArray,
   })).patch('/admin/branding', {
     preserveScroll: true,
-    onSuccess: () => {
+    onSuccess: (page) => {
       success('Berhasil', 'Pengaturan branding berhasil diperbarui')
+
+      // Update props dengan data terbaru dari server
+      if (page.props.settings) {
+        Object.assign(props.settings, page.props.settings)
+
+        // Update form dengan data terbaru
+        Object.values(page.props.settings).flat().forEach((setting) => {
+          form.settings[setting.key] = setting.value
+        })
+      }
     },
     onError: (errors) => {
       console.error('Form submission errors:', errors)

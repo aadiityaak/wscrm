@@ -15,8 +15,10 @@ class BrandingController extends Controller
     {
         $settings = BrandingSetting::getAllActive()->groupBy('type');
 
+        // Add timestamp to force fresh data
         return Inertia::render('Admin/Branding', [
             'settings' => $settings,
+            'timestamp' => now()->timestamp,
         ]);
     }
 
@@ -39,7 +41,13 @@ class BrandingController extends Controller
             }
         }
 
-        return redirect()->back()->with('success', 'Pengaturan branding berhasil diperbarui.');
+        // Reload fresh data after update
+        $settings = BrandingSetting::getAllActive()->groupBy('type');
+
+        return Inertia::render('Admin/Branding', [
+            'settings' => $settings,
+            'timestamp' => now()->timestamp,
+        ])->with('success', 'Pengaturan branding berhasil diperbarui.');
     }
 
     public function uploadImage(Request $request)
