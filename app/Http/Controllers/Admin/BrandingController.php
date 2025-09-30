@@ -35,9 +35,13 @@ class BrandingController extends Controller
             $setting = BrandingSetting::where('key', $settingData['key'])->first();
 
             if ($setting) {
-                $setting->update([
-                    'value' => $settingData['value'],
-                ]);
+                // Skip updating image settings from form submission
+                // Images are handled separately via uploadImage endpoint
+                if ($setting->type !== 'image') {
+                    $setting->update([
+                        'value' => $settingData['value'],
+                    ]);
+                }
             }
         }
 

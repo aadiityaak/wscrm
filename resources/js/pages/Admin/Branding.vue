@@ -276,11 +276,14 @@ const getSettingLabel = (key: string): string => {
 }
 
 const submitSettings = () => {
-  const settingsArray = Object.values(props.settings).flat().map((setting) => ({
-    key: setting.key,
-    value: form.settings[setting.key],
-    type: setting.type,
-  }))
+  // Filter out image settings - they are handled separately via upload endpoints
+  const settingsArray = Object.values(props.settings).flat()
+    .filter((setting) => setting.type !== 'image')
+    .map((setting) => ({
+      key: setting.key,
+      value: form.settings[setting.key],
+      type: setting.type,
+    }))
 
   form.transform((data) => ({
     settings: settingsArray,
@@ -392,6 +395,13 @@ const uploadPreviewImage = async (key: string) => {
       return
     }
 
+    // Check if response is JSON
+    const contentType = response.headers.get('content-type')
+    if (!contentType || !contentType.includes('application/json')) {
+      error('Server error', 'Server mengembalikan response yang tidak valid')
+      return
+    }
+
     const data = await response.json()
 
     if (data.success) {
@@ -449,6 +459,13 @@ const deleteImage = async (key: string) => {
       } else {
         error('Terjadi kesalahan', `Server error: ${response.status}`)
       }
+      return
+    }
+
+    // Check if response is JSON
+    const contentType = response.headers.get('content-type')
+    if (!contentType || !contentType.includes('application/json')) {
+      error('Server error', 'Server mengembalikan response yang tidak valid')
       return
     }
 
