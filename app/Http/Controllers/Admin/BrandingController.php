@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\BrandingSetting;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
@@ -11,11 +12,13 @@ use Inertia\Inertia;
 
 class BrandingController extends Controller
 {
+    /**
+     * Display branding settings page
+     */
     public function index()
     {
         $settings = BrandingSetting::getAllActive()->groupBy('type');
 
-        // Add timestamp to force fresh data
         return Inertia::render('Admin/Branding', [
             'settings' => $settings,
             'timestamp' => now()->timestamp,
@@ -25,47 +28,34 @@ class BrandingController extends Controller
     /**
      * Share branding settings with all views
      */
-    public static function shareBrandingSettings()
+    public static function shareBrandingSettings(): void
     {
-        $brandingSettings = [];
-        $settings = BrandingSetting::getAllActive();
-
-        foreach ($settings as $setting) {
-            $brandingSettings[$setting->key] = $setting->value;
-        }
+        $brandingSettings = BrandingSetting::getAllActive()
+            ->pluck('value', 'key')
+            ->toArray();
 
         Inertia::share('brandingSettings', $brandingSettings);
     }
 
+    /**
+     * Update non-image settings only
+     * Image settings are handled separately via dedicated endpoints
+     */
     public function update(Request $request)
     {
         $validated = $request->validate([
             'settings' => 'required|array',
-            'settings.*.key' => 'required|string',
+            'settings.*.key' => 'required|string|exists:branding_settings,key',
             'settings.*.value' => 'nullable|string',
-            'settings.*.type' => ['required', Rule::in(['text', 'textarea', 'color', 'image'])],
+            'settings.*.type' => ['required', Rule::in(['text', 'textarea', 'color'])],
         ]);
 
-        foreach ($validated['settings'] as $settingData) {
-            $setting = BrandingSetting::where('key', $settingData['key'])->first();
-
-            if ($setting) {
-                if ($setting->type === 'image') {
-                    // For image settings, only update if value is explicitly provided
-                    // Don't overwrite existing image URLs with null
-                    if ($settingData['value'] !== null) {
-                        $setting->update([
-                            'value' => $settingData['value'],
-                        ]);
-                    }
-                } else {
-                    // Update non-image settings normally
-                    $setting->update([
-                        'value' => $settingData['value'],
-                    ]);
-                }
-            }
-        }
+        // Only update non-image settings
+        collect($validated['settings'])->each(function (array $settingData): void {
+            BrandingSetting::where('key', $settingData['key'])
+                ->where('type', '!=', 'image')
+                ->update(['value' => $settingData['value']]);
+        });
 
         // Reload fresh data after update
         $settings = BrandingSetting::getAllActive()->groupBy('type');
@@ -76,46 +66,38 @@ class BrandingController extends Controller
         ])->with('success', 'Pengaturan branding berhasil diperbarui.');
     }
 
-    public function uploadImage(Request $request)
+    /**
+     * Upload image and update branding setting
+     */
+    public function uploadImage(Request $request): JsonResponse
     {
-        // Ensure JSON response for validation errors
         $request->headers->set('Accept', 'application/json');
 
         try {
             $validated = $request->validate([
-                'image' => 'required|image|mimes:jpeg,png,jpg,gif,svg|max:5120', // 5MB
-                'key' => 'required|string',
+                'image' => 'required|image|mimes:jpeg,png,jpg,gif,svg|max:5120',
+                'key' => 'required|string|exists:branding_settings,key',
             ]);
 
-            if ($request->hasFile('image')) {
-                // Find existing setting to delete old image
-                $existingSetting = BrandingSetting::where('key', $validated['key'])->first();
-                if ($existingSetting && $existingSetting->value) {
-                    // Delete old image file from storage
-                    $oldImagePath = str_replace('/storage/', '', $existingSetting->value);
-                    if (Storage::disk('public')->exists($oldImagePath)) {
-                        Storage::disk('public')->delete($oldImagePath);
-                    }
-                }
+            $setting = BrandingSetting::where('key', $validated['key'])
+                ->where('type', 'image')
+                ->firstOrFail();
 
-                $image = $request->file('image');
-                $filename = time().'_'.$image->getClientOriginalName();
-                $path = $image->storeAs('branding', $filename, 'public');
+            // Delete old image if exists
+            $this->deleteImageFile($setting->value);
 
-                // Update the setting with the new image path
-                BrandingSetting::setValue($validated['key'], '/storage/'.$path);
+            // Upload new image
+            $path = $validated['image']->store('branding', 'public');
+            $publicPath = Storage::url($path);
 
-                return response()->json([
-                    'success' => true,
-                    'path' => '/storage/'.$path,
-                    'message' => 'Gambar berhasil diupload.',
-                ]);
-            }
+            // Update setting
+            $setting->update(['value' => $publicPath]);
 
             return response()->json([
-                'success' => false,
-                'message' => 'Gagal mengupload gambar.',
-            ], 400);
+                'success' => true,
+                'path' => $publicPath,
+                'message' => 'Gambar berhasil diupload.',
+            ]);
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json([
                 'success' => false,
@@ -130,38 +112,32 @@ class BrandingController extends Controller
         }
     }
 
-    public function deleteImage(Request $request)
+    /**
+     * Delete image and clear branding setting
+     */
+    public function deleteImage(Request $request): JsonResponse
     {
-        // Ensure JSON response for validation errors
         $request->headers->set('Accept', 'application/json');
 
         try {
             $validated = $request->validate([
-                'key' => 'required|string',
+                'key' => 'required|string|exists:branding_settings,key',
             ]);
 
-            $setting = BrandingSetting::where('key', $validated['key'])->first();
+            $setting = BrandingSetting::where('key', $validated['key'])
+                ->where('type', 'image')
+                ->firstOrFail();
 
-            if ($setting && $setting->value) {
-                // Delete the file from storage
-                $imagePath = str_replace('/storage/', '', $setting->value);
-                if (Storage::disk('public')->exists($imagePath)) {
-                    Storage::disk('public')->delete($imagePath);
-                }
+            // Delete file
+            $this->deleteImageFile($setting->value);
 
-                // Clear the setting value
-                $setting->update(['value' => null]);
-
-                return response()->json([
-                    'success' => true,
-                    'message' => 'Gambar berhasil dihapus.',
-                ]);
-            }
+            // Clear setting
+            $setting->update(['value' => null]);
 
             return response()->json([
-                'success' => false,
-                'message' => 'Gambar tidak ditemukan.',
-            ], 404);
+                'success' => true,
+                'message' => 'Gambar berhasil dihapus.',
+            ]);
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json([
                 'success' => false,
@@ -173,6 +149,22 @@ class BrandingController extends Controller
                 'success' => false,
                 'message' => 'Terjadi kesalahan: '.$e->getMessage(),
             ], 500);
+        }
+    }
+
+    /**
+     * Helper method to delete image file from storage
+     */
+    private function deleteImageFile(?string $imagePath): void
+    {
+        if (empty($imagePath)) {
+            return;
+        }
+
+        $relativePath = str_replace('/storage/', '', $imagePath);
+
+        if (Storage::disk('public')->exists($relativePath)) {
+            Storage::disk('public')->delete($relativePath);
         }
     }
 }

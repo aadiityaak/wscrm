@@ -94,7 +94,7 @@
                     </button>
                   </div>
 
-                  <!-- New Image Preview -->
+                  <!-- New Image Preview (Auto Uploading) -->
                   <div v-if="imagePreviews[setting.key]" class="space-y-3">
                     <div class="relative w-32 h-32 border-2 border-blue-300 rounded-lg overflow-hidden">
                       <img
@@ -112,18 +112,8 @@
                         </button>
                       </div>
                     </div>
-                    <div class="flex items-center justify-between">
-                      <div class="text-xs text-blue-600">
-                        Preview gambar baru - belum disimpan
-                      </div>
-                      <button
-                        type="button"
-                        @click="uploadPreviewImage(setting.key)"
-                        :disabled="form.processing"
-                        class="text-xs bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded disabled:opacity-50"
-                      >
-                        Upload
-                      </button>
+                    <div class="text-xs text-blue-600">
+                      📤 {{ uploadingImages[setting.key] ? 'Mengupload gambar...' : 'Memproses...' }}
                     </div>
                   </div>
 
@@ -227,14 +217,13 @@ const form = useForm({
 
 // Preview functionality
 const imagePreviews = ref<Record<string, string>>({})
-const pendingFiles = ref<Record<string, File>>({})
+const uploadingImages = ref<Record<string, boolean>>({})
 
 const createImagePreview = (file: File, key: string) => {
   const reader = new FileReader()
   reader.onload = (e) => {
     if (e.target?.result) {
       imagePreviews.value[key] = e.target.result as string
-      pendingFiles.value[key] = file
     }
   }
   reader.readAsDataURL(file)
@@ -243,9 +232,6 @@ const createImagePreview = (file: File, key: string) => {
 const clearImagePreview = (key: string) => {
   if (imagePreviews.value[key]) {
     delete imagePreviews.value[key]
-  }
-  if (pendingFiles.value[key]) {
-    delete pendingFiles.value[key]
   }
 }
 
@@ -297,11 +283,12 @@ const handleImageError = (event: Event) => {
 }
 
 const submitSettings = () => {
-  // Include all settings but for image settings, send existing value to prevent null override
+  // Only submit non-image settings - image settings handled via dedicated endpoints
   const settingsArray = Object.values(props.settings).flat()
+    .filter((setting) => setting.type !== 'image')
     .map((setting) => ({
       key: setting.key,
-      value: setting.type === 'image' ? setting.value : form.settings[setting.key],
+      value: form.settings[setting.key],
       type: setting.type,
     }))
 
@@ -309,18 +296,8 @@ const submitSettings = () => {
     settings: settingsArray,
   })).patch('/admin/branding', {
     preserveScroll: true,
-    onSuccess: (page) => {
+    onSuccess: () => {
       success('Berhasil', 'Pengaturan branding berhasil diperbarui')
-
-      // Update props dengan data terbaru dari server
-      if (page.props.settings) {
-        Object.assign(props.settings, page.props.settings)
-
-        // Update form dengan data terbaru
-        Object.values(page.props.settings).flat().forEach((setting) => {
-          form.settings[setting.key] = setting.value
-        })
-      }
     },
     onError: (errors) => {
       console.error('Form submission errors:', errors)
@@ -344,7 +321,7 @@ const resetForm = () => {
   })
 }
 
-const handleImageUpload = (event: Event, key: string) => {
+const handleImageUpload = async (event: Event, key: string) => {
   const target = event.target as HTMLInputElement
   const file = target.files?.[0]
 
@@ -371,16 +348,16 @@ const handleImageUpload = (event: Event, key: string) => {
   // Create preview immediately
   createImagePreview(file, key)
 
+  // Auto upload immediately after file selection
+  await uploadImageImmediately(file, key)
+
   // Clear the input so same file can be selected again
   target.value = ''
 }
 
-const uploadPreviewImage = async (key: string) => {
-  const file = pendingFiles.value[key]
-  if (!file) {
-    error('File tidak ditemukan', 'Silakan pilih file lagi')
-    return
-  }
+const uploadImageImmediately = async (file: File, key: string) => {
+  // Set loading state
+  uploadingImages.value[key] = true
 
   const formData = new FormData()
   formData.append('image', file)
@@ -425,7 +402,7 @@ const uploadPreviewImage = async (key: string) => {
     const data = await response.json()
 
     if (data.success) {
-      // Update the setting value and form
+      // Update the form data
       form.settings[key] = data.path
 
       // Update the settings prop for reactive display
@@ -446,6 +423,9 @@ const uploadPreviewImage = async (key: string) => {
   } catch (uploadError) {
     console.error('Upload error:', uploadError)
     error('Terjadi kesalahan', 'Terjadi kesalahan saat mengupload gambar')
+  } finally {
+    // Clear loading state
+    uploadingImages.value[key] = false
   }
 }
 
