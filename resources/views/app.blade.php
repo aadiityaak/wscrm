@@ -34,9 +34,9 @@
         <title inertia>{{ config('app.name', 'WebSweetStudio') }}</title>
 
         {{-- Default favicon - will be updated dynamically with JavaScript --}}
-        <link rel="icon" href="/1.png" sizes="any">
-        <link rel="icon" href="/1.png" type="image/png">
-        <link rel="apple-touch-icon" href="/1.png">
+        <link rel="icon" href="{{ $brandingSettings['app_favicon'] ?? '/1.png' }}" sizes="any">
+        <link rel="icon" href="{{ $brandingSettings['app_favicon'] ?? '/1.png' }}" type="image/png">
+        <link rel="apple-touch-icon" href="{{ $brandingSettings['app_favicon'] ?? '/1.png' }}">
 
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600" rel="stylesheet" />

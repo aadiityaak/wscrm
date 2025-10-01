@@ -7,6 +7,36 @@ import type { DefineComponent } from 'vue';
 import { createApp, h } from 'vue';
 import { initializeTheme } from './composables/useAppearance';
 
+// Function to initialize favicon from branding settings
+function initializeFavicon() {
+    // Check if we have branding settings with favicon
+    if ((window as any).brandingSettings) {
+        const faviconUrl = (window as any).brandingSettings.app_favicon;
+        
+        if (faviconUrl) {
+            // Update or create favicon link elements
+            const updateFavicon = (href: string, rel: string, type?: string) => {
+                let link = document.querySelector(`link[rel="${rel}"]`) as HTMLLinkElement;
+                if (!link) {
+                    link = document.createElement('link');
+                    link.rel = rel;
+                    document.head.appendChild(link);
+                }
+                link.href = href;
+                if (type) {
+                    link.type = type;
+                }
+            };
+
+            // Update all favicon variants
+            updateFavicon(faviconUrl, 'icon', 'image/x-icon');
+            updateFavicon(faviconUrl, 'icon', 'image/png');
+            updateFavicon(faviconUrl, 'shortcut icon');
+            updateFavicon(faviconUrl, 'apple-touch-icon');
+        }
+    }
+}
+
 // Setup CSRF token for axios
 const token = document.head.querySelector('meta[name="csrf-token"]') as HTMLMetaElement;
 if (token) {
@@ -61,3 +91,6 @@ createInertiaApp({
 
 // This will set light / dark mode on page load...
 initializeTheme();
+
+// Initialize favicon from branding settings
+initializeFavicon();

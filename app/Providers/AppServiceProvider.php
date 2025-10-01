@@ -33,5 +33,17 @@ class AppServiceProvider extends ServiceProvider
 
             return $brandingSettings;
         });
+
+        // Share branding settings with all Blade views
+        view()->share('brandingSettings', function () {
+            $brandingSettings = [];
+            $settings = BrandingSetting::getAllActive();
+
+            foreach ($settings as $setting) {
+                $brandingSettings[$setting->key] = $setting->value;
+            }
+
+            return $brandingSettings;
+        });
     }
 }
