@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { computed } from 'vue';
+import { usePage } from '@inertiajs/vue3';
 import AppLogoIcon from '@/components/AppLogoIcon.vue';
 
 interface Props {
@@ -8,6 +10,17 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), {
     showText: true,
 });
+
+interface BrandingSettings {
+    app_name?: string;
+}
+
+const page = usePage();
+const brandingSettings = computed<BrandingSettings>(() => (page.props.brandingSettings as BrandingSettings) || {});
+
+const appName = computed(() => {
+    return brandingSettings.value.app_name || 'WebSweetStudio';
+});
 </script>
 
 <template>
@@ -15,8 +28,8 @@ const props = withDefaults(defineProps<Props>(), {
         <div class="flex aspect-square size-8 items-center justify-center rounded-md">
             <AppLogoIcon class="size-8 h-8 w-8" />
         </div>
-        <div v-if="showText" class="ml-2 grid flex-1 text-left text-sm transition-all duration-200">
-            <span class="mb-0.5 truncate leading-tight font-semibold">WebSweetStudio</span>
+        <div v-if="props.showText" class="ml-2 grid flex-1 text-left text-sm transition-all duration-200">
+            <span class="mb-0.5 truncate leading-tight font-semibold">{{ appName }}</span>
         </div>
     </div>
 </template>

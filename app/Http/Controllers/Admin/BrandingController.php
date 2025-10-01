@@ -22,6 +22,21 @@ class BrandingController extends Controller
         ]);
     }
 
+    /**
+     * Share branding settings with all views
+     */
+    public static function shareBrandingSettings()
+    {
+        $brandingSettings = [];
+        $settings = BrandingSetting::getAllActive();
+        
+        foreach ($settings as $setting) {
+            $brandingSettings[$setting->key] = $setting->value;
+        }
+        
+        Inertia::share('brandingSettings', $brandingSettings);
+    }
+
     public function update(Request $request)
     {
         $validated = $request->validate([

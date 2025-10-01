@@ -68,6 +68,7 @@
                         :src="setting.value"
                         :alt="getSettingLabel(setting.key)"
                         class="w-full h-full object-contain"
+                        @error="handleImageError"
                       />
                       <!-- Placeholder jika belum ada image -->
                       <div v-else class="w-full h-full flex items-center justify-center">
@@ -193,7 +194,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useForm } from '@inertiajs/vue3'
 import AppLayout from '@/layouts/AppLayout.vue'
 import { useToast } from '@/composables/useToast'
@@ -275,6 +276,26 @@ const getSettingLabel = (key: string): string => {
   return settingLabels[key] || key
 }
 
+const handleImageError = (event: Event) => {
+  const img = event.target as HTMLImageElement
+  img.style.display = 'none'
+  // Optionally show a placeholder or error message
+  const parent = img.parentElement
+  if (parent) {
+    const placeholder = document.createElement('div')
+    placeholder.className = 'w-full h-full flex items-center justify-center bg-gray-100'
+    placeholder.innerHTML = `
+      <div class="text-center">
+        <svg class="w-8 h-8 text-gray-400 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+        </svg>
+        <p class="text-xs text-gray-500">Gambar tidak dapat dimuat</p>
+      </div>
+    `
+    parent.appendChild(placeholder)
+  }
+}
+
 const submitSettings = () => {
   // Filter out image settings - they are handled separately via upload endpoints
   const settingsArray = Object.values(props.settings).flat()
@@ -285,7 +306,7 @@ const submitSettings = () => {
       type: setting.type,
     }))
 
-  form.transform((data) => ({
+  form.transform(() => ({
     settings: settingsArray,
   })).patch('/admin/branding', {
     preserveScroll: true,
