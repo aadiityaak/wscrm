@@ -65,10 +65,13 @@ router.on('error', (event) => {
     }
 });
 
-const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
-
 createInertiaApp({
-    title: (title) => (title ? `${title} - ${appName}` : appName),
+    title: (title) => {
+        // Get app name from branding settings or use default
+        const brandingAppName = (window as any).brandingSettings?.app_name;
+        const appName = brandingAppName || import.meta.env.VITE_APP_NAME || 'Laravel';
+        return title ? `${title} - ${appName}` : appName;
+    },
     resolve: (name) => resolvePageComponent(`./pages/${name}.vue`, import.meta.glob<DefineComponent>('./pages/**/*.vue')),
     setup({ el, App, props, plugin }) {
         createApp({ render: () => h(App, props) })

@@ -31,9 +31,9 @@
             }
         </style>
 
-        <title inertia>{{ config('app.name', 'WebSweetStudio') }}</title>
+        <title inertia>{{ $brandingSettings['app_name'] ?? config('app.name', 'WebSweetStudio') }}</title>
 
-        {{-- Default favicon - will be updated dynamically with JavaScript --}}
+        {{-- Favicon from branding settings with fallback to default --}}
         <link rel="icon" href="{{ $brandingSettings['app_favicon'] ?? '/1.png' }}" sizes="any">
         <link rel="icon" href="{{ $brandingSettings['app_favicon'] ?? '/1.png' }}" type="image/png">
         <link rel="apple-touch-icon" href="{{ $brandingSettings['app_favicon'] ?? '/1.png' }}">
