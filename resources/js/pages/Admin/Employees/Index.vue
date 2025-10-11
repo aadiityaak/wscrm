@@ -391,19 +391,19 @@ const resetPassword = (employee: Employee) => {
                                     <td class="px-3 py-4 text-sm text-muted-foreground">{{ formatDate(employee.hire_date) }}</td>
                                     <td class="px-3 py-4">
                                         <div class="flex items-center justify-center gap-1">
-                                            <Button size="sm" variant="outline" asChild>
-                                                <Link :href="`/admin/employees/${employee.id}`" title="Lihat Detail">
-                                                    <Users class="h-3 w-3" />
+                                            <Button size="sm" variant="outline" asChild class="cursor-pointer" title="Lihat Detail">
+                                                <Link :href="`/admin/employees/${employee.id}`">
+                                                    <Users class="h-3.5 w-3.5" />
                                                 </Link>
                                             </Button>
-                                            <Button size="sm" variant="secondary" @click="resetPassword(employee)" class="cursor-pointer" title="Reset Password">
-                                                <Key class="h-3 w-3" />
+                                            <Button size="sm" variant="outline" @click="resetPassword(employee)" class="cursor-pointer" title="Reset Password">
+                                                <Key class="h-3.5 w-3.5" />
                                             </Button>
                                             <Button size="sm" variant="outline" @click="openEditModal(employee)" class="cursor-pointer" title="Edit">
-                                                <Edit class="h-3 w-3" />
+                                                <Edit class="h-3.5 w-3.5" />
                                             </Button>
-                                            <Button size="sm" variant="outline" @click="openDeleteModal(employee)" class="cursor-pointer" title="Hapus">
-                                                <Trash2 class="h-3 w-3" />
+                                            <Button size="sm" variant="outline" @click="openDeleteModal(employee)" class="cursor-pointer text-red-600 hover:text-red-700 hover:bg-red-50" title="Hapus">
+                                                <Trash2 class="h-3.5 w-3.5" />
                                             </Button>
                                         </div>
                                     </td>

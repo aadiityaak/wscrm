@@ -146,14 +146,9 @@ const getStatusClass = (status: string) => {
 
     <AppLayout :breadcrumbs="breadcrumbs">
         <div class="space-y-6">
-            <div class="flex items-center justify-between">
-                <div>
-                    <h1 class="text-3xl font-bold tracking-tight">{{ customer.name }}</h1>
-                    <p class="text-muted-foreground">Customer details and activity</p>
-                </div>
-                <Button variant="outline" asChild>
-                    <Link :href="`/admin/customers`" class="cursor-pointer"> Back to Customers </Link>
-                </Button>
+            <div>
+                <h1 class="text-3xl font-bold tracking-tight">{{ customer.name }}</h1>
+                <p class="text-muted-foreground">Customer details and activity</p>
             </div>
 
             <!-- Customer Information -->

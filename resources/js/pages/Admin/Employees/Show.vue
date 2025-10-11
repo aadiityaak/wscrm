@@ -127,7 +127,7 @@ const deleteEmployee = () => {
                     <p class="text-sm sm:text-base text-muted-foreground">Detail informasi karyawan</p>
                 </div>
                 <div class="flex gap-2">
-                    <Button variant="secondary" @click="resetPassword" class="cursor-pointer">
+                    <Button variant="outline" @click="resetPassword" class="cursor-pointer">
                         <Key class="mr-2 h-4 w-4" />
                         Reset Password
                     </Button>
@@ -137,7 +137,7 @@ const deleteEmployee = () => {
                             Edit
                         </Link>
                     </Button>
-                    <Button variant="outline" @click="deleteEmployee" class="cursor-pointer text-red-600 hover:text-red-700">
+                    <Button variant="outline" @click="deleteEmployee" class="cursor-pointer text-red-600 hover:text-red-700 hover:bg-red-50">
                         <Trash2 class="mr-2 h-4 w-4" />
                         Hapus
                     </Button>

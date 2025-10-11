@@ -570,19 +570,19 @@ const getSortIcon = (field: string) => {
                                     <td class="px-3 py-4 text-sm text-muted-foreground">{{ formatDate(customer.created_at) }}</td>
                                     <td class="px-3 py-4">
                                         <div class="flex items-center justify-center gap-1">
-                                            <Button size="sm" variant="outline" asChild>
-                                                <Link :href="`/admin/customers/${customer.id}`" title="Lihat Detail">
-                                                    <Users class="h-3 w-3" />
+                                            <Button size="sm" variant="outline" asChild class="cursor-pointer" title="Lihat Detail">
+                                                <Link :href="`/admin/customers/${customer.id}`">
+                                                    <Users class="h-3.5 w-3.5" />
                                                 </Link>
                                             </Button>
                                             <Button size="sm" variant="secondary" @click="impersonateCustomer(customer)" class="cursor-pointer" :title="`Login sebagai ${customer.name}`">
-                                                <LogIn class="h-3 w-3" />
+                                                <LogIn class="h-3.5 w-3.5" />
                                             </Button>
                                             <Button size="sm" variant="outline" @click="openEditModal(customer)" class="cursor-pointer" title="Edit">
-                                                <Edit class="h-3 w-3" />
+                                                <Edit class="h-3.5 w-3.5" />
                                             </Button>
-                                            <Button size="sm" variant="outline" @click="openDeleteModal(customer)" class="cursor-pointer" title="Hapus">
-                                                <Trash2 class="h-3 w-3" />
+                                            <Button size="sm" variant="outline" @click="openDeleteModal(customer)" class="cursor-pointer text-red-600 hover:text-red-700 hover:bg-red-50" title="Hapus">
+                                                <Trash2 class="h-3.5 w-3.5" />
                                             </Button>
                                         </div>
                                     </td>
