@@ -156,7 +156,8 @@
       "Bash(/dev/null)",
       "Bash(netstat:*)",
       "Bash(findstr:*)",
-      "Bash(taskkill:*)"
+      "Bash(taskkill:*)",
+      "Bash(git rm:*)"
     ],
     "deny": [],
     "ask": []
