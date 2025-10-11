@@ -43,8 +43,51 @@
 import { cva } from 'class-variance-authority'
 import { cn } from '@/lib/utils'
 import { useToast } from '@/composables/useToast'
+import { usePage } from '@inertiajs/vue3'
+import { watchEffect } from 'vue'
 
-const { toasts, removeToast } = useToast()
+const { toasts, removeToast, success, error } = useToast()
+const page = usePage()
+
+// Handle flash messages from server
+watchEffect(() => {
+  const flash = (page.props as any).flash
+
+  if (flash?.toast) {
+    const toast = flash.toast
+    const variant = toast.type === 'error' ? 'destructive' : toast.type === 'success' ? 'success' : 'default'
+
+    addToast({
+      title: toast.title,
+      description: toast.message,
+      variant
+    })
+  } else if (flash?.error) {
+    error('Error', flash.error)
+  } else if (flash?.success) {
+    success('Success', flash.success)
+  }
+})
+
+const addToast = (toast: Omit<ToastItem, 'id'>) => {
+  const id = `toast-${Date.now()}`
+  const newToast: ToastItem = {
+    id,
+    duration: 5000,
+    ...toast,
+  }
+
+  toasts.value.push(newToast)
+
+  // Auto remove toast after duration
+  if (newToast.duration && newToast.duration > 0) {
+    setTimeout(() => {
+      removeToast(id)
+    }, newToast.duration)
+  }
+
+  return id
+}
 
 const toastVariants = cva(
   'border bg-background text-foreground',

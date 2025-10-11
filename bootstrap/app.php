@@ -37,6 +37,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'guest' => \App\Http\Middleware\RedirectIfAuthenticated::class,
             'auth' => \App\Http\Middleware\Authenticate::class,
             'admin' => EnsureAdmin::class,
+            'admin.auth' => \App\Http\Middleware\AdminAuthorization::class,
             'super_admin' => \App\Http\Middleware\EnsureSuperAdmin::class,
             'no.cache' => NoCacheMiddleware::class,
         ]);

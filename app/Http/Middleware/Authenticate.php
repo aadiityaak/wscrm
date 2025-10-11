@@ -17,6 +17,11 @@ class Authenticate extends Middleware
                 return route('customer.login');
             }
 
+            // Check if this is an admin route
+            if ($request->is('admin/*') || $request->is('admin')) {
+                return route('login');
+            }
+
             // Default admin login
             return route('login');
         }

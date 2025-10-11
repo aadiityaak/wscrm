@@ -66,6 +66,11 @@ class HandleInertiaRequests extends Middleware
             ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
             'customerBadges' => $customerBadges,
+            'flash' => [
+                'toast' => $request->session()->get('toast'),
+                'error' => $request->session()->get('error'),
+                'success' => $request->session()->get('success'),
+            ],
         ];
     }
 }
