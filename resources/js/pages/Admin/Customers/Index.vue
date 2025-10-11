@@ -575,7 +575,7 @@ const getSortIcon = (field: string) => {
                                                     <Users class="h-3.5 w-3.5" />
                                                 </Link>
                                             </Button>
-                                            <Button size="sm" variant="secondary" @click="impersonateCustomer(customer)" class="cursor-pointer" :title="`Login sebagai ${customer.name}`">
+                                            <Button size="sm" @click="impersonateCustomer(customer)" class="cursor-pointer bg-blue-600 hover:bg-blue-700 text-white" :title="`Login sebagai ${customer.name}`">
                                                 <LogIn class="h-3.5 w-3.5" />
                                             </Button>
                                             <Button size="sm" variant="outline" @click="openEditModal(customer)" class="cursor-pointer" title="Edit">

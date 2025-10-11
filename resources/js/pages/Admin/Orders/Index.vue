@@ -749,25 +749,17 @@ const getSortIcon = (field: string) => {
                                     </td>
                                     <td class="py-3 text-sm text-muted-foreground">{{ formatDate(order.created_at) }}</td>
                                     <td class="py-3">
-                                        <div class="flex items-center justify-center space-x-2">
-                                            <Link :href="`/admin/orders/${order.id}`">
-                                                <Button variant="ghost" size="sm">
-                                                    <Package class="h-4 w-4" />
-                                                </Button>
-                                            </Link>
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                @click="openEditModal(order)"
-                                            >
-                                                <Edit class="h-4 w-4" />
+                                        <div class="flex items-center justify-center gap-1">
+                                            <Button size="sm" variant="outline" asChild class="cursor-pointer" title="Lihat Detail">
+                                                <Link :href="`/admin/orders/${order.id}`">
+                                                    <Package class="h-3.5 w-3.5" />
+                                                </Link>
                                             </Button>
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                @click="confirmDelete(order)"
-                                            >
-                                                <Trash2 class="h-4 w-4" />
+                                            <Button size="sm" variant="outline" @click="openEditModal(order)" class="cursor-pointer" title="Edit">
+                                                <Edit class="h-3.5 w-3.5" />
+                                            </Button>
+                                            <Button size="sm" variant="outline" @click="confirmDelete(order)" class="cursor-pointer text-red-600 hover:text-red-700 hover:bg-red-50" title="Hapus">
+                                                <Trash2 class="h-3.5 w-3.5" />
                                             </Button>
                                         </div>
                                     </td>
