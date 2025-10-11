@@ -32,3 +32,4 @@ yarn-error.log
 # UI components (generated)
 /resources/js/components/ui/
 /test-extract.claude/settings.json
+/.claude/

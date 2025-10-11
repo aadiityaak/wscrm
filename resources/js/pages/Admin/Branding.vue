@@ -1,29 +1,56 @@
 <template>
   <AppLayout>
     <div class="max-w-6xl mx-auto p-6">
-      <div class="bg-white rounded-lg shadow-sm border border-gray-200">
-        <div class="p-6 border-b border-gray-200">
-          <h1 class="text-2xl font-semibold text-gray-900">Pengaturan Branding</h1>
-          <p class="text-sm text-gray-600 mt-1">
+      <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+        <div class="p-6 border-b border-gray-200 dark:border-gray-700">
+          <h1 class="text-2xl font-semibold text-gray-900 dark:text-white">Pengaturan Branding</h1>
+          <p class="text-sm text-gray-600 dark:text-gray-300 mt-1">
             Kelola logo, warna, dan identitas visual aplikasi
           </p>
+
+          <!-- Dark Mode Toggle -->
+          <div class="mt-4">
+            <div class="flex items-center justify-between">
+              <div>
+                <h3 class="text-sm font-medium text-gray-900 dark:text-white">Tampilan Mode</h3>
+                <p class="text-xs text-gray-500 dark:text-gray-400">Pilih preferensi tampilan untuk aplikasi</p>
+              </div>
+              <div class="inline-flex gap-1 rounded-lg bg-neutral-100 dark:bg-neutral-800 p-1">
+                <button
+                  v-for="{ value, Icon, label } in themeTabs"
+                  :key="value"
+                  @click="updateTheme(value)"
+                  :class="[
+                    'flex items-center rounded-md px-3 py-1.5 transition-colors',
+                    currentTheme === value
+                      ? 'bg-white dark:bg-neutral-700 dark:text-neutral-100 shadow-xs'
+                      : 'text-neutral-500 hover:bg-neutral-200/60 hover:text-black dark:text-neutral-400 dark:hover:bg-neutral-700/60',
+                  ]"
+                  :title="label"
+                >
+                  <component :is="Icon" class="h-4 w-4" />
+                  <span class="ml-1.5 text-sm">{{ label }}</span>
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
 
         <form @submit.prevent="submitSettings" class="p-6">
           <div class="space-y-8">
             <!-- Identitas Aplikasi -->
             <div v-if="settings.text?.length" class="space-y-6">
-              <h2 class="text-lg font-medium text-gray-900">Identitas Aplikasi</h2>
+              <h2 class="text-lg font-medium text-gray-900 dark:text-white">Identitas Aplikasi</h2>
               <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div v-for="setting in settings.text" :key="setting.key" class="space-y-2">
-                  <label :for="setting.key" class="block text-sm font-medium text-gray-700">
+                  <label :for="setting.key" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
                     {{ getSettingLabel(setting.key) }}
                   </label>
                   <input
                     :id="setting.key"
                     v-model="form.settings[setting.key]"
                     type="text"
-                    class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm px-4 py-2"
+                    class="block w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm px-4 py-2"
                     :placeholder="setting.description"
                   />
                 </div>
@@ -32,17 +59,17 @@
 
             <!-- Textarea Settings -->
             <div v-if="settings.textarea?.length" class="space-y-6">
-              <h2 class="text-lg font-medium text-gray-900">Informasi Perusahaan</h2>
+              <h2 class="text-lg font-medium text-gray-900 dark:text-white">Informasi Perusahaan</h2>
               <div class="space-y-6">
                 <div v-for="setting in settings.textarea" :key="setting.key" class="space-y-2">
-                  <label :for="setting.key" class="block text-sm font-medium text-gray-700">
+                  <label :for="setting.key" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
                     {{ getSettingLabel(setting.key) }}
                   </label>
                   <textarea
                     :id="setting.key"
                     v-model="form.settings[setting.key]"
                     rows="3"
-                    class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm px-4 py-2"
+                    class="block w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm px-4 py-2"
                     :placeholder="setting.description"
                   ></textarea>
                 </div>
@@ -51,17 +78,17 @@
 
             <!-- Logo dan Gambar -->
             <div v-if="settings.image?.length" class="space-y-6">
-              <h2 class="text-lg font-medium text-gray-900">Logo dan Gambar</h2>
+              <h2 class="text-lg font-medium text-gray-900 dark:text-white">Logo dan Gambar</h2>
               <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div v-for="setting in settings.image" :key="setting.key" class="space-y-4">
-                  <label class="block text-sm font-medium text-gray-700">
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
                     {{ getSettingLabel(setting.key) }}
                   </label>
-                  <p class="text-sm text-gray-500">{{ setting.description }}</p>
+                  <p class="text-sm text-gray-500 dark:text-gray-400">{{ setting.description }}</p>
 
                   <!-- Current Image Preview (dari database atau placeholder) -->
                   <div v-if="!imagePreviews[setting.key]" class="space-y-3">
-                    <div class="relative w-32 h-32 border-2 border-gray-200 rounded-lg overflow-hidden bg-gray-50">
+                    <div class="relative w-32 h-32 border-2 border-gray-200 dark:border-gray-600 rounded-lg overflow-hidden bg-gray-50 dark:bg-gray-700">
                       <!-- Image yang tersimpan di database -->
                       <img
                         v-if="setting.value"
@@ -73,14 +100,14 @@
                       <!-- Placeholder jika belum ada image -->
                       <div v-else class="w-full h-full flex items-center justify-center">
                         <div class="text-center">
-                          <svg class="w-8 h-8 text-gray-400 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <svg class="w-8 h-8 text-gray-400 dark:text-gray-500 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
                           </svg>
-                          <p class="text-xs text-gray-500">Belum ada gambar</p>
+                          <p class="text-xs text-gray-500 dark:text-gray-400">Belum ada gambar</p>
                         </div>
                       </div>
                     </div>
-                    <div class="text-xs text-gray-600">
+                    <div class="text-xs text-gray-600 dark:text-gray-400">
                       {{ setting.value ? 'Gambar saat ini' : 'Preview akan tampil di sini' }}
                     </div>
                     <button
@@ -88,7 +115,7 @@
                       type="button"
                       @click="deleteImage(setting.key)"
                       :disabled="form.processing"
-                      class="text-sm text-red-600 hover:text-red-800 disabled:opacity-50"
+                      class="text-sm text-red-600 hover:text-red-800 dark:text-red-400 disabled:opacity-50"
                     >
                       Hapus Gambar
                     </button>
@@ -96,7 +123,7 @@
 
                   <!-- New Image Preview (Auto Uploading) -->
                   <div v-if="imagePreviews[setting.key]" class="space-y-3">
-                    <div class="relative w-32 h-32 border-2 border-blue-300 rounded-lg overflow-hidden">
+                    <div class="relative w-32 h-32 border-2 border-blue-300 dark:border-blue-600 rounded-lg overflow-hidden">
                       <img
                         :src="imagePreviews[setting.key]"
                         :alt="`Preview ${getSettingLabel(setting.key)}`"
@@ -112,7 +139,7 @@
                         </button>
                       </div>
                     </div>
-                    <div class="text-xs text-blue-600">
+                    <div class="text-xs text-blue-600 dark:text-blue-400">
                       📤 {{ uploadingImages[setting.key] ? 'Mengupload gambar...' : 'Memproses...' }}
                     </div>
                   </div>
@@ -124,7 +151,7 @@
                       :id="`upload_${setting.key}`"
                       @change="(event) => handleImageUpload(event, setting.key)"
                       accept="image/*"
-                      class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 px-4 py-2"
+                      class="block w-full text-sm text-gray-500 dark:text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 dark:file:bg-blue-900 file:text-blue-700 dark:file:text-blue-300 hover:file:bg-blue-100 dark:hover:file:bg-blue-800 px-4 py-2"
                     />
                   </div>
                 </div>
@@ -133,10 +160,10 @@
 
             <!-- Palet Warna -->
             <div v-if="settings.color?.length" class="space-y-6">
-              <h2 class="text-lg font-medium text-gray-900">Palet Warna</h2>
+              <h2 class="text-lg font-medium text-gray-900 dark:text-white">Palet Warna</h2>
               <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div v-for="setting in settings.color" :key="setting.key" class="space-y-2">
-                  <label :for="setting.key" class="block text-sm font-medium text-gray-700">
+                  <label :for="setting.key" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
                     {{ getSettingLabel(setting.key) }}
                   </label>
                   <div class="flex items-center space-x-3">
@@ -144,27 +171,27 @@
                       :id="setting.key"
                       v-model="form.settings[setting.key]"
                       type="color"
-                      class="h-10 w-20 rounded border border-gray-300 cursor-pointer px-2 py-1"
+                      class="h-10 w-20 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 cursor-pointer px-2 py-1"
                     />
                     <input
                       v-model="form.settings[setting.key]"
                       type="text"
-                      class="flex-1 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm px-4 py-2"
+                      class="flex-1 rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm px-4 py-2"
                       placeholder="#000000"
                     />
                   </div>
-                  <p class="text-xs text-gray-500">{{ setting.description }}</p>
+                  <p class="text-xs text-gray-500 dark:text-gray-400">{{ setting.description }}</p>
                 </div>
               </div>
             </div>
           </div>
 
           <!-- Action Buttons -->
-          <div class="flex justify-end space-x-3 pt-6 border-t border-gray-200 mt-8">
+          <div class="flex justify-end space-x-3 pt-6 border-t border-gray-200 dark:border-gray-700 mt-8">
             <button
               type="button"
               @click="resetForm"
-              class="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
             >
               Reset
             </button>
@@ -188,6 +215,8 @@ import { ref, onMounted } from 'vue'
 import { useForm } from '@inertiajs/vue3'
 import AppLayout from '@/layouts/AppLayout.vue'
 import { useToast } from '@/composables/useToast'
+import { Monitor, Moon, Sun } from 'lucide-vue-next'
+import { useAppearance } from '@/composables/useAppearance'
 
 interface BrandingSetting {
   id: number
@@ -209,6 +238,17 @@ interface Props {
 
 const props = defineProps<Props>()
 const { success, error } = useToast()
+const { appearance, updateAppearance } = useAppearance()
+
+// Theme tabs configuration
+const themeTabs = [
+  { value: 'light', Icon: Sun, label: 'Terang' },
+  { value: 'dark', Icon: Moon, label: 'Gelap' },
+  { value: 'system', Icon: Monitor, label: 'Sistem' },
+] as const
+
+// Current theme state
+const currentTheme = ref(appearance)
 
 // Form setup
 const form = useForm({
@@ -235,11 +275,20 @@ const clearImagePreview = (key: string) => {
   }
 }
 
+// Theme update function
+const updateTheme = (theme: 'light' | 'dark' | 'system') => {
+  currentTheme.value = theme
+  updateAppearance(theme)
+}
+
 // Initialize form with current settings
 onMounted(() => {
   Object.values(props.settings).flat().forEach((setting) => {
     form.settings[setting.key] = setting.value
   })
+
+  // Sync current theme
+  currentTheme.value = appearance
 })
 
 // Setting labels mapping
