@@ -8,6 +8,7 @@ use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\ValidationException;
 
 class LoginRequest extends FormRequest
@@ -57,14 +58,20 @@ class LoginRequest extends FormRequest
             return;
         }
 
-        // If email auth fails, try with username
-        $user = User::where('username', $login)->first();
+        // If email auth fails, try with username only if column exists
+        try {
+            if (Schema::hasColumn('users', 'username')) {
+                $user = User::where('username', $login)->first();
 
-        if ($user && Hash::check($password, $user->password)) {
-            Auth::login($user, $this->boolean('remember'));
-            RateLimiter::clear($this->throttleKey());
+                if ($user && Hash::check($password, $user->password)) {
+                    Auth::login($user, $this->boolean('remember'));
+                    RateLimiter::clear($this->throttleKey());
 
-            return;
+                    return;
+                }
+            }
+        } catch (\Exception $e) {
+            // Schema not available, skip username check
         }
 
         RateLimiter::hit($this->throttleKey());
