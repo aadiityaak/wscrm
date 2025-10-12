@@ -188,6 +188,13 @@ class BuildProductionStructure extends Command
                 File::delete($devFilePath);
             }
         }
+
+        // Remove install folder from public_html
+        $installPath = $destination.'/install';
+        if (File::exists($installPath)) {
+            File::deleteDirectory($installPath);
+            $this->info('Removed install folder from public_html');
+        }
     }
 
     private function modifyIndexPhpForProduction(string $publicHtmlPath): void
