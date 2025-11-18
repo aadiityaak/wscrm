@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Customer;
 use App\Models\Invoice;
+use App\Models\Order;
 use App\Services\InvoiceGeneratorService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
@@ -95,6 +96,9 @@ class InvoiceController extends Controller
                 'overdue' => $overdueAmount,
             ],
             'customers' => Customer::orderBy('name')->get(['id', 'name', 'email']),
+            'services' => Order::services()
+                ->with('customer:id,name,email')
+                ->get(['id', 'domain_name', 'service_type', 'customer_id']),
             'generationMessage' => $generationMessage,
         ]);
     }
@@ -103,6 +107,7 @@ class InvoiceController extends Controller
     {
         $validated = $request->validate([
             'customer_id' => 'required|exists:customers,id',
+            'service_id' => 'nullable|exists:orders,id',
             'invoice_type' => 'required|in:setup,renewal',
             'amount' => 'required|numeric|min:0',
             'discount' => 'nullable|numeric|min:0',
@@ -113,17 +118,18 @@ class InvoiceController extends Controller
 
         $invoiceNumber = $generator->generateInvoiceNumber();
 
-        $invoice = Invoice::create([
+        Invoice::create([
             'invoice_number' => $invoiceNumber,
             'invoice_type' => $validated['invoice_type'],
             'customer_id' => $validated['customer_id'],
+            'order_id' => $validated['service_id'] ?? null,
             'amount' => $validated['amount'],
             'discount' => $validated['discount'] ?? 0,
             'issue_date' => now(),
             'due_date' => $validated['due_date'],
             'billing_cycle' => $validated['billing_cycle'],
             'status' => 'pending',
-            'notes' => $validated['notes'],
+            'notes' => $validated['notes'] ?? null,
         ]);
 
         return back()->with('message', 'Invoice created successfully.');
@@ -176,7 +182,7 @@ class InvoiceController extends Controller
             return $pdf->download($filename);
 
         } catch (\Exception $e) {
-            \Log::error('PDF Generation Error: '.$e->getMessage());
+            logger()->error('PDF Generation Error: '.$e->getMessage());
 
             return back()->with('error', 'Gagal menggenerate PDF: '.$e->getMessage());
         }
